@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PopupApp } from "@/components/extension/PopupApp";
-import { Download, Puzzle, ChevronRight, CheckCircle } from "lucide-react";
+import { Download, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
