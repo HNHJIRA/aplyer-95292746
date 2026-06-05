@@ -1,0 +1,122 @@
+import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useAplyerStore } from "@/lib/storage/useAplyerStore";
+import type { OnboardingStep } from "@/lib/storage/types";
+import { Welcome } from "./screens/Welcome";
+import { ResumeUpload } from "./screens/ResumeUpload";
+import { ResumeAnalysis } from "./screens/ResumeAnalysis";
+import { Profile } from "./screens/Profile";
+import { WritingSamples } from "./screens/WritingSamples";
+import { Success } from "./screens/Success";
+import { Dashboard } from "./screens/Dashboard";
+import { Settings } from "./screens/Settings";
+import { StepDots } from "./ui/StepDots";
+
+type View = OnboardingStep | "dashboard" | "settings";
+
+const ONBOARDING_ORDER: OnboardingStep[] = [
+  "welcome",
+  "resume_upload",
+  "resume_analysis",
+  "profile",
+  "writing_samples",
+  "success",
+];
+
+export function PopupApp() {
+  const { state, loaded, update } = useAplyerStore();
+  const [view, setView] = useState<View>("welcome");
+
+  useEffect(() => {
+    if (!loaded) return;
+    if (state.onboardingStatus.completed) setView("dashboard");
+    else setView(state.onboardingStatus.currentStep === "done" ? "dashboard" : state.onboardingStatus.currentStep);
+  }, [loaded, state.onboardingStatus.completed, state.onboardingStatus.currentStep]);
+
+  const stepIndex = useMemo(() => {
+    if (view === "dashboard" || view === "settings" || view === "done") return -1;
+    return ONBOARDING_ORDER.indexOf(view);
+  }, [view]);
+
+  async function goTo(next: View, currentStep?: OnboardingStep) {
+    if (currentStep) await update({ onboardingStatus: { ...state.onboardingStatus, currentStep } });
+    setView(next);
+  }
+
+  async function finishOnboarding() {
+    await update({
+      onboardingStatus: {
+        ...state.onboardingStatus,
+        completed: true,
+        currentStep: "done",
+        completedAt: new Date().toISOString(),
+      },
+    });
+    setView("dashboard");
+  }
+
+  if (!loaded) {
+    return <div className="flex h-full items-center justify-center text-muted-foreground text-sm">Loading…</div>;
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      {stepIndex >= 1 && stepIndex <= 4 && (
+        <div className="flex items-center justify-between border-b border-border px-6 py-3">
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            Step {stepIndex} / 5
+          </span>
+          <StepDots total={5} current={stepIndex - 1} />
+        </div>
+      )}
+
+      <div className="relative flex-1 overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={view}
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -16 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="absolute inset-0 flex flex-col"
+          >
+            {view === "welcome" && <Welcome onNext={() => goTo("resume_upload", "resume_upload")} />}
+            {view === "resume_upload" && (
+              <ResumeUpload
+                onBack={() => goTo("welcome", "welcome")}
+                onNext={() => goTo("resume_analysis", "resume_analysis")}
+              />
+            )}
+            {view === "resume_analysis" && (
+              <ResumeAnalysis
+                onBack={() => goTo("resume_upload", "resume_upload")}
+                onNext={() => goTo("profile", "profile")}
+              />
+            )}
+            {view === "profile" && (
+              <Profile
+                onBack={() => goTo("resume_analysis", "resume_analysis")}
+                onNext={() => goTo("writing_samples", "writing_samples")}
+              />
+            )}
+            {view === "writing_samples" && (
+              <WritingSamples
+                onBack={() => goTo("profile", "profile")}
+                onNext={() => goTo("success", "success")}
+              />
+            )}
+            {view === "success" && <Success onDone={finishOnboarding} />}
+            {view === "dashboard" && (
+              <Dashboard
+                onSettings={() => setView("settings")}
+                onResume={() => setView("resume_upload")}
+                onProfile={() => setView("profile")}
+              />
+            )}
+            {view === "settings" && <Settings onBack={() => setView("dashboard")} />}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
