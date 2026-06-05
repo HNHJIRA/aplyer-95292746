@@ -56,18 +56,28 @@ function Index() {
             architecture. Ready to drop into a Manifest V3 extension popup.
           </p>
 
-          {/* Download CTA */}
-          <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row lg:items-start">
+          {/* Download CTA — Landscape */}
+          <div className="mt-6 flex w-full items-stretch gap-0 overflow-hidden rounded-xl border border-brand-green/20 bg-gradient-to-r from-brand-green/10 via-brand-green/5 to-transparent">
             <button
               onClick={downloadExtension}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-green px-5 py-3 text-sm font-bold text-[#06140A] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+              className="group inline-flex flex-1 items-center justify-between px-5 py-4 text-left transition-colors hover:bg-brand-green/10"
             >
-              <Download className="h-4 w-4" />
-              Download Extension
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-green text-[#06140A] shadow-[0_4px_12px_-4px_rgba(29,185,84,0.5)] transition-transform group-hover:scale-105">
+                  <Download className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-foreground">Download Extension</div>
+                  <div className="text-[11px] text-muted-foreground">aplyer-extension.zip · Ready to load unpacked</div>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
             </button>
-            <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-              420 × 650 · Tailwind · Framer Motion · TypeScript
-            </span>
+            <div className="hidden items-center border-l border-border px-4 sm:flex">
+              <span className="font-mono text-[10px] uppercase leading-relaxed tracking-[0.16em] text-muted-foreground">
+                420 × 650<br/>Tailwind · TS
+              </span>
+            </div>
           </div>
 
           {/* Install Steps */}
