@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { PopupApp } from "@/components/extension/PopupApp";
 import {
   Download,
@@ -13,7 +13,6 @@ import {
   Briefcase,
   ShieldCheck,
   Zap,
-  Chrome,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -159,14 +158,13 @@ function Nav() {
           >
             Founder
           </a>
-          <button
-            onClick={downloadExtension}
-            className="group inline-flex items-center gap-2 rounded-lg bg-brand-green px-4 py-2 text-sm font-bold text-[#06140A] shadow-[0_8px_24px_-8px_rgba(29,185,84,0.7)] transition-transform hover:scale-[1.03]"
+          <Link
+            to="/dashboard"
+            className="group inline-flex items-center gap-2 rounded-lg bg-brand-green px-4 py-2 text-sm font-bold text-primary-foreground shadow-[0_8px_24px_-8px_rgba(29,185,84,0.7)] transition-transform hover:scale-[1.03]"
           >
-            <Chrome className="h-4 w-4" />
-            Get Extension
+            Open Dashboard
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </button>
+          </Link>
         </div>
       </div>
     </nav>
@@ -236,19 +234,20 @@ function Hero() {
             variants={fadeUp}
             className="mt-7 flex flex-col items-center gap-3 sm:flex-row lg:items-start"
           >
-            <button
-              onClick={downloadExtension}
-              className="group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-green px-6 py-3.5 text-[15px] font-bold text-[#06140A] shadow-[0_18px_40px_-14px_rgba(29,185,84,0.7)] transition-transform hover:scale-[1.02] sm:w-auto"
+            <Link
+              to="/dashboard"
+              className="group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-green px-6 py-3.5 text-[15px] font-bold text-primary-foreground shadow-[0_18px_40px_-14px_rgba(29,185,84,0.7)] transition-transform hover:scale-[1.02] sm:w-auto"
+            >
+              Open Dashboard
+              <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <a
+              href="/aplyer-extension.zip"
+              download
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-paper/60 px-6 py-3.5 text-[15px] font-semibold text-foreground transition-colors hover:border-brand-green/40 sm:w-auto"
             >
               <Download className="h-4 w-4" />
               Download Extension
-              <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </button>
-            <a
-              href="#how"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-paper/60 px-6 py-3.5 text-[15px] font-semibold text-foreground transition-colors hover:border-brand-green/40 sm:w-auto"
-            >
-              See how it works
             </a>
           </motion.div>
 
@@ -309,7 +308,7 @@ function Hero() {
               </span>
             </div>
             <div className="h-[620px] w-[400px] overflow-hidden bg-background">
-              <PopupApp />
+              <PopupApp onStart={() => { window.location.href = "/dashboard"; }} />
             </div>
           </motion.div>
         </motion.div>
@@ -594,14 +593,13 @@ function FinalCTA() {
           essay questions on every careers page.
         </p>
         <div className="relative mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <button
-            onClick={downloadExtension}
-            className="group inline-flex items-center gap-2 rounded-xl bg-brand-green px-6 py-3.5 text-[15px] font-bold text-[#06140A] shadow-[0_18px_40px_-14px_rgba(29,185,84,0.7)] transition-transform hover:scale-[1.03]"
+          <Link
+            to="/dashboard"
+            className="group inline-flex items-center gap-2 rounded-xl bg-brand-green px-6 py-3.5 text-[15px] font-bold text-primary-foreground shadow-[0_18px_40px_-14px_rgba(29,185,84,0.7)] transition-transform hover:scale-[1.03]"
           >
-            <Download className="h-4 w-4" />
-            Download Extension
+            Open Dashboard
             <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </button>
+          </Link>
           <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
             <Check className="h-4 w-4 text-brand-green" />
             Free during early access
