@@ -23,7 +23,7 @@ const ONBOARDING_ORDER: OnboardingStep[] = [
   "success",
 ];
 
-export function PopupApp() {
+export function PopupApp({ onStart }: { onStart?: () => void } = {}) {
   const { state, loaded, update } = useAplyerStore();
   const [view, setView] = useState<View>("welcome");
 
@@ -80,7 +80,7 @@ export function PopupApp() {
             transition={{ duration: 0.25, ease: "easeOut" }}
             className="absolute inset-0 flex flex-col"
           >
-            {view === "welcome" && <Welcome onNext={() => goTo("resume_upload", "resume_upload")} />}
+            {view === "welcome" && <Welcome onNext={onStart ?? (() => goTo("resume_upload", "resume_upload"))} />}
             {view === "resume_upload" && (
               <ResumeUpload
                 onBack={() => goTo("welcome", "welcome")}
