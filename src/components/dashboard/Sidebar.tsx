@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   FileText,
@@ -57,9 +57,9 @@ export function Sidebar() {
             : loc.pathname.startsWith(item.to);
           const Icon = item.icon;
           return (
-            <Link
+            <a
               key={item.to}
-              to={item.to}
+              href={item.to}
               className={`mb-0.5 flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] transition-colors ${
                 active
                   ? "bg-brand-green/10 text-brand-green"
@@ -68,7 +68,7 @@ export function Sidebar() {
             >
               <Icon className="h-4 w-4" />
               {item.label}
-            </Link>
+            </a>
           );
         })}
       </nav>
