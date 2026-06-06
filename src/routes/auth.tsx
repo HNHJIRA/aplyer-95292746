@@ -8,6 +8,9 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search) => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Sign in · Aplyer.ai" },
@@ -29,15 +32,17 @@ const signUpSchema = signInSchema.extend({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
+  const redirectTo = getSafeRedirect(search.redirect);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "" });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard" });
+      if (data.session) navigate({ to: redirectTo as "/dashboard" });
     });
-  }, [navigate]);
+  }, [navigate, redirectTo]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,7 +63,7 @@ function AuthPage() {
           return;
         }
         toast.success("Welcome back");
-        navigate({ to: "/dashboard" });
+        navigate({ to: redirectTo as "/dashboard" });
       } else {
         const parsed = signUpSchema.safeParse(form);
         if (!parsed.success) {
@@ -69,7 +74,7 @@ function AuthPage() {
           email: parsed.data.email,
           password: parsed.data.password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: `${window.location.origin}${redirectTo}`,
             data: { first_name: parsed.data.firstName, last_name: parsed.data.lastName },
           },
         });
@@ -214,6 +219,11 @@ function AuthPage() {
       </div>
     </div>
   );
+}
+
+function getSafeRedirect(redirect?: string) {
+  if (redirect === "/dashboard" || redirect?.startsWith("/dashboard/")) return redirect;
+  return "/dashboard";
 }
 
 function Field({
