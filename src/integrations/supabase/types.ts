@@ -14,7 +14,221 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          linkedin: string | null
+          location: string | null
+          phone: string | null
+          portfolio: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          linkedin?: string | null
+          location?: string | null
+          phone?: string | null
+          portfolio?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          linkedin?: string | null
+          location?: string | null
+          phone?: string | null
+          portfolio?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      resume_scores: {
+        Row: {
+          completeness: number
+          created_at: string
+          id: string
+          resume_id: string
+          score: number
+          sections: Json
+          strength: number
+          strengths: string[]
+          suggestions: string[]
+          user_id: string
+        }
+        Insert: {
+          completeness: number
+          created_at?: string
+          id?: string
+          resume_id: string
+          score: number
+          sections?: Json
+          strength: number
+          strengths?: string[]
+          suggestions?: string[]
+          user_id: string
+        }
+        Update: {
+          completeness?: number
+          created_at?: string
+          id?: string
+          resume_id?: string
+          score?: number
+          sections?: Json
+          strength?: number
+          strengths?: string[]
+          suggestions?: string[]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resume_scores_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resumes: {
+        Row: {
+          file_name: string
+          file_size: number
+          file_type: string | null
+          id: string
+          is_current: boolean
+          resume_text: string | null
+          storage_path: string
+          uploaded_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          file_name: string
+          file_size: number
+          file_type?: string | null
+          id?: string
+          is_current?: boolean
+          resume_text?: string | null
+          storage_path: string
+          uploaded_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          file_name?: string
+          file_size?: number
+          file_type?: string | null
+          id?: string
+          is_current?: boolean
+          resume_text?: string | null
+          storage_path?: string
+          uploaded_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          renews_at: string | null
+          tier: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          renews_at?: string | null
+          tier?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          renews_at?: string | null
+          tier?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          ai_provider: string
+          autofill_enabled: boolean
+          created_at: string
+          notifications: boolean
+          telemetry: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_provider?: string
+          autofill_enabled?: boolean
+          created_at?: string
+          notifications?: boolean
+          telemetry?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_provider?: string
+          autofill_enabled?: boolean
+          created_at?: string
+          notifications?: boolean
+          telemetry?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      writing_samples: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+          word_count: number
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+          word_count?: number
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+          word_count?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
