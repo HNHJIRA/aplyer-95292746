@@ -13,7 +13,6 @@ import {
   Briefcase,
   ShieldCheck,
   Zap,
-  Chrome,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -594,14 +593,13 @@ function FinalCTA() {
           essay questions on every careers page.
         </p>
         <div className="relative mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <button
-            onClick={downloadExtension}
-            className="group inline-flex items-center gap-2 rounded-xl bg-brand-green px-6 py-3.5 text-[15px] font-bold text-[#06140A] shadow-[0_18px_40px_-14px_rgba(29,185,84,0.7)] transition-transform hover:scale-[1.03]"
+          <Link
+            to="/dashboard"
+            className="group inline-flex items-center gap-2 rounded-xl bg-brand-green px-6 py-3.5 text-[15px] font-bold text-primary-foreground shadow-[0_18px_40px_-14px_rgba(29,185,84,0.7)] transition-transform hover:scale-[1.03]"
           >
-            <Download className="h-4 w-4" />
-            Download Extension
+            Open Dashboard
             <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </button>
+          </Link>
           <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
             <Check className="h-4 w-4 text-brand-green" />
             Free during early access
