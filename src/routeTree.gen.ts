@@ -15,6 +15,13 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthForgotRouteImport } from './routes/auth.forgot'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
+import { Route as AuthenticatedDashboardWritingRouteImport } from './routes/_authenticated/dashboard.writing'
+import { Route as AuthenticatedDashboardSupportRouteImport } from './routes/_authenticated/dashboard.support'
+import { Route as AuthenticatedDashboardSubscriptionRouteImport } from './routes/_authenticated/dashboard.subscription'
+import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard.settings'
+import { Route as AuthenticatedDashboardResumeRouteImport } from './routes/_authenticated/dashboard.resume'
+import { Route as AuthenticatedDashboardProfileRouteImport } from './routes/_authenticated/dashboard.profile'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -45,20 +52,75 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDashboardIndexRoute =
+  AuthenticatedDashboardIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardWritingRoute =
+  AuthenticatedDashboardWritingRouteImport.update({
+    id: '/writing',
+    path: '/writing',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardSupportRoute =
+  AuthenticatedDashboardSupportRouteImport.update({
+    id: '/support',
+    path: '/support',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardSubscriptionRoute =
+  AuthenticatedDashboardSubscriptionRouteImport.update({
+    id: '/subscription',
+    path: '/subscription',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardSettingsRoute =
+  AuthenticatedDashboardSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardResumeRoute =
+  AuthenticatedDashboardResumeRouteImport.update({
+    id: '/resume',
+    path: '/resume',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardProfileRoute =
+  AuthenticatedDashboardProfileRouteImport.update({
+    id: '/profile',
+    path: '/profile',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/auth/forgot': typeof AuthForgotRoute
+  '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
+  '/dashboard/resume': typeof AuthenticatedDashboardResumeRoute
+  '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
+  '/dashboard/subscription': typeof AuthenticatedDashboardSubscriptionRoute
+  '/dashboard/support': typeof AuthenticatedDashboardSupportRoute
+  '/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
+  '/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
   '/auth/forgot': typeof AuthForgotRoute
+  '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
+  '/dashboard/resume': typeof AuthenticatedDashboardResumeRoute
+  '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
+  '/dashboard/subscription': typeof AuthenticatedDashboardSubscriptionRoute
+  '/dashboard/support': typeof AuthenticatedDashboardSupportRoute
+  '/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
+  '/dashboard': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -66,14 +128,44 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
-  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/auth/forgot': typeof AuthForgotRoute
+  '/_authenticated/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
+  '/_authenticated/dashboard/resume': typeof AuthenticatedDashboardResumeRoute
+  '/_authenticated/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
+  '/_authenticated/dashboard/subscription': typeof AuthenticatedDashboardSubscriptionRoute
+  '/_authenticated/dashboard/support': typeof AuthenticatedDashboardSupportRoute
+  '/_authenticated/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
+  '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/reset-password' | '/dashboard' | '/auth/forgot'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/dashboard'
+    | '/auth/forgot'
+    | '/dashboard/profile'
+    | '/dashboard/resume'
+    | '/dashboard/settings'
+    | '/dashboard/subscription'
+    | '/dashboard/support'
+    | '/dashboard/writing'
+    | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/reset-password' | '/dashboard' | '/auth/forgot'
+  to:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/auth/forgot'
+    | '/dashboard/profile'
+    | '/dashboard/resume'
+    | '/dashboard/settings'
+    | '/dashboard/subscription'
+    | '/dashboard/support'
+    | '/dashboard/writing'
+    | '/dashboard'
   id:
     | '__root__'
     | '/'
@@ -82,6 +174,13 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/dashboard'
     | '/auth/forgot'
+    | '/_authenticated/dashboard/profile'
+    | '/_authenticated/dashboard/resume'
+    | '/_authenticated/dashboard/settings'
+    | '/_authenticated/dashboard/subscription'
+    | '/_authenticated/dashboard/support'
+    | '/_authenticated/dashboard/writing'
+    | '/_authenticated/dashboard/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -135,15 +234,91 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dashboard/': {
+      id: '/_authenticated/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/writing': {
+      id: '/_authenticated/dashboard/writing'
+      path: '/writing'
+      fullPath: '/dashboard/writing'
+      preLoaderRoute: typeof AuthenticatedDashboardWritingRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/support': {
+      id: '/_authenticated/dashboard/support'
+      path: '/support'
+      fullPath: '/dashboard/support'
+      preLoaderRoute: typeof AuthenticatedDashboardSupportRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/subscription': {
+      id: '/_authenticated/dashboard/subscription'
+      path: '/subscription'
+      fullPath: '/dashboard/subscription'
+      preLoaderRoute: typeof AuthenticatedDashboardSubscriptionRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/settings': {
+      id: '/_authenticated/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof AuthenticatedDashboardSettingsRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/resume': {
+      id: '/_authenticated/dashboard/resume'
+      path: '/resume'
+      fullPath: '/dashboard/resume'
+      preLoaderRoute: typeof AuthenticatedDashboardResumeRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/profile': {
+      id: '/_authenticated/dashboard/profile'
+      path: '/profile'
+      fullPath: '/dashboard/profile'
+      preLoaderRoute: typeof AuthenticatedDashboardProfileRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
   }
 }
 
+interface AuthenticatedDashboardRouteChildren {
+  AuthenticatedDashboardProfileRoute: typeof AuthenticatedDashboardProfileRoute
+  AuthenticatedDashboardResumeRoute: typeof AuthenticatedDashboardResumeRoute
+  AuthenticatedDashboardSettingsRoute: typeof AuthenticatedDashboardSettingsRoute
+  AuthenticatedDashboardSubscriptionRoute: typeof AuthenticatedDashboardSubscriptionRoute
+  AuthenticatedDashboardSupportRoute: typeof AuthenticatedDashboardSupportRoute
+  AuthenticatedDashboardWritingRoute: typeof AuthenticatedDashboardWritingRoute
+  AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
+}
+
+const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
+  {
+    AuthenticatedDashboardProfileRoute: AuthenticatedDashboardProfileRoute,
+    AuthenticatedDashboardResumeRoute: AuthenticatedDashboardResumeRoute,
+    AuthenticatedDashboardSettingsRoute: AuthenticatedDashboardSettingsRoute,
+    AuthenticatedDashboardSubscriptionRoute:
+      AuthenticatedDashboardSubscriptionRoute,
+    AuthenticatedDashboardSupportRoute: AuthenticatedDashboardSupportRoute,
+    AuthenticatedDashboardWritingRoute: AuthenticatedDashboardWritingRoute,
+    AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
+  }
+
+const AuthenticatedDashboardRouteWithChildren =
+  AuthenticatedDashboardRoute._addFileChildren(
+    AuthenticatedDashboardRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRouteWithChildren,
 }
 
 const AuthenticatedRouteRouteWithChildren =
