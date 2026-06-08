@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { downloadExtension } from "@/lib/download-extension";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -36,22 +37,6 @@ export const Route = createFileRoute("/")({
   }),
   component: Index,
 });
-
-function downloadExtension() {
-  fetch("/aplyer-extension.zip")
-    .then((res) => {
-      if (!res.ok) throw new Error(`Download failed: ${res.status}`);
-      return res.blob();
-    })
-    .then((blob) => {
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "aplyer-extension.zip";
-      a.click();
-      URL.revokeObjectURL(a.href);
-    })
-    .catch((err) => alert(err.message));
-}
 
 import type { Variants } from "framer-motion";
 
@@ -241,14 +226,14 @@ function Hero() {
               Open Dashboard
               <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
-            <a
-              href="/aplyer-extension.zip"
-              download
+            <button
+              type="button"
+              onClick={() => void downloadExtension().catch((err) => alert(err.message))}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-paper/60 px-6 py-3.5 text-[15px] font-semibold text-foreground transition-colors hover:border-brand-green/40 sm:w-auto"
             >
               <Download className="h-4 w-4" />
               Download Extension
-            </a>
+            </button>
           </motion.div>
 
           <motion.div
