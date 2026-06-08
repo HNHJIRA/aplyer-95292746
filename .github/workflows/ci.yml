@@ -28,9 +28,14 @@ jobs:
           npx yarn install
           npx yarn run build
 
+      - name: 🏠 Create static landing page for shared hosting
+        run: node scripts/create-static-landing.mjs
+
       - name: 📝 Add SPA .htaccess for deep links
         run: |
           cat > dist/client/.htaccess << 'EOF'
+          DirectoryIndex index.html
+
           <IfModule mod_rewrite.c>
             RewriteEngine On
             RewriteBase /
