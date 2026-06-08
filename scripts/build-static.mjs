@@ -3,7 +3,7 @@
 // Run AFTER `bun run build` — copies prerendered + client assets into dist/
 // and writes a SPA fallback .htaccess so deep links work on refresh.
 
-import { cp, mkdir, rm, writeFile, readdir, stat, copyFile } from "node:fs/promises";
+import { cp, mkdir, rm, writeFile, readdir, stat, readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
@@ -85,6 +85,14 @@ RewriteRule ^ index.html [L]
 
 await writeFile(join(OUT, ".htaccess"), htaccess);
 console.log(`→ Wrote ${OUT}/.htaccess`);
+
+const extensionZip = join(OUT, "aplyer-extension.zip");
+if (existsSync(extensionZip)) {
+  const zip = await readFile(extensionZip);
+  await writeFile(join(OUT, "aplyer-extension.zip.b64"), zip.toString("base64"));
+  await rm(extensionZip, { force: true });
+  console.log("→ Wrote text-safe extension download and removed raw zip");
+}
 
 // Stats
 async function dirSize(p) {

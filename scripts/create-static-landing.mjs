@@ -368,7 +368,7 @@ const html = String.raw`<!doctype html>
             </svg>
             Aplyer.ai
           </a>
-          <a class="nav-cta" href="/aplyer-extension.zip" download>Download Extension</a>
+          <a class="nav-cta" href="/aplyer-extension.zip.b64" onclick="downloadExtension(event)">Download Extension</a>
         </div>
       </header>
 
@@ -380,7 +380,7 @@ const html = String.raw`<!doctype html>
             Aplyer is a Chrome extension that fills long essay questions on job applications in your own voice — using your resume. Works inside Workday, Greenhouse, Lever, and employer careers pages.
           </p>
           <div class="actions">
-            <a class="primary" href="/aplyer-extension.zip" download>Download Extension →</a>
+            <a class="primary" href="/aplyer-extension.zip.b64" onclick="downloadExtension(event)">Download Extension →</a>
             <a class="secondary" href="mailto:hello@aplyer.ai">Contact Founder</a>
           </div>
           <div class="stats" aria-label="Extension highlights">
@@ -419,6 +419,28 @@ const html = String.raw`<!doctype html>
 
       <footer class="footer">© 2026 Aplyer.ai</footer>
     </div>
+    <script>
+      async function downloadExtension(event) {
+        event.preventDefault();
+        const response = await fetch('/aplyer-extension.zip.b64', { cache: 'no-store' });
+        if (!response.ok) throw new Error('Download failed: ' + response.status);
+        const encoded = (await response.text()).replace(/\s/g, '');
+        const binary = atob(encoded);
+        const chunks = [];
+        for (let offset = 0; offset < binary.length; offset += 262144) {
+          const slice = binary.slice(offset, offset + 262144);
+          const bytes = new Uint8Array(slice.length);
+          for (let i = 0; i < slice.length; i += 1) bytes[i] = slice.charCodeAt(i);
+          chunks.push(bytes);
+        }
+        const url = URL.createObjectURL(new Blob(chunks, { type: 'application/zip' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'aplyer-extension.zip';
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+    </script>
   </body>
 </html>`;
 

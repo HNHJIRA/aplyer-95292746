@@ -14,6 +14,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { downloadExtension } from "@/lib/download-extension";
 
 const nav: Array<{ to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }> = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -76,18 +77,7 @@ export function Sidebar() {
       <div className="border-t border-border p-3">
         <button
           type="button"
-          onClick={() => {
-            fetch("/aplyer-extension.zip")
-              .then((r) => { if (!r.ok) throw new Error(`Download failed: ${r.status}`); return r.blob(); })
-              .then((blob) => {
-                const a = document.createElement("a");
-                a.href = URL.createObjectURL(blob);
-                a.download = "aplyer-extension.zip";
-                a.click();
-                URL.revokeObjectURL(a.href);
-              })
-              .catch((e) => alert(e.message));
-          }}
+          onClick={() => void downloadExtension().catch((e) => alert(e.message))}
           className="mb-2 flex w-full items-center gap-2 rounded-lg border border-brand-green/25 bg-brand-green/5 px-3 py-2.5 text-[12px] text-brand-green hover:bg-brand-green/10"
         >
           <Chrome className="h-4 w-4" />

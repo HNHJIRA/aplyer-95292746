@@ -13,6 +13,7 @@ import {
   Circle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { downloadExtension } from "@/lib/download-extension";
 
 export const Route = createFileRoute("/_authenticated/dashboard/")({
   component: DashboardHome,
@@ -126,18 +127,7 @@ function DashboardHome() {
           </p>
           <button
             type="button"
-            onClick={() => {
-              fetch("/aplyer-extension.zip")
-                .then((r) => { if (!r.ok) throw new Error(`Download failed: ${r.status}`); return r.blob(); })
-                .then((blob) => {
-                  const a = document.createElement("a");
-                  a.href = URL.createObjectURL(blob);
-                  a.download = "aplyer-extension.zip";
-                  a.click();
-                  URL.revokeObjectURL(a.href);
-                })
-                .catch((e) => alert(e.message));
-            }}
+            onClick={() => void downloadExtension().catch((e) => alert(e.message))}
             className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-green px-3.5 py-2.5 text-[12px] font-semibold text-[#06140A]"
           >
             Download extension <ArrowRight className="h-3.5 w-3.5" />
