@@ -53,8 +53,14 @@ jobs:
           </IfModule>
           EOF
 
+      - name: ✅ Verify zip integrity in build output
+        run: |
+          ls -la dist/client/aplyer-extension.zip
+          unzip -t dist/client/aplyer-extension.zip | tail -3
+
       - name: List output files
         run: find dist/client -print
+
 
       - name: 📂 Sync files
         uses: SamKirkland/FTP-Deploy-Action@4.3.3
