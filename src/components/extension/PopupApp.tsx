@@ -20,7 +20,7 @@ import {
   type ExtensionSession,
 } from "@/lib/extension/runtime";
 
-type View = OnboardingStep | "dashboard" | "settings";
+type View = OnboardingStep | "dashboard";
 
 const ONBOARDING_ORDER: OnboardingStep[] = [
   "welcome",
