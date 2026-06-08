@@ -70,7 +70,7 @@ function AuthPage() {
           toast.error(parsed.error.issues[0]?.message ?? "Check your inputs");
           return;
         }
-        const { error } = await supabase.auth.signUp({
+        const { error: signUpError } = await supabase.auth.signUp({
           email: parsed.data.email,
           password: parsed.data.password,
           options: {
@@ -78,12 +78,20 @@ function AuthPage() {
             data: { first_name: parsed.data.firstName, last_name: parsed.data.lastName },
           },
         });
-        if (error) {
-          toast.error(error.message);
+        if (signUpError) {
+          toast.error(signUpError.message);
           return;
         }
-        toast.success("Check your email to verify your account.");
-        setMode("signin");
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: parsed.data.email,
+          password: parsed.data.password,
+        });
+        if (signInError) {
+          toast.error(signInError.message);
+          return;
+        }
+        toast.success("Welcome to Aplyer");
+        navigate({ to: redirectTo as "/dashboard" });
       }
     } finally {
       setLoading(false);
