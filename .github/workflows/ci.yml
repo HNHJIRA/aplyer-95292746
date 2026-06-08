@@ -68,4 +68,31 @@ jobs:
           server: ${{ secrets.SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: dist/client/
+      - name: 📂 Sync files via lftp (forces binary mode)
+        env:
+          FTP_SERVER: ${{ secrets.SERVER }}
+          FTP_USER: ${{ secrets.FTP_USERNAME }}
+          FTP_PASS: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y lftp
+          lftp -c "
+            set ftp:ssl-allow no;
+            set ssl:verify-certificate no;
+            set ftp:passive-mode true;
+            set net:max-retries 3;
+            set net:timeout 30;
+            set xfer:clobber on;
+            open -u \"$FTP_USER\",\"$FTP_PASS\" \"$FTP_SERVER\";
+            mirror -R --verbose --delete-first --parallel=4 \
+              --exclude-glob '.git*' \
+              --exclude-glob 'node_modules/' \
+              ./dist/client/ /;
+          "
+
+      - name: ✅ Verify uploaded zip
+        run: |
+          sleep 5
+          curl -sI "https://${{ secrets.SITE_DOMAIN || 'aplyer.assuredtechno.com' }}/aplyer-extension.zip"
+          curl -s "https://${{ secrets.SITE_DOMAIN || 'aplyer.assuredtechno.com' }}/aplyer-extension.zip" -o /tmp/verify.zip
+          unzip -t /tmp/verify.zip | tail -3
+
