@@ -162,12 +162,10 @@ export function PopupApp({ onStart, onFinish }: { onStart?: () => void; onFinish
             {view === "success" && <Success onDone={finishOnboarding} />}
             {view === "dashboard" && (
               <Dashboard
-                onSettings={() => setView("settings")}
                 onResume={() => setView("resume_upload")}
                 onProfile={() => setView("profile")}
               />
             )}
-            {view === "settings" && <Settings onBack={() => setView("dashboard")} />}
           </motion.div>
         </AnimatePresence>
       </div>
