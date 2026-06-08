@@ -6,6 +6,7 @@ import { Loader2, Save } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { CountryCitySelect, formatLocation, parseLocation } from "@/components/ui/CountryCitySelect";
 
 export const Route = createFileRoute("/_authenticated/dashboard/profile")({
   component: ProfilePage,
@@ -29,6 +30,7 @@ const EMPTY: Form = { first_name: "", last_name: "", email: "", phone: "", locat
 function ProfilePage() {
   const qc = useQueryClient();
   const [form, setForm] = useState<Form>(EMPTY);
+  const [loc, setLoc] = useState<{ country: string; city: string }>({ country: "", city: "" });
   const [saving, setSaving] = useState(false);
 
   const { data, isLoading } = useQuery({
