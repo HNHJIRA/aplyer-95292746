@@ -9,7 +9,7 @@ import { Profile } from "./screens/Profile";
 import { WritingSamples } from "./screens/WritingSamples";
 import { Success } from "./screens/Success";
 import { Dashboard } from "./screens/Dashboard";
-import { Settings } from "./screens/Settings";
+
 import { SignIn } from "./screens/SignIn";
 import { StepDots } from "./ui/StepDots";
 import {
@@ -20,7 +20,7 @@ import {
   type ExtensionSession,
 } from "@/lib/extension/runtime";
 
-type View = OnboardingStep | "dashboard" | "settings";
+type View = OnboardingStep | "dashboard";
 
 const ONBOARDING_ORDER: OnboardingStep[] = [
   "welcome",
@@ -77,7 +77,7 @@ export function PopupApp({ onStart, onFinish }: { onStart?: () => void; onFinish
   }, [loaded, state.onboardingStatus.completed, state.onboardingStatus.currentStep, onFinish]);
 
   const stepIndex = useMemo(() => {
-    if (view === "dashboard" || view === "settings" || view === "done") return -1;
+    if (view === "dashboard" || view === "done") return -1;
     return ONBOARDING_ORDER.indexOf(view);
   }, [view]);
 
@@ -162,12 +162,10 @@ export function PopupApp({ onStart, onFinish }: { onStart?: () => void; onFinish
             {view === "success" && <Success onDone={finishOnboarding} />}
             {view === "dashboard" && (
               <Dashboard
-                onSettings={() => setView("settings")}
                 onResume={() => setView("resume_upload")}
                 onProfile={() => setView("profile")}
               />
             )}
-            {view === "settings" && <Settings onBack={() => setView("dashboard")} />}
           </motion.div>
         </AnimatePresence>
       </div>

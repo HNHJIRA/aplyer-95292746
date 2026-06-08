@@ -58,3 +58,13 @@ export function openAuthInTab(webUrl: string) {
 export const APP_WEB_URL =
   (import.meta.env?.VITE_APP_URL as string | undefined) ||
   "https://aplyer-sparkle-foundation.lovable.app";
+
+export function openWebPath(path: string) {
+  const url = `${APP_WEB_URL.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+  const c = chromeApi();
+  if (c?.tabs?.create) {
+    c.tabs.create({ url });
+  } else if (typeof window !== "undefined") {
+    window.location.href = url;
+  }
+}

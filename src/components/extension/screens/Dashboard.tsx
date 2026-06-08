@@ -13,6 +13,7 @@ import {
 import { LogoMark } from "../Logo";
 import { Button } from "../ui/Button";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
+import { openWebPath } from "@/lib/extension/runtime";
 
 const PLATFORMS = [
   { name: "Greenhouse", color: "#1DB954" },
@@ -20,7 +21,9 @@ const PLATFORMS = [
   { name: "Workday", color: "#3B82F6" },
 ];
 
-export function Dashboard({ onSettings, onResume, onProfile }: { onSettings: () => void; onResume: () => void; onProfile: () => void }) {
+export function Dashboard({ onResume, onProfile }: { onResume: () => void; onProfile: () => void }) {
+  const openSettings = () => openWebPath("/dashboard/settings");
+  const openSubscription = () => openWebPath("/dashboard/subscription");
   const { state } = useAplyerStore();
   const profileFields = state.profile ? Object.values(state.profile).filter(Boolean).length : 0;
   const profilePct = Math.round((profileFields / 7) * 100);
@@ -37,7 +40,7 @@ export function Dashboard({ onSettings, onResume, onProfile }: { onSettings: () 
           </div>
         </div>
         <button
-          onClick={onSettings}
+          onClick={openSettings}
           className="rounded-md p-1.5 text-muted-foreground transition hover:bg-field hover:text-foreground"
           aria-label="Settings"
         >
@@ -86,7 +89,7 @@ export function Dashboard({ onSettings, onResume, onProfile }: { onSettings: () 
           <StatusCard icon={<FileText className="h-4 w-4" />} label="Resume" value={state.resumeMetadata ? "Active" : "Missing"} ok={!!state.resumeMetadata} onClick={onResume} />
           <StatusCard icon={<User className="h-4 w-4" />} label="Profile" value={`${profilePct}%`} ok={profilePct >= 80} onClick={onProfile} />
           <StatusCard icon={<PenLine className="h-4 w-4" />} label="Samples" value={`${state.writingSamples.length}`} ok={state.writingSamples.length > 0} />
-          <StatusCard icon={<Crown className="h-4 w-4" />} label="Plan" value={state.subscriptionStatus.tier.toUpperCase()} ok onClick={onSettings} />
+          <StatusCard icon={<Crown className="h-4 w-4" />} label="Plan" value={state.subscriptionStatus.tier.toUpperCase()} ok onClick={openSubscription} />
         </div>
 
         {/* Supported platforms */}
@@ -112,7 +115,7 @@ export function Dashboard({ onSettings, onResume, onProfile }: { onSettings: () 
             <QuickAction icon={<Upload className="h-4 w-4" />} label="Re-upload Resume" onClick={onResume} />
             <QuickAction icon={<User className="h-4 w-4" />} label="Edit Profile" onClick={onProfile} />
             <QuickAction icon={<RefreshCcw className="h-4 w-4" />} label="Re-run Resume Analysis" onClick={onResume} />
-            <QuickAction icon={<Sparkles className="h-4 w-4" />} label="AI Provider Settings" onClick={onSettings} />
+            
           </div>
         </div>
 
@@ -132,7 +135,7 @@ export function Dashboard({ onSettings, onResume, onProfile }: { onSettings: () 
                 <p className="mt-0.5 text-[11px] text-muted-foreground">Unlimited apps, advanced AI models, priority support.</p>
               </div>
             </div>
-            <Button size="sm" className="mt-2.5 w-full" onClick={onSettings}>Upgrade</Button>
+            <Button size="sm" className="mt-2.5 w-full" onClick={openSubscription}>Upgrade</Button>
           </motion.div>
         )}
       </div>
