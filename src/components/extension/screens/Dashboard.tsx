@@ -115,7 +115,7 @@ export function Dashboard({ onResume, onProfile }: { onResume: () => void; onPro
             <QuickAction icon={<Upload className="h-4 w-4" />} label="Re-upload Resume" onClick={onResume} />
             <QuickAction icon={<User className="h-4 w-4" />} label="Edit Profile" onClick={onProfile} />
             <QuickAction icon={<RefreshCcw className="h-4 w-4" />} label="Re-run Resume Analysis" onClick={onResume} />
-            <QuickAction icon={<Sparkles className="h-4 w-4" />} label="AI Provider Settings" onClick={openSettings} />
+            
           </div>
         </div>
 
