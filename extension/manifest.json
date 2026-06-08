@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Stop skipping jobs. Apply and sound like yourself on every application.",
   "permissions": ["storage", "activeTab", "tabs"],
-  "host_permissions": ["https://*.lovable.app/*"],
+  "host_permissions": ["https://*.lovable.app/*", "https://aplyer.assuredtechno.com/*"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -23,6 +23,7 @@
   },
   "externally_connectable": {
     "matches": [
+      "https://aplyer.assuredtechno.com/*",
       "https://*.lovable.app/*",
       "http://localhost/*",
       "http://localhost:*/*"

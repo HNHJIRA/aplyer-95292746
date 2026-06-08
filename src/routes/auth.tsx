@@ -40,7 +40,7 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: redirectTo as "/dashboard" });
+      if (data.session) goToRedirect(redirectTo, navigate);
     });
   }, [navigate, redirectTo]);
 
@@ -63,7 +63,7 @@ function AuthPage() {
           return;
         }
         toast.success("Welcome back");
-        navigate({ to: redirectTo as "/dashboard" });
+        goToRedirect(redirectTo, navigate);
       } else {
         const parsed = signUpSchema.safeParse(form);
         if (!parsed.success) {
@@ -91,7 +91,7 @@ function AuthPage() {
           return;
         }
         toast.success("Welcome to Aplyer");
-        navigate({ to: redirectTo as "/dashboard" });
+        goToRedirect(redirectTo, navigate);
       }
     } finally {
       setLoading(false);
@@ -230,8 +230,17 @@ function AuthPage() {
 }
 
 function getSafeRedirect(redirect?: string) {
+  if (redirect === "/extension-auth" || redirect?.startsWith("/extension-auth?")) return redirect;
   if (redirect === "/dashboard" || redirect?.startsWith("/dashboard/")) return redirect;
   return "/dashboard";
+}
+
+function goToRedirect(redirectTo: string, navigate: ReturnType<typeof useNavigate>) {
+  if (redirectTo.startsWith("/extension-auth")) {
+    window.location.href = redirectTo;
+    return;
+  }
+  navigate({ to: redirectTo as "/dashboard" });
 }
 
 function Field({
