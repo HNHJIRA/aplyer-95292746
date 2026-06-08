@@ -77,7 +77,7 @@ export function PopupApp({ onStart, onFinish }: { onStart?: () => void; onFinish
   }, [loaded, state.onboardingStatus.completed, state.onboardingStatus.currentStep, onFinish]);
 
   const stepIndex = useMemo(() => {
-    if (view === "dashboard" || view === "settings" || view === "done") return -1;
+    if (view === "dashboard" || view === "done") return -1;
     return ONBOARDING_ORDER.indexOf(view);
   }, [view]);
 
