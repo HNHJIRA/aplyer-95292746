@@ -15,9 +15,11 @@ function base64ToBlob(base64: string) {
     chunks.push(bytes);
   }
 
-  const parts = chunks.map((chunk) =>
-    chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.byteLength),
-  );
+  const parts = chunks.map((chunk) => {
+    const buffer = new ArrayBuffer(chunk.byteLength);
+    new Uint8Array(buffer).set(chunk);
+    return buffer;
+  });
 
   return new Blob(parts, { type: "application/zip" });
 }
