@@ -36,7 +36,13 @@ function saveBlob(blob: Blob) {
 
 export async function downloadExtension() {
   const res = await fetch(EXTENSION_B64_PATH, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Download failed: ${res.status}`);
-  const encodedZip = await res.text();
-  saveBlob(base64ToBlob(encodedZip));
+  if (res.ok) {
+    const encodedZip = await res.text();
+    saveBlob(base64ToBlob(encodedZip));
+    return;
+  }
+
+  const fallback = await fetch(`/${EXTENSION_ZIP_NAME}`, { cache: "no-store" });
+  if (!fallback.ok) throw new Error(`Download failed: ${res.status}`);
+  saveBlob(await fallback.blob());
 }
