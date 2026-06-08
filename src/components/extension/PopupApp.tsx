@@ -63,6 +63,7 @@ export function PopupApp({ onStart, onFinish }: { onStart?: () => void; onFinish
       if (area === "local" && "aplyer.session.v1" in changes) {
         const next = changes["aplyer.session.v1"].newValue as ExtensionSession | undefined;
         setSession(next ?? null);
+        ensureSupabaseSession(next ?? null);
       }
     };
     c?.storage?.onChanged?.addListener(onChanged);
