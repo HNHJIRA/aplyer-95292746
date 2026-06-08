@@ -74,14 +74,25 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t border-border p-3">
-        <a
-          href="/aplyer-extension.zip"
-          download
-          className="mb-2 flex items-center gap-2 rounded-lg border border-brand-green/25 bg-brand-green/5 px-3 py-2.5 text-[12px] text-brand-green hover:bg-brand-green/10"
+        <button
+          type="button"
+          onClick={() => {
+            fetch("/aplyer-extension.zip")
+              .then((r) => { if (!r.ok) throw new Error(`Download failed: ${r.status}`); return r.blob(); })
+              .then((blob) => {
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = "aplyer-extension.zip";
+                a.click();
+                URL.revokeObjectURL(a.href);
+              })
+              .catch((e) => alert(e.message));
+          }}
+          className="mb-2 flex w-full items-center gap-2 rounded-lg border border-brand-green/25 bg-brand-green/5 px-3 py-2.5 text-[12px] text-brand-green hover:bg-brand-green/10"
         >
           <Chrome className="h-4 w-4" />
           Install extension
-        </a>
+        </button>
         <button
           onClick={signOut}
           className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[12px] text-muted-foreground hover:bg-field hover:text-foreground"
