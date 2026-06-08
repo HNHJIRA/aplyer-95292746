@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
 import type { OnboardingStep } from "@/lib/storage/types";
@@ -10,7 +10,15 @@ import { WritingSamples } from "./screens/WritingSamples";
 import { Success } from "./screens/Success";
 import { Dashboard } from "./screens/Dashboard";
 import { Settings } from "./screens/Settings";
+import { SignIn } from "./screens/SignIn";
 import { StepDots } from "./ui/StepDots";
+import {
+  APP_WEB_URL,
+  getExtensionSession,
+  isExtensionRuntime,
+  openAuthInTab,
+  type ExtensionSession,
+} from "@/lib/extension/runtime";
 
 type View = OnboardingStep | "dashboard" | "settings";
 
