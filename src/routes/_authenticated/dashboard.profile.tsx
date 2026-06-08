@@ -54,11 +54,13 @@ function ProfilePage() {
         portfolio: data.profile?.portfolio ?? "",
         website: data.profile?.website ?? "",
       });
+      setLoc(parseLocation(data.profile?.location ?? ""));
     }
   }, [data]);
 
   async function save() {
-    const parsed = schema.safeParse(form);
+    const merged = { ...form, location: formatLocation(loc.country, loc.city) };
+    const parsed = schema.safeParse(merged);
     if (!parsed.success) { toast.error(parsed.error.issues[0]?.message ?? "Check inputs"); return; }
     setSaving(true);
     const { data: u } = await supabase.auth.getUser();
@@ -86,7 +88,9 @@ function ProfilePage() {
             <Field label="Last name" value={form.last_name} onChange={(v) => setForm({ ...form, last_name: v })} />
             <Field label="Email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} type="email" />
             <Field label="Phone" value={form.phone || ""} onChange={(v) => setForm({ ...form, phone: v })} />
-            <Field label="Location" value={form.location || ""} onChange={(v) => setForm({ ...form, location: v })} placeholder="City, Country" />
+            <div className="md:col-span-2">
+              <CountryCitySelect country={loc.country} city={loc.city} onChange={setLoc} />
+            </div>
             <Field label="LinkedIn" value={form.linkedin || ""} onChange={(v) => setForm({ ...form, linkedin: v })} placeholder="linkedin.com/in/you" />
             <Field label="Portfolio" value={form.portfolio || ""} onChange={(v) => setForm({ ...form, portfolio: v })} placeholder="https://" />
             <Field label="Website" value={form.website || ""} onChange={(v) => setForm({ ...form, website: v })} placeholder="https://" />
