@@ -13,6 +13,7 @@ import {
 import { LogoMark } from "../Logo";
 import { Button } from "../ui/Button";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
+import { openWebPath } from "@/lib/extension/runtime";
 
 const PLATFORMS = [
   { name: "Greenhouse", color: "#1DB954" },
