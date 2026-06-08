@@ -20,6 +20,7 @@ import {
   openWebPath,
   type ExtensionSession,
 } from "@/lib/extension/runtime";
+import { ensureSupabaseSession } from "@/lib/extension/sync";
 
 type View = OnboardingStep | "dashboard";
 
@@ -46,6 +47,7 @@ export function PopupApp({ onStart, onFinish }: { onStart?: () => void; onFinish
     try {
       const s = await getExtensionSession();
       setSession(s);
+      await ensureSupabaseSession(s);
     } finally {
       setChecking(false);
       setSessionChecked(true);
@@ -61,6 +63,7 @@ export function PopupApp({ onStart, onFinish }: { onStart?: () => void; onFinish
       if (area === "local" && "aplyer.session.v1" in changes) {
         const next = changes["aplyer.session.v1"].newValue as ExtensionSession | undefined;
         setSession(next ?? null);
+        ensureSupabaseSession(next ?? null);
       }
     };
     c?.storage?.onChanged?.addListener(onChanged);

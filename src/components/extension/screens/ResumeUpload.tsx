@@ -5,6 +5,7 @@ import { Button } from "../ui/Button";
 import { parseResume } from "@/lib/resume/parse";
 import { scoreResume } from "@/lib/resume/score";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
+import { syncResumeToBackend } from "@/lib/extension/sync";
 
 type UploadState = "idle" | "uploading" | "success" | "error";
 
@@ -34,16 +35,19 @@ export function ResumeUpload({ onNext, onBack }: { onNext: () => void; onBack: (
     try {
       const parsed = await parseResume(file);
       const score = scoreResume(parsed.text);
+      const meta = {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type || file.name.split(".").pop() || "",
+        uploadedAt: new Date().toISOString(),
+      };
       await update({
         resumeText: parsed.text,
-        resumeMetadata: {
-          fileName: file.name,
-          fileSize: file.size,
-          fileType: file.type || file.name.split(".").pop() || "",
-          uploadedAt: new Date().toISOString(),
-        },
+        resumeMetadata: meta,
         resumeScore: score,
       });
+      // best-effort backend sync (no-op if not signed in)
+      try { await syncResumeToBackend(file, parsed.text, score, meta); } catch (e) { console.warn("[aplyer] resume sync", e); }
       setStatus("success");
     } catch {
       setError("Could not read this file.");
