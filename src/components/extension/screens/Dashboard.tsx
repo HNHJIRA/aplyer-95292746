@@ -89,7 +89,7 @@ export function Dashboard({ onResume, onProfile }: { onResume: () => void; onPro
           <StatusCard icon={<FileText className="h-4 w-4" />} label="Resume" value={state.resumeMetadata ? "Active" : "Missing"} ok={!!state.resumeMetadata} onClick={onResume} />
           <StatusCard icon={<User className="h-4 w-4" />} label="Profile" value={`${profilePct}%`} ok={profilePct >= 80} onClick={onProfile} />
           <StatusCard icon={<PenLine className="h-4 w-4" />} label="Samples" value={`${state.writingSamples.length}`} ok={state.writingSamples.length > 0} />
-          <StatusCard icon={<Crown className="h-4 w-4" />} label="Plan" value={state.subscriptionStatus.tier.toUpperCase()} ok onClick={openSettings} />
+          <StatusCard icon={<Crown className="h-4 w-4" />} label="Plan" value={state.subscriptionStatus.tier.toUpperCase()} ok onClick={openSubscription} />
         </div>
 
         {/* Supported platforms */}
