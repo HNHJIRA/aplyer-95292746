@@ -57,7 +57,7 @@ export function openAuthInTab(webUrl: string) {
 // Override at build time via VITE_APP_URL.
 export const APP_WEB_URL =
   (import.meta.env?.VITE_APP_URL as string | undefined) ||
-  "https://aplyer-sparkle-foundation.lovable.app";
+  "https://aplyer.assuredtechno.com";
 
 export function openWebPath(path: string) {
   const url = `${APP_WEB_URL.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
