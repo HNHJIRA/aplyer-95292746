@@ -8,18 +8,31 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 const OUT = "dist";
-const SRC = ".output/public";
+// TanStack Start with prerender writes static HTML + assets into dist/client.
+// Older versions used .output/public — fall back for compatibility.
+const SRC = existsSync("dist/client") ? "dist/client" : ".output/public";
 
 if (!existsSync(SRC)) {
-  console.error(`✗ ${SRC} not found. Run \`bun run build\` first.`);
+  console.error(`✗ Neither dist/client nor .output/public found. Run \`bun run build\` first.`);
   process.exit(1);
 }
 
-await rm(OUT, { recursive: true, force: true });
-await mkdir(OUT, { recursive: true });
-
-console.log(`→ Copying ${SRC} → ${OUT}/`);
-await cp(SRC, OUT, { recursive: true });
+console.log(`→ Flattening ${SRC} → ${OUT}/`);
+// Move dist/client/* up into dist/, then remove dist/client and dist/server.
+if (SRC === "dist/client") {
+  // Copy first to a temp dir to avoid renaming a folder into its own parent.
+  const TMP = "dist-static-tmp";
+  await rm(TMP, { recursive: true, force: true });
+  await cp(SRC, TMP, { recursive: true });
+  await rm(OUT, { recursive: true, force: true });
+  await mkdir(OUT, { recursive: true });
+  await cp(TMP, OUT, { recursive: true });
+  await rm(TMP, { recursive: true, force: true });
+} else {
+  await rm(OUT, { recursive: true, force: true });
+  await mkdir(OUT, { recursive: true });
+  await cp(SRC, OUT, { recursive: true });
+}
 
 // Ensure index.html exists at root (prerendered "/" output)
 if (!existsSync(join(OUT, "index.html"))) {
