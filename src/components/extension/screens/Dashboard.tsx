@@ -135,7 +135,7 @@ export function Dashboard({ onResume, onProfile }: { onResume: () => void; onPro
                 <p className="mt-0.5 text-[11px] text-muted-foreground">Unlimited apps, advanced AI models, priority support.</p>
               </div>
             </div>
-            <Button size="sm" className="mt-2.5 w-full" onClick={openSettings}>Upgrade</Button>
+            <Button size="sm" className="mt-2.5 w-full" onClick={openSubscription}>Upgrade</Button>
           </motion.div>
         )}
       </div>
