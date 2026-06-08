@@ -31,6 +31,9 @@ jobs:
             -x "aplyer-extension.zip" "extension-src/*" "extension-src"
           cd .. && ls -la public/aplyer-extension.zip
           unzip -t public/aplyer-extension.zip | tail -5
+          base64 -w 0 public/aplyer-extension.zip > public/aplyer-extension.zip.b64
+          base64 -d public/aplyer-extension.zip.b64 > /tmp/aplyer-extension-from-b64.zip
+          unzip -t /tmp/aplyer-extension-from-b64.zip | tail -5
 
       - name: 🔨 Build Project
         run: |
@@ -53,10 +56,12 @@ jobs:
           </IfModule>
           EOF
 
-      - name: ✅ Verify zip integrity in build output
+      - name: ✅ Verify encoded extension in build output
         run: |
-          ls -la dist/client/aplyer-extension.zip
-          unzip -t dist/client/aplyer-extension.zip | tail -3
+          ls -la dist/client/aplyer-extension.zip.b64
+          base64 -d dist/client/aplyer-extension.zip.b64 > /tmp/verify-build.zip
+          unzip -t /tmp/verify-build.zip | tail -3
+          rm -f dist/client/aplyer-extension.zip
 
       - name: List output files
         run: find dist/client -print
@@ -86,7 +91,8 @@ jobs:
       - name: ✅ Verify uploaded zip
         run: |
           sleep 5
-          curl -sI "https://${{ secrets.SITE_DOMAIN || 'aplyer.assuredtechno.com' }}/aplyer-extension.zip"
-          curl -s "https://${{ secrets.SITE_DOMAIN || 'aplyer.assuredtechno.com' }}/aplyer-extension.zip" -o /tmp/verify.zip
+          curl -sI "https://${{ secrets.SITE_DOMAIN || 'aplyer.assuredtechno.com' }}/aplyer-extension.zip.b64"
+          curl -s "https://${{ secrets.SITE_DOMAIN || 'aplyer.assuredtechno.com' }}/aplyer-extension.zip.b64" -o /tmp/verify.zip.b64
+          base64 -d /tmp/verify.zip.b64 > /tmp/verify.zip
           unzip -t /tmp/verify.zip | tail -3
 
