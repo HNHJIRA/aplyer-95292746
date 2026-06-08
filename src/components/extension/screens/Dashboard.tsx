@@ -40,7 +40,7 @@ export function Dashboard({ onResume, onProfile }: { onResume: () => void; onPro
           </div>
         </div>
         <button
-          onClick={onSettings}
+          onClick={openSettings}
           className="rounded-md p-1.5 text-muted-foreground transition hover:bg-field hover:text-foreground"
           aria-label="Settings"
         >
@@ -89,7 +89,7 @@ export function Dashboard({ onResume, onProfile }: { onResume: () => void; onPro
           <StatusCard icon={<FileText className="h-4 w-4" />} label="Resume" value={state.resumeMetadata ? "Active" : "Missing"} ok={!!state.resumeMetadata} onClick={onResume} />
           <StatusCard icon={<User className="h-4 w-4" />} label="Profile" value={`${profilePct}%`} ok={profilePct >= 80} onClick={onProfile} />
           <StatusCard icon={<PenLine className="h-4 w-4" />} label="Samples" value={`${state.writingSamples.length}`} ok={state.writingSamples.length > 0} />
-          <StatusCard icon={<Crown className="h-4 w-4" />} label="Plan" value={state.subscriptionStatus.tier.toUpperCase()} ok onClick={onSettings} />
+          <StatusCard icon={<Crown className="h-4 w-4" />} label="Plan" value={state.subscriptionStatus.tier.toUpperCase()} ok onClick={openSettings} />
         </div>
 
         {/* Supported platforms */}
@@ -115,7 +115,7 @@ export function Dashboard({ onResume, onProfile }: { onResume: () => void; onPro
             <QuickAction icon={<Upload className="h-4 w-4" />} label="Re-upload Resume" onClick={onResume} />
             <QuickAction icon={<User className="h-4 w-4" />} label="Edit Profile" onClick={onProfile} />
             <QuickAction icon={<RefreshCcw className="h-4 w-4" />} label="Re-run Resume Analysis" onClick={onResume} />
-            <QuickAction icon={<Sparkles className="h-4 w-4" />} label="AI Provider Settings" onClick={onSettings} />
+            <QuickAction icon={<Sparkles className="h-4 w-4" />} label="AI Provider Settings" onClick={openSettings} />
           </div>
         </div>
 
@@ -135,7 +135,7 @@ export function Dashboard({ onResume, onProfile }: { onResume: () => void; onPro
                 <p className="mt-0.5 text-[11px] text-muted-foreground">Unlimited apps, advanced AI models, priority support.</p>
               </div>
             </div>
-            <Button size="sm" className="mt-2.5 w-full" onClick={onSettings}>Upgrade</Button>
+            <Button size="sm" className="mt-2.5 w-full" onClick={openSettings}>Upgrade</Button>
           </motion.div>
         )}
       </div>
