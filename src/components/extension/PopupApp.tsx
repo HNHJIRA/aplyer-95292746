@@ -23,15 +23,19 @@ const ONBOARDING_ORDER: OnboardingStep[] = [
   "success",
 ];
 
-export function PopupApp({ onStart }: { onStart?: () => void } = {}) {
+export function PopupApp({ onStart, onFinish }: { onStart?: () => void; onFinish?: () => void } = {}) {
   const { state, loaded, update } = useAplyerStore();
   const [view, setView] = useState<View>("welcome");
 
   useEffect(() => {
     if (!loaded) return;
-    if (state.onboardingStatus.completed) setView("dashboard");
-    else setView(state.onboardingStatus.currentStep === "done" ? "dashboard" : state.onboardingStatus.currentStep);
-  }, [loaded, state.onboardingStatus.completed, state.onboardingStatus.currentStep]);
+    if (state.onboardingStatus.completed) {
+      if (onFinish) { onFinish(); return; }
+      setView("dashboard");
+    } else {
+      setView(state.onboardingStatus.currentStep === "done" ? "dashboard" : state.onboardingStatus.currentStep);
+    }
+  }, [loaded, state.onboardingStatus.completed, state.onboardingStatus.currentStep, onFinish]);
 
   const stepIndex = useMemo(() => {
     if (view === "dashboard" || view === "settings" || view === "done") return -1;
@@ -52,6 +56,7 @@ export function PopupApp({ onStart }: { onStart?: () => void } = {}) {
         completedAt: new Date().toISOString(),
       },
     });
+    if (onFinish) { onFinish(); return; }
     setView("dashboard");
   }
 
