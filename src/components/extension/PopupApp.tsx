@@ -99,8 +99,18 @@ export function PopupApp({ onStart, onFinish }: { onStart?: () => void; onFinish
     setView("dashboard");
   }
 
-  if (!loaded) {
+  if (!loaded || !sessionChecked) {
     return <div className="flex h-full items-center justify-center text-muted-foreground text-sm">Loading…</div>;
+  }
+
+  if (inExtension && !session) {
+    return (
+      <SignIn
+        onSignIn={() => openAuthInTab(APP_WEB_URL)}
+        onRefresh={refreshSession}
+        checking={checking}
+      />
+    );
   }
 
   return (
