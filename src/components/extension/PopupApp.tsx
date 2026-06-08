@@ -20,6 +20,7 @@ import {
   openWebPath,
   type ExtensionSession,
 } from "@/lib/extension/runtime";
+import { ensureSupabaseSession } from "@/lib/extension/sync";
 
 type View = OnboardingStep | "dashboard";
 
@@ -46,6 +47,7 @@ export function PopupApp({ onStart, onFinish }: { onStart?: () => void; onFinish
     try {
       const s = await getExtensionSession();
       setSession(s);
+      await ensureSupabaseSession(s);
     } finally {
       setChecking(false);
       setSessionChecked(true);
