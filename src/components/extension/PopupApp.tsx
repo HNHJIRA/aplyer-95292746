@@ -34,6 +34,37 @@ const ONBOARDING_ORDER: OnboardingStep[] = [
 export function PopupApp({ onStart, onFinish }: { onStart?: () => void; onFinish?: () => void } = {}) {
   const { state, loaded, update } = useAplyerStore();
   const [view, setView] = useState<View>("welcome");
+  const inExtension = isExtensionRuntime();
+  const [session, setSession] = useState<ExtensionSession | null>(null);
+  const [sessionChecked, setSessionChecked] = useState(!inExtension);
+  const [checking, setChecking] = useState(false);
+
+  const refreshSession = useCallback(async () => {
+    if (!inExtension) return;
+    setChecking(true);
+    try {
+      const s = await getExtensionSession();
+      setSession(s);
+    } finally {
+      setChecking(false);
+      setSessionChecked(true);
+    }
+  }, [inExtension]);
+
+  useEffect(() => {
+    if (!inExtension) return;
+    refreshSession();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const c = (globalThis as any).chrome;
+    const onChanged = (changes: Record<string, { newValue?: unknown }>, area: string) => {
+      if (area === "local" && "aplyer.session.v1" in changes) {
+        const next = changes["aplyer.session.v1"].newValue as ExtensionSession | undefined;
+        setSession(next ?? null);
+      }
+    };
+    c?.storage?.onChanged?.addListener(onChanged);
+    return () => c?.storage?.onChanged?.removeListener(onChanged);
+  }, [inExtension, refreshSession]);
 
   useEffect(() => {
     if (!loaded) return;
