@@ -17,6 +17,7 @@ import {
   getExtensionSession,
   isExtensionRuntime,
   openAuthInTab,
+  openWebPath,
   type ExtensionSession,
 } from "@/lib/extension/runtime";
 
@@ -95,6 +96,10 @@ export function PopupApp({ onStart, onFinish }: { onStart?: () => void; onFinish
         completedAt: new Date().toISOString(),
       },
     });
+    if (inExtension) {
+      openWebPath("/dashboard");
+      return;
+    }
     if (onFinish) { onFinish(); return; }
     setView("dashboard");
   }
@@ -162,8 +167,8 @@ export function PopupApp({ onStart, onFinish }: { onStart?: () => void; onFinish
             {view === "success" && <Success onDone={finishOnboarding} />}
             {view === "dashboard" && (
               <Dashboard
-                onResume={() => setView("resume_upload")}
-                onProfile={() => setView("profile")}
+                onResume={() => openWebPath("/dashboard/resume")}
+                onProfile={() => openWebPath("/dashboard/profile")}
               />
             )}
           </motion.div>
