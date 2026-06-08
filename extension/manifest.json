@@ -3,7 +3,8 @@
   "name": "Aplyer.ai",
   "version": "1.0.0",
   "description": "Stop skipping jobs. Apply and sound like yourself on every application.",
-  "permissions": ["storage", "activeTab"],
+  "permissions": ["storage", "activeTab", "tabs"],
+  "host_permissions": ["https://*.lovable.app/*"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -19,5 +20,12 @@
   },
   "background": {
     "service_worker": "background.js"
+  },
+  "externally_connectable": {
+    "matches": [
+      "https://*.lovable.app/*",
+      "http://localhost/*",
+      "http://localhost:*/*"
+    ]
   }
 }

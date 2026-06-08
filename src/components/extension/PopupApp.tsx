@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
 import type { OnboardingStep } from "@/lib/storage/types";
@@ -10,7 +10,15 @@ import { WritingSamples } from "./screens/WritingSamples";
 import { Success } from "./screens/Success";
 import { Dashboard } from "./screens/Dashboard";
 import { Settings } from "./screens/Settings";
+import { SignIn } from "./screens/SignIn";
 import { StepDots } from "./ui/StepDots";
+import {
+  APP_WEB_URL,
+  getExtensionSession,
+  isExtensionRuntime,
+  openAuthInTab,
+  type ExtensionSession,
+} from "@/lib/extension/runtime";
 
 type View = OnboardingStep | "dashboard" | "settings";
 
@@ -26,6 +34,37 @@ const ONBOARDING_ORDER: OnboardingStep[] = [
 export function PopupApp({ onStart, onFinish }: { onStart?: () => void; onFinish?: () => void } = {}) {
   const { state, loaded, update } = useAplyerStore();
   const [view, setView] = useState<View>("welcome");
+  const inExtension = isExtensionRuntime();
+  const [session, setSession] = useState<ExtensionSession | null>(null);
+  const [sessionChecked, setSessionChecked] = useState(!inExtension);
+  const [checking, setChecking] = useState(false);
+
+  const refreshSession = useCallback(async () => {
+    if (!inExtension) return;
+    setChecking(true);
+    try {
+      const s = await getExtensionSession();
+      setSession(s);
+    } finally {
+      setChecking(false);
+      setSessionChecked(true);
+    }
+  }, [inExtension]);
+
+  useEffect(() => {
+    if (!inExtension) return;
+    refreshSession();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const c = (globalThis as any).chrome;
+    const onChanged = (changes: Record<string, { newValue?: unknown }>, area: string) => {
+      if (area === "local" && "aplyer.session.v1" in changes) {
+        const next = changes["aplyer.session.v1"].newValue as ExtensionSession | undefined;
+        setSession(next ?? null);
+      }
+    };
+    c?.storage?.onChanged?.addListener(onChanged);
+    return () => c?.storage?.onChanged?.removeListener(onChanged);
+  }, [inExtension, refreshSession]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -60,8 +99,18 @@ export function PopupApp({ onStart, onFinish }: { onStart?: () => void; onFinish
     setView("dashboard");
   }
 
-  if (!loaded) {
+  if (!loaded || !sessionChecked) {
     return <div className="flex h-full items-center justify-center text-muted-foreground text-sm">Loading…</div>;
+  }
+
+  if (inExtension && !session) {
+    return (
+      <SignIn
+        onSignIn={() => openAuthInTab(APP_WEB_URL)}
+        onRefresh={refreshSession}
+        checking={checking}
+      />
+    );
   }
 
   return (
