@@ -9,7 +9,7 @@ import { Profile } from "./screens/Profile";
 import { WritingSamples } from "./screens/WritingSamples";
 import { Success } from "./screens/Success";
 import { Dashboard } from "./screens/Dashboard";
-import { Settings } from "./screens/Settings";
+
 import { SignIn } from "./screens/SignIn";
 import { StepDots } from "./ui/StepDots";
 import {
