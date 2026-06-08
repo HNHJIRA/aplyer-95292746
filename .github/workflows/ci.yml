@@ -23,10 +23,20 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: 🗜️ Rebuild extension zip (fresh, uncorrupted)
+        run: |
+          sudo apt-get update && sudo apt-get install -y zip
+          rm -f public/aplyer-extension.zip extension/aplyer-extension.zip
+          cd extension && zip -r ../public/aplyer-extension.zip . \
+            -x "aplyer-extension.zip" "extension-src/*" "extension-src"
+          cd .. && ls -la public/aplyer-extension.zip
+          unzip -t public/aplyer-extension.zip | tail -5
+
       - name: 🔨 Build Project
         run: |
           npx yarn install
           npx yarn run build
+
 
       - name: 📝 Add SPA .htaccess for deep links
         run: |
