@@ -1,26 +1,55 @@
 {
   "manifest_version": 3,
   "name": "Aplyer.ai",
-  "version": "1.0.0",
-  "description": "Stop skipping jobs. Apply and sound like yourself on every application.",
-  "permissions": ["storage", "activeTab", "tabs"],
-  "host_permissions": ["https://*.lovable.app/*", "https://aplyer.assuredtechno.com/*"],
+  "version": "1.1.0",
+  "description": "Detect supported ATS application questions and prepare to generate tailored answers.",
+  "permissions": ["storage", "activeTab", "tabs", "sidePanel", "scripting"],
+  "host_permissions": [
+    "https://*.lovable.app/*",
+    "https://aplyer.assuredtechno.com/*",
+    "https://*.greenhouse.io/*",
+    "https://boards.greenhouse.io/*",
+    "https://job-boards.greenhouse.io/*",
+    "https://*.lever.co/*",
+    "https://jobs.lever.co/*"
+  ],
   "action": {
     "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icon.png",
-      "48": "icon.png",
-      "128": "icon.png"
+    "default_icon": { "16": "icon.png", "48": "icon.png", "128": "icon.png" }
+  },
+  "icons": { "16": "icon.png", "48": "icon.png", "128": "icon.png" },
+  "background": { "service_worker": "background.js" },
+  "side_panel": { "default_path": "sidepanel.html" },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://boards.greenhouse.io/*",
+        "https://job-boards.greenhouse.io/*",
+        "https://*.greenhouse.io/*",
+        "https://jobs.lever.co/*",
+        "https://*.lever.co/*"
+      ],
+      "js": [
+        "content/logger.js",
+        "content/adapters/base.js",
+        "content/adapters/greenhouse.js",
+        "content/adapters/lever.js",
+        "content/adapters/workday.js",
+        "content/detector.js",
+        "content/injector.js",
+        "content/content.js"
+      ],
+      "css": ["content/inject.css"],
+      "run_at": "document_idle",
+      "all_frames": false
     }
-  },
-  "icons": {
-    "16": "icon.png",
-    "48": "icon.png",
-    "128": "icon.png"
-  },
-  "background": {
-    "service_worker": "background.js"
-  },
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["sidepanel.html", "icon.png"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "externally_connectable": {
     "matches": [
       "https://aplyer.assuredtechno.com/*",

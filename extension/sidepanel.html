@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aplyer · Side Panel</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+  <header class="hdr">
+    <div class="logo">
+      <span class="logo-dot"></span>
+      <span class="logo-text">Aplyer<span class="logo-accent">.ai</span></span>
+    </div>
+    <span id="platform-pill" class="pill pill-green">No ATS</span>
+  </header>
+
+  <section class="card">
+    <div class="card-label">Status</div>
+    <div class="grid">
+      <div class="stat"><div class="stat-k">ATS Platform</div><div id="s-platform" class="stat-v">—</div></div>
+      <div class="stat"><div class="stat-k">Questions Detected</div><div id="s-count" class="stat-v">0</div></div>
+      <div class="stat"><div class="stat-k">Connection</div><div id="s-conn" class="stat-v">Checking…</div></div>
+      <div class="stat"><div class="stat-k">Resume</div><div id="s-resume" class="stat-v">—</div></div>
+      <div class="stat"><div class="stat-k">Subscription</div><div id="s-plan" class="stat-v">—</div></div>
+    </div>
+  </section>
+
+  <section class="card" id="question-card" style="display:none">
+    <div class="card-label">Selected question</div>
+    <div id="q-text" class="q-text"></div>
+    <div id="q-meta" class="q-meta"></div>
+  </section>
+
+  <section class="card" id="questions-card" style="display:none">
+    <div class="card-label">All detected questions</div>
+    <ol id="q-list" class="q-list"></ol>
+  </section>
+
+  <section class="card soon">
+    <div class="soon-badge">Coming in Milestone 4</div>
+    <h3>AI answer generation</h3>
+    <p>We've detected your application and mapped the supported questions. Tailored Claude-powered answers, voice matching, and one-click autofill arrive in Milestone 4.</p>
+  </section>
+
+  <footer class="ftr">Aplyer.ai · Milestone 2 build</footer>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>
