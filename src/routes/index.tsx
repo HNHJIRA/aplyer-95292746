@@ -293,7 +293,7 @@ function Hero() {
               </span>
             </div>
             <div className="h-[620px] w-[400px] overflow-hidden bg-background">
-              <PopupApp onStart={() => { window.location.href = "/dashboard"; }} onFinish={() => { window.location.href = "/dashboard"; }} />
+              <PopupApp />
             </div>
           </motion.div>
         </motion.div>
