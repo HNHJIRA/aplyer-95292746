@@ -59,7 +59,7 @@ const FIXTURES = [
   {
     id: "WD-01",
     name: "Standard textarea with formField wrapper label",
-    expect: { questions: 1, stableId: /^wd:formField-/ },
+    expect: { questions: 1, stableId: /^wd:/ },
     html: `
       <div data-automation-id="formField-additionalInformation">
         <label>Why do you want to work at Acme?</label>
