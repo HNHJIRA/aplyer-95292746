@@ -27,7 +27,7 @@ const ADAPTER_FILES = [
 function bootDom(html) {
   const dom = new JSDOM(
     `<!doctype html><html><head></head><body>${html}</body></html>`,
-    { url: "https://acme.wd5.myworkdayjobs.com/en-US/External/job/app", pretendToBeVisual: true },
+    { url: "https://acme.wd5.myworkdayjobs.com/en-US/External/job/app", pretendToBeVisual: true, runScripts: "outside-only" },
   );
   const { window } = dom;
   // jsdom doesn't lay out boxes — fake getBoundingClientRect so isVisible() passes.
