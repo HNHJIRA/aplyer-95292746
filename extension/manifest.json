@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Aplyer.ai",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Detect supported ATS application questions and prepare to generate tailored answers.",
   "permissions": ["storage", "activeTab", "tabs", "sidePanel", "scripting"],
   "host_permissions": [
@@ -41,7 +41,7 @@
       ],
       "css": ["content/inject.css"],
       "run_at": "document_idle",
-      "all_frames": false
+      "all_frames": true
     }
   ],
   "web_accessible_resources": [
