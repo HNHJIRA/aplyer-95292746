@@ -43,7 +43,8 @@
         "content/adapters/workday.js",
         "content/detector.js",
         "content/injector.js",
-        "content/content.js"
+        "content/content.js",
+        "content/debug-overlay.js"
       ],
       "css": ["content/inject.css"],
       "run_at": "document_idle",
