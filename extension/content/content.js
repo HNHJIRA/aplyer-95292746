@@ -112,6 +112,10 @@
   }
 
   function renderPill() {
+    // Only render the floating status pill in the top frame — otherwise
+    // each iframe would render its own pill (Greenhouse embed forms run
+    // inside an iframe, and we now inject into all frames).
+    if (window.top !== window) return;
     if (!pill) {
       pill = document.createElement("div");
       pill.className = "aplyer-status-pill";
