@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Aplyer.ai",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "Detect supported ATS application questions and prepare to generate tailored answers.",
   "permissions": ["storage", "activeTab", "tabs", "sidePanel", "scripting"],
   "host_permissions": [
@@ -11,7 +11,10 @@
     "https://boards.greenhouse.io/*",
     "https://job-boards.greenhouse.io/*",
     "https://*.lever.co/*",
-    "https://jobs.lever.co/*"
+    "https://jobs.lever.co/*",
+    "https://*.myworkdayjobs.com/*",
+    "https://*.workday.com/*",
+    "https://*.myworkdaysite.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -27,7 +30,10 @@
         "https://job-boards.greenhouse.io/*",
         "https://*.greenhouse.io/*",
         "https://jobs.lever.co/*",
-        "https://*.lever.co/*"
+        "https://*.lever.co/*",
+        "https://*.myworkdayjobs.com/*",
+        "https://*.workday.com/*",
+        "https://*.myworkdaysite.com/*"
       ],
       "js": [
         "content/logger.js",
