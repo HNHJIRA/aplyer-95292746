@@ -83,12 +83,15 @@ export function PopupApp() {
       if (area === "local" && "aplyer.session.v1" in changes) {
         const next = changes["aplyer.session.v1"].newValue as ExtensionSession | undefined;
         setSession(next ?? null);
-        ensureSupabaseSession(next ?? null);
+        (async () => {
+          const ok = await ensureSupabaseSession(next ?? null);
+          if (ok) await hydrateOnce();
+        })();
       }
     };
     c?.storage?.onChanged?.addListener(onChanged);
     return () => c?.storage?.onChanged?.removeListener(onChanged);
-  }, [refreshSession]);
+  }, [refreshSession, hydrateOnce]);
 
   void handleSignOut;
   async function handleSignOut() {
