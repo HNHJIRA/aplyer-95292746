@@ -1,30 +1,7 @@
 // Aplyer content-script orchestrator — hardened for production.
 (function () {
   const log = window.AplyerLog;
-  const ORCH_VERSION = "1.2.0";
-
-  // Diagnostics record consumed by debug-overlay.js when ?aplyer_debug=1.
-  const dbg = (window.__aplyerDebug = window.__aplyerDebug || {
-    orchestratorVersion: ORCH_VERSION,
-    apiVersion: window.AplyerAdapters?.API_VERSION,
-    adapterName: null,
-    adapterVersion: null,
-    detectionSource: null,
-    questionsCount: 0,
-    injectionCount: 0,
-    scanCount: 0,
-    mutationCount: 0,
-    lastScanAt: 0,
-    stableIds: [],
-    errors: [],
-  });
-  function note(level, scope, msg, extra) {
-    try {
-      dbg.errors.push({ level, scope, msg: typeof msg === "string" ? msg : JSON.stringify(msg), ts: Date.now() });
-      if (dbg.errors.length > 50) dbg.errors.splice(0, dbg.errors.length - 50);
-    } catch {}
-    log[level === "err" ? "warn" : level]?.(scope, msg, extra);
-  }
+  const ORCH_VERSION = "1.1.0";
 
   log.info("boot", "Content script loaded", {
     url: location.href,
@@ -34,12 +11,8 @@
 
   let adapter;
   try { adapter = window.AplyerDetect(); }
-  catch (e) { note("warn", "detector", "detect() threw: " + e); return; }
-  if (!adapter) { dbg.detectionSource = "none"; return; }
-
-  dbg.adapterName = adapter.name;
-  dbg.adapterVersion = adapter.adapterVersion;
-  dbg.detectionSource = adapter._detectionSource || "host";
+  catch (e) { log.warn("detector", "detect() threw", String(e)); return; }
+  if (!adapter) return;
 
   log.info("adapter", `Adapter loaded`, {
     name: adapter.name,
@@ -71,11 +44,8 @@
     totalScans++;
     let found = [];
     try { found = adapter.extractQuestions() || []; }
-    catch (e) { note("warn", "scan", "extractQuestions threw: " + e); }
+    catch (e) { log.warn("scan", "extractQuestions threw", String(e)); }
     finally { lastScanAt = Date.now(); scansInFlight--; }
-
-    dbg.scanCount = totalScans;
-    dbg.lastScanAt = lastScanAt;
 
     if (found.length === 0) { maybeBroadcast(); return; }
 
@@ -100,11 +70,7 @@
     for (const q of fresh) {
       knownIds.add(q.questionId);
       questions.push(q);
-      const sid = q.questionId.split("#")[0];
-      if (!dbg.stableIds.includes(sid)) dbg.stableIds.push(sid);
     }
-    dbg.questionsCount = questions.length;
-    dbg.injectionCount = totalInjections;
     broadcast();
     renderPill();
   }
@@ -197,9 +163,9 @@
   scheduleScan(120);
   let mo;
   try {
-    mo = new MutationObserver((records) => { dbg.mutationCount += records.length; scheduleScan(); });
+    mo = new MutationObserver(() => scheduleScan());
     mo.observe(document.body, { childList: true, subtree: true });
-  } catch (e) { note("warn", "observer", "MutationObserver setup failed: " + e); }
+  } catch (e) { log.warn("observer", "MutationObserver setup failed", String(e)); }
 
   // Re-scan on SPA route transitions.
   window.addEventListener("popstate", () => scheduleScan(200));

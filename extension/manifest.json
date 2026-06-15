@@ -1,14 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Aplyer.ai",
-  "version": "1.2.1",
+  "version": "1.2.0",
   "description": "Detect supported ATS application questions and prepare to generate tailored answers.",
   "permissions": ["storage", "activeTab", "tabs", "sidePanel", "scripting"],
   "host_permissions": [
     "https://*.lovable.app/*",
     "https://aplyer.assuredtechno.com/*",
-    "https://aplyer.devssh.xyz/*",
-    "https://*.devssh.xyz/*",
     "https://*.greenhouse.io/*",
     "https://boards.greenhouse.io/*",
     "https://job-boards.greenhouse.io/*",
@@ -45,8 +43,7 @@
         "content/adapters/workday.js",
         "content/detector.js",
         "content/injector.js",
-        "content/content.js",
-        "content/debug-overlay.js"
+        "content/content.js"
       ],
       "css": ["content/inject.css"],
       "run_at": "document_idle",
@@ -62,8 +59,6 @@
   "externally_connectable": {
     "matches": [
       "https://aplyer.assuredtechno.com/*",
-      "https://aplyer.devssh.xyz/*",
-      "https://*.devssh.xyz/*",
       "https://*.lovable.app/*",
       "http://localhost/*",
       "http://localhost:*/*"
