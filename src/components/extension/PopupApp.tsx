@@ -139,9 +139,8 @@ export function PopupApp() {
     default:
       return (
         <Dashboard
-          onResume={() => goTo("resume_upload")}
-          onProfile={() => goTo("profile")}
-          onSignOut={handleSignOut}
+          onResume={() => { void goTo("resume_upload"); }}
+          onProfile={() => { void goTo("profile"); }}
         />
       );
   }
