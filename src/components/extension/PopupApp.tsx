@@ -8,7 +8,7 @@ import {
   signOutExtension,
   type ExtensionSession,
 } from "@/lib/extension/runtime";
-import { ensureSupabaseSession } from "@/lib/extension/sync";
+import { ensureSupabaseSession, hydrateFromBackend } from "@/lib/extension/sync";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
 import type { OnboardingStep } from "@/lib/storage/types";
 import { SignIn } from "./screens/SignIn";
