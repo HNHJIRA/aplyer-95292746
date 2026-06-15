@@ -43,6 +43,7 @@
         "content/adapters/workday.js",
         "content/detector.js",
         "content/injector.js",
+        "content/autofill.js",
         "content/content.js"
       ],
       "css": ["content/inject.css"],
