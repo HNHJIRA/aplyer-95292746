@@ -1,7 +1,14 @@
 // Helpers to mirror extension data to Supabase when a session is available.
 import { supabase } from "@/integrations/supabase/client";
 import type { ExtensionSession } from "@/lib/extension/runtime";
-import type { Profile, ResumeMetadata, ResumeScore, WritingSample } from "@/lib/storage/types";
+import { storage } from "@/lib/storage/storage";
+import type {
+  AplyerState,
+  Profile,
+  ResumeMetadata,
+  ResumeScore,
+  WritingSample,
+} from "@/lib/storage/types";
 
 export async function ensureSupabaseSession(session: ExtensionSession | null) {
   if (!session) return false;
@@ -107,4 +114,115 @@ export async function syncWritingSampleToBackend(sample: WritingSample) {
     content: sample.content,
     word_count: sample.wordCount,
   });
+}
+
+/**
+ * Pull existing user data from backend into extension local storage.
+ * If the user already has a resume + profile, mark onboarding complete so
+ * returning users don't see the welcome wizard again.
+ */
+export async function hydrateFromBackend(): Promise<AplyerState | null> {
+  const { data: u } = await supabase.auth.getUser();
+  if (!u.user) return null;
+  const uid = u.user.id;
+
+  const [profileRes, resumeRes, samplesRes, subRes, settingsRes] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
+    supabase
+      .from("resumes")
+      .select("*, resume_scores(*)")
+      .eq("user_id", uid)
+      .eq("is_current", true)
+      .order("uploaded_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase.from("writing_samples").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
+    supabase.from("subscriptions").select("*").eq("user_id", uid).maybeSingle(),
+    supabase.from("user_settings").select("*").eq("user_id", uid).maybeSingle(),
+  ]);
+
+  const current = await storage.getState();
+  const patch: Partial<AplyerState> = {};
+
+  const p = profileRes.data;
+  if (p) {
+    patch.profile = {
+      firstName: p.first_name ?? "",
+      lastName: p.last_name ?? "",
+      email: p.email ?? u.user.email ?? "",
+      phone: p.phone ?? "",
+      linkedin: p.linkedin ?? "",
+      portfolio: p.portfolio ?? "",
+      location: p.location ?? "",
+    };
+  }
+
+  const r = resumeRes.data as
+    | (Record<string, unknown> & { resume_scores?: Array<Record<string, unknown>> })
+    | null;
+  if (r) {
+    patch.resumeText = (r.resume_text as string) ?? null;
+    patch.resumeMetadata = {
+      fileName: r.file_name as string,
+      fileSize: Number(r.file_size ?? 0),
+      fileType: (r.file_type as string) ?? "",
+      uploadedAt: (r.uploaded_at as string) ?? new Date().toISOString(),
+    };
+    const sc = Array.isArray(r.resume_scores) ? r.resume_scores[0] : undefined;
+    if (sc) {
+      patch.resumeScore = {
+        score: Number(sc.score ?? 0),
+        completeness: Number(sc.completeness ?? 0),
+        strength: Number(sc.strength ?? 0),
+        readiness: Number(sc.score ?? 0),
+        sections: (sc.sections as ResumeScore["sections"]) ?? {
+          contact: false, experience: false, skills: false,
+          education: false, summary: false, certifications: false,
+        },
+        strengths: (sc.strengths as string[]) ?? [],
+        suggestions: (sc.suggestions as string[]) ?? [],
+      };
+    }
+  }
+
+  if (samplesRes.data?.length) {
+    patch.writingSamples = samplesRes.data.map((s) => ({
+      id: s.id,
+      type: s.type as WritingSample["type"],
+      title: s.title,
+      content: s.content,
+      wordCount: s.word_count,
+      createdAt: s.created_at,
+    }));
+  }
+
+  if (subRes.data) {
+    patch.subscriptionStatus = {
+      tier: (subRes.data.tier as "free" | "pro" | "enterprise") ?? "free",
+      renewsAt: subRes.data.renews_at ?? undefined,
+    };
+  }
+
+  if (settingsRes.data) {
+    patch.settings = {
+      ...current.settings,
+      notifications: settingsRes.data.notifications,
+      autofillEnabled: settingsRes.data.autofill_enabled,
+      telemetry: settingsRes.data.telemetry,
+    };
+  }
+
+  // If returning user already has resume + profile, skip the wizard.
+  const hasResume = !!patch.resumeMetadata || !!current.resumeMetadata;
+  const hasProfile = !!patch.profile || !!current.profile;
+  if (hasResume && hasProfile && !current.onboardingStatus.completed) {
+    patch.onboardingStatus = {
+      completed: true,
+      currentStep: "done",
+      startedAt: current.onboardingStatus.startedAt ?? new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    };
+  }
+
+  return await storage.patch(patch);
 }

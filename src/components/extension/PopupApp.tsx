@@ -8,7 +8,7 @@ import {
   signOutExtension,
   type ExtensionSession,
 } from "@/lib/extension/runtime";
-import { ensureSupabaseSession } from "@/lib/extension/sync";
+import { ensureSupabaseSession, hydrateFromBackend } from "@/lib/extension/sync";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
 import type { OnboardingStep } from "@/lib/storage/types";
 import { SignIn } from "./screens/SignIn";
@@ -35,7 +35,16 @@ export function PopupApp() {
   const [session, setSession] = useState<ExtensionSession | null>(null);
   const [sessionChecked, setSessionChecked] = useState(!inExtension);
   const [checking, setChecking] = useState(false);
-  const { state, loaded, update } = useAplyerStore();
+  const { state, loaded, update, reload } = useAplyerStore();
+
+  const hydrateOnce = useCallback(async () => {
+    try {
+      await hydrateFromBackend();
+      await reload();
+    } catch (e) {
+      console.warn("[aplyer] hydrate failed", e);
+    }
+  }, [reload]);
 
   const refreshSession = useCallback(async () => {
     if (!inExtension) {
@@ -47,6 +56,7 @@ export function PopupApp() {
           expires_at: data.session.expires_at,
           user: { id: data.session.user.id, email: data.session.user.email },
         });
+        await hydrateOnce();
       } else {
         setSession(null);
       }
@@ -57,12 +67,13 @@ export function PopupApp() {
     try {
       const s = await getExtensionSession();
       setSession(s);
-      await ensureSupabaseSession(s);
+      const ok = await ensureSupabaseSession(s);
+      if (ok) await hydrateOnce();
     } finally {
       setChecking(false);
       setSessionChecked(true);
     }
-  }, [inExtension]);
+  }, [inExtension, hydrateOnce]);
 
   useEffect(() => {
     refreshSession();
@@ -72,12 +83,15 @@ export function PopupApp() {
       if (area === "local" && "aplyer.session.v1" in changes) {
         const next = changes["aplyer.session.v1"].newValue as ExtensionSession | undefined;
         setSession(next ?? null);
-        ensureSupabaseSession(next ?? null);
+        (async () => {
+          const ok = await ensureSupabaseSession(next ?? null);
+          if (ok) await hydrateOnce();
+        })();
       }
     };
     c?.storage?.onChanged?.addListener(onChanged);
     return () => c?.storage?.onChanged?.removeListener(onChanged);
-  }, [refreshSession]);
+  }, [refreshSession, hydrateOnce]);
 
   void handleSignOut;
   async function handleSignOut() {
