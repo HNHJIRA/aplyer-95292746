@@ -16,14 +16,25 @@
 (function () {
   const Base = window.AplyerAdapters.Base;
 
-  // Sections we treat as essay-bearing. Workday's "Application Questions",
-  // "My Experience > Additional Information", and free-form essay prompts
-  // all render through [data-automation-id$="formField"] wrappers.
-  const ESSAY_SELECTORS = [
+  // Workday application questions render as textareas, rich-text editors,
+  // text inputs, selects, and radio/checkbox groups inside
+  // [data-automation-id$="formField"] wrappers.
+  const FIELD_SELECTORS = [
     "textarea",
-    // Workday rich text editors mount a content-editable div.
     'div[contenteditable="true"][data-automation-id]',
+    'input[type="text"]',
+    'input[type="email"]',
+    'input[type="tel"]',
+    'input[type="url"]',
+    'input[type="number"]',
+    "select",
+    'button[aria-haspopup="listbox"]',
+    'fieldset',
   ].join(",");
+
+  // Identity / autofill fields the user does NOT want a Generate Answer button on.
+  const IDENTITY_RE = /(first[\s_-]?name|last[\s_-]?name|legal name|given name|family name|middle name|preferred (first )?name|full name|email|phone|mobile|tel|country|territory|state|region|province|city|location|address|street|zip|postal|linkedin|website|portfolio|github|twitter|facebook|url|resume|cv|cover letter|date of birth|dob|gender|race|ethnicity|veteran|disability|hispanic|citizenship|work authoriz|visa|sponsor|source|how did you hear|salary|compensation|notice period|start date|available|relocate|password|confirm|search|filter)/i;
+
 
   class WorkdayAdapter extends Base {
     constructor() {
