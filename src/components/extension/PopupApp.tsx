@@ -56,6 +56,7 @@ export function PopupApp() {
           expires_at: data.session.expires_at,
           user: { id: data.session.user.id, email: data.session.user.email },
         });
+        await hydrateOnce();
       } else {
         setSession(null);
       }
