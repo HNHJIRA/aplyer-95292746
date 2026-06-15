@@ -39,9 +39,23 @@ function AuthPage() {
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "" });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) goToRedirect(redirectTo, navigate);
-    });
+    let active = true;
+
+    supabase.auth
+      .getUser()
+      .then(async ({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
+          return;
+        }
+        if (data.user) goToRedirect(redirectTo, navigate);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
   }, [navigate, redirectTo]);
 
   async function handleSubmit(e: React.FormEvent) {
