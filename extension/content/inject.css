@@ -1,9 +1,13 @@
 /* Branded Generate Answer button — Aplyer palette */
 .aplyer-action {
-  margin-top: 8px;
+  margin: 6px 0 14px;
   display: flex;
   justify-content: flex-end;
+  width: 100%;
+  clear: both;
+  pointer-events: auto;
 }
+.aplyer-btn { white-space: nowrap; }
 .aplyer-btn {
   display: inline-flex;
   align-items: center;

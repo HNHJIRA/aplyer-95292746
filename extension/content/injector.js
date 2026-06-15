@@ -45,7 +45,13 @@
         });
 
         wrap.appendChild(btn);
-        anchor.appendChild(wrap);
+        // Place button as a sibling AFTER the field wrapper so it doesn't
+        // overlap inputs that have inner padding / bordered boxes.
+        if (anchor.parentElement) {
+          anchor.parentElement.insertBefore(wrap, anchor.nextSibling);
+        } else {
+          anchor.appendChild(wrap);
+        }
         injected++;
       } catch (e) {
         log.warn("injector", "Failed to inject for question", { qid: q?.questionId, err: String(e) });
