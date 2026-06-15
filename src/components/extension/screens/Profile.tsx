@@ -5,7 +5,6 @@ import { z } from "zod";
 import { Button } from "../ui/Button";
 import { Field } from "../ui/Field";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
-import { CountryCitySelect, formatLocation, parseLocation } from "@/components/ui/CountryCitySelect";
 import { syncProfileToBackend } from "@/lib/extension/sync";
 
 const schema = z.object({
@@ -15,7 +14,7 @@ const schema = z.object({
   phone: z.string().trim().min(5, "Too short").max(40),
   linkedin: z.string().trim().url("Must be a URL").max(255).or(z.literal("")),
   portfolio: z.string().trim().url("Must be a URL").max(255).or(z.literal("")),
-  location: z.string().trim().min(2, "Pick country").max(160),
+  location: z.string().trim().min(2, "Required").max(160),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -32,7 +31,6 @@ export function Profile({ onNext, onBack }: { onNext: () => void; onBack: () => 
     location: "",
   };
   const [values, setValues] = useState<FormValues>(initial);
-  const [loc, setLoc] = useState(parseLocation(initial.location));
   const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
   const [saving, setSaving] = useState(false);
 
@@ -42,8 +40,7 @@ export function Profile({ onNext, onBack }: { onNext: () => void; onBack: () => 
   }
 
   async function submit() {
-    const merged = { ...values, location: formatLocation(loc.country, loc.city) };
-    const parsed = schema.safeParse(merged);
+    const parsed = schema.safeParse(values);
     if (!parsed.success) {
       const errs: Partial<Record<keyof FormValues, string>> = {};
       for (const i of parsed.error.issues) errs[i.path[0] as keyof FormValues] = i.message;
@@ -64,15 +61,14 @@ export function Profile({ onNext, onBack }: { onNext: () => void; onBack: () => 
         <p className="text-[11px] text-muted-foreground">Used to autofill applications.</p>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex-1 space-y-2">
+      <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex-1 space-y-2 overflow-y-auto">
         <div className="grid grid-cols-2 gap-2">
           <Field label="First Name" name="firstName" value={values.firstName} onChange={(e) => set("firstName", e.target.value)} error={errors.firstName} />
           <Field label="Last Name" name="lastName" value={values.lastName} onChange={(e) => set("lastName", e.target.value)} error={errors.lastName} />
         </div>
         <Field label="Email" name="email" type="email" value={values.email} onChange={(e) => set("email", e.target.value)} error={errors.email} />
         <Field label="Phone" name="phone" value={values.phone} onChange={(e) => set("phone", e.target.value)} error={errors.phone} />
-        <CountryCitySelect compact country={loc.country} city={loc.city} onChange={setLoc} />
-        {errors.location && <p className="text-[10px] text-brand-red">{errors.location}</p>}
+        <Field label="Location" name="location" placeholder="City, Country" value={values.location} onChange={(e) => set("location", e.target.value)} error={errors.location} />
         <Field label="LinkedIn URL" name="linkedin" placeholder="https://linkedin.com/in/…" value={values.linkedin} onChange={(e) => set("linkedin", e.target.value)} error={errors.linkedin} />
         <Field label="Portfolio URL" name="portfolio" placeholder="https://…" value={values.portfolio} onChange={(e) => set("portfolio", e.target.value)} error={errors.portfolio} />
       </motion.div>
@@ -84,3 +80,4 @@ export function Profile({ onNext, onBack }: { onNext: () => void; onBack: () => 
     </div>
   );
 }
+
