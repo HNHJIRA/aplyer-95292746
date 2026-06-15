@@ -1,13 +1,15 @@
 /* Branded Generate Answer button — Aplyer palette */
 .aplyer-action {
-  margin: 6px 0 14px;
+  margin: 8px 0 16px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  align-items: center;
   width: 100%;
   clear: both;
   pointer-events: auto;
+  box-sizing: border-box;
 }
-.aplyer-btn { white-space: nowrap; }
+.aplyer-btn { white-space: nowrap; line-height: 1; }
 .aplyer-btn {
   display: inline-flex;
   align-items: center;
