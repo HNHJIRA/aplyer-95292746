@@ -124,16 +124,41 @@
     if (window.top !== window) return;
     if (!pill) {
       pill = document.createElement("div");
-      pill.className = "aplyer-status-pill";
+      pill.className = "aplyer-status-wrap";
       pill.innerHTML = `
-        <span class="dot"></span>
-        <span class="lbl">${adapter.platformLabel} detected</span>
-        <span class="count">${questions.length}</span>
+        <div class="aplyer-status-pill" data-aplyer-pill>
+          <span class="dot"></span>
+          <span class="lbl">${adapter.platformLabel} detected</span>
+          <span class="count">${questions.length}</span>
+        </div>
+        <button type="button" class="aplyer-autofill-btn" data-aplyer-autofill title="Autofill name, email, phone, location, links from your profile">
+          <span class="aplyer-btn-dot"></span>
+          <span>Autofill Basics</span>
+        </button>
       `;
-      pill.title = "Open Aplyer side panel";
-      pill.addEventListener("click", () => openSidePanel(null));
       try { document.documentElement.appendChild(pill); }
       catch (e) { log.warn("ui", "pill append failed", String(e)); pill = null; return; }
+      pill.querySelector("[data-aplyer-pill]").addEventListener("click", () => openSidePanel(null));
+      pill.querySelector("[data-aplyer-autofill]").addEventListener("click", async (e) => {
+        e.preventDefault(); e.stopPropagation();
+        const btn = e.currentTarget;
+        const orig = btn.innerHTML;
+        btn.disabled = true;
+        try {
+          const res = await window.AplyerAutofill.autofill();
+          if (res?.missing) {
+            btn.innerHTML = `<span class="aplyer-btn-dot"></span><span>Sign in & save profile</span>`;
+          } else if (res?.filled > 0) {
+            btn.innerHTML = `<span class="aplyer-btn-dot"></span><span>Filled ${res.filled} field${res.filled === 1 ? "" : "s"}</span>`;
+          } else {
+            btn.innerHTML = `<span class="aplyer-btn-dot"></span><span>No basic fields found</span>`;
+          }
+        } catch (err) {
+          log.warn("autofill", "autofill threw", String(err));
+          btn.innerHTML = `<span class="aplyer-btn-dot"></span><span>Autofill failed</span>`;
+        }
+        setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 1800);
+      });
     } else {
       pill.querySelector(".count").textContent = String(questions.length);
     }
