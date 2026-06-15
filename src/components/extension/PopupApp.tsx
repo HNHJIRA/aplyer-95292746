@@ -79,6 +79,7 @@ export function PopupApp() {
     return () => c?.storage?.onChanged?.removeListener(onChanged);
   }, [refreshSession]);
 
+  void handleSignOut;
   async function handleSignOut() {
     if (inExtension) await signOutExtension();
     await supabase.auth.signOut();
