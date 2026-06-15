@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "build:static": "vite build && node scripts/create-static-landing.mjs && node scripts/build-static.mjs",
+    "build:static": "vite build --config vite.spa.config.ts && node scripts/build-static.mjs",
     "build:dev": "vite build --mode development",
     "build:extension": "vite build --config vite.extension.config.ts",
     "preview": "vite preview",
