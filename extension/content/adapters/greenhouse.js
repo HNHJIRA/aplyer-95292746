@@ -1,4 +1,6 @@
 // Greenhouse adapter — long-form essay questions on Greenhouse boards.
+// Hardened for both classic boards.greenhouse.io and the React-rendered
+// job-boards.greenhouse.io surface.
 (function () {
   const Base = window.AplyerAdapters.Base;
 
@@ -6,7 +8,7 @@
     constructor() {
       super("greenhouse");
       this.platformLabel = "Greenhouse";
-      this.adapterVersion = "1.0.0";
+      this.adapterVersion = "1.1.0";
     }
 
     matches(loc) {
@@ -19,7 +21,7 @@
     extractQuestions() {
       const results = [];
       let textareas;
-      try { textareas = document.querySelectorAll("textarea"); }
+      try { textareas = document.querySelectorAll("textarea, [contenteditable='true']"); }
       catch { return results; }
 
       textareas.forEach((ta, i) => {
@@ -28,7 +30,8 @@
           if (ta.disabled || ta.readOnly) return;
           if (!isVisible(ta)) return;
           const label = this._findLabel(ta);
-          if (!label || label.length < 8) return;
+          // Relaxed minimum to 3 chars — short labels like "Why?" are valid.
+          if (!label || label.length < 3) return;
           const id = ta.id || ta.name || `gh-${i}-${hash(label)}`;
           results.push({
             questionId: id,
@@ -49,25 +52,41 @@
         }
         const lb = el.getAttribute("aria-labelledby");
         if (lb) {
-          const node = document.getElementById(lb);
-          if (node) return clean(node.textContent);
+          const parts = lb.split(/\s+/).map((id) => document.getElementById(id)?.textContent || "").join(" ");
+          const t = clean(parts);
+          if (t) return t;
         }
         const al = el.getAttribute("aria-label");
         if (al) return clean(al);
+
+        // Walk parents up to 8 levels looking for a label-like element.
         let p = el.parentElement;
-        for (let i = 0; i < 5 && p; i++) {
-          const lab = p.querySelector("label");
-          if (lab && lab.textContent && lab.textContent.trim().length > 4) return clean(lab.textContent);
+        for (let i = 0; i < 8 && p; i++) {
+          const lab = p.querySelector("label, legend, [class*='label' i]");
+          if (lab && lab.textContent && lab.textContent.trim().length > 2) {
+            return clean(lab.textContent);
+          }
           p = p.parentElement;
         }
+
+        // Fallbacks — placeholder or name attribute.
+        const ph = el.getAttribute("placeholder");
+        if (ph && ph.trim().length > 2) return clean(ph);
+        const nm = el.getAttribute("name");
+        if (nm && nm.trim().length > 2) return clean(nm.replace(/[_-]+/g, " "));
       } catch { /* ignore */ }
       return null;
     }
 
     anchorFor(field) {
       let p = field.parentElement;
-      for (let i = 0; i < 4 && p; i++) {
-        if (p.classList && (p.classList.contains("field") || p.classList.contains("application-question") || p.tagName === "DIV")) {
+      for (let i = 0; i < 6 && p; i++) {
+        if (p.classList && (
+          p.classList.contains("field") ||
+          p.classList.contains("application-question") ||
+          p.tagName === "FIELDSET" ||
+          p.tagName === "DIV"
+        )) {
           return p;
         }
         p = p.parentElement;
