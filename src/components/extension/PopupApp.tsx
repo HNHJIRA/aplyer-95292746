@@ -66,12 +66,13 @@ export function PopupApp() {
     try {
       const s = await getExtensionSession();
       setSession(s);
-      await ensureSupabaseSession(s);
+      const ok = await ensureSupabaseSession(s);
+      if (ok) await hydrateOnce();
     } finally {
       setChecking(false);
       setSessionChecked(true);
     }
-  }, [inExtension]);
+  }, [inExtension, hydrateOnce]);
 
   useEffect(() => {
     refreshSession();
