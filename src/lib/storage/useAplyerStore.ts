@@ -6,6 +6,13 @@ export function useAplyerStore() {
   const [state, setState] = useState<AplyerState>(DEFAULT_STATE);
   const [loaded, setLoaded] = useState(false);
 
+  const reload = useCallback(async () => {
+    const s = await storage.getState();
+    setState(s);
+    setLoaded(true);
+    return s;
+  }, []);
+
   useEffect(() => {
     let alive = true;
     storage.getState().then((s) => {
@@ -30,5 +37,5 @@ export function useAplyerStore() {
     setState(DEFAULT_STATE);
   }, []);
 
-  return { state, loaded, update, reset };
+  return { state, loaded, update, reset, reload };
 }
