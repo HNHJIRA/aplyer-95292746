@@ -1,43 +1,44 @@
 import { useCallback, useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { CheckCircle2, ExternalLink, FileText, LogOut, RefreshCw, Settings as SettingsIcon, Sparkles, Wifi, WifiOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   APP_WEB_URL,
   getExtensionSession,
   isExtensionRuntime,
   openAuthInTab,
-  openWebPath,
   signOutExtension,
   type ExtensionSession,
 } from "@/lib/extension/runtime";
 import { ensureSupabaseSession } from "@/lib/extension/sync";
+import { useAplyerStore } from "@/lib/storage/useAplyerStore";
+import type { OnboardingStep } from "@/lib/storage/types";
 import { SignIn } from "./screens/SignIn";
-import { LogoMark } from "./Logo";
+import { Welcome } from "./screens/Welcome";
+import { ResumeUpload } from "./screens/ResumeUpload";
+import { ResumeAnalysis } from "./screens/ResumeAnalysis";
+import { Profile } from "./screens/Profile";
+import { WritingSamples } from "./screens/WritingSamples";
+import { Success } from "./screens/Success";
+import { Dashboard } from "./screens/Dashboard";
 
-interface Status {
-  resumeName: string | null;
-  resumeUploadedAt: string | null;
-  tier: string;
-  syncedAt: string | null;
-}
+const FLOW: OnboardingStep[] = [
+  "welcome",
+  "resume_upload",
+  "resume_analysis",
+  "profile",
+  "writing_samples",
+  "success",
+  "done",
+];
 
 export function PopupApp() {
   const inExtension = isExtensionRuntime();
   const [session, setSession] = useState<ExtensionSession | null>(null);
   const [sessionChecked, setSessionChecked] = useState(!inExtension);
   const [checking, setChecking] = useState(false);
-  const [status, setStatus] = useState<Status>({
-    resumeName: null,
-    resumeUploadedAt: null,
-    tier: "free",
-    syncedAt: null,
-  });
-  const [online, setOnline] = useState<boolean>(typeof navigator === "undefined" ? true : navigator.onLine);
+  const { state, loaded, update } = useAplyerStore();
 
   const refreshSession = useCallback(async () => {
     if (!inExtension) {
-      // Web preview: use supabase session directly
       const { data } = await supabase.auth.getSession();
       if (data.session) {
         setSession({
@@ -63,30 +64,6 @@ export function PopupApp() {
     }
   }, [inExtension]);
 
-  const refreshStatus = useCallback(async () => {
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) return;
-    const [{ data: resume }, { data: sub }] = await Promise.all([
-      supabase
-        .from("resumes")
-        .select("file_name, uploaded_at")
-        .eq("user_id", u.user.id)
-        .eq("is_current", true)
-        .maybeSingle(),
-      supabase
-        .from("subscriptions")
-        .select("tier")
-        .eq("user_id", u.user.id)
-        .maybeSingle(),
-    ]);
-    setStatus({
-      resumeName: resume?.file_name ?? null,
-      resumeUploadedAt: resume?.uploaded_at ?? null,
-      tier: sub?.tier ?? "free",
-      syncedAt: new Date().toISOString(),
-    });
-  }, []);
-
   useEffect(() => {
     refreshSession();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -102,28 +79,35 @@ export function PopupApp() {
     return () => c?.storage?.onChanged?.removeListener(onChanged);
   }, [refreshSession]);
 
-  useEffect(() => {
-    if (session) void refreshStatus();
-  }, [session, refreshStatus]);
-
-  useEffect(() => {
-    const on = () => setOnline(true);
-    const off = () => setOnline(false);
-    window.addEventListener("online", on);
-    window.addEventListener("offline", off);
-    return () => {
-      window.removeEventListener("online", on);
-      window.removeEventListener("offline", off);
-    };
-  }, []);
-
+  void handleSignOut;
   async function handleSignOut() {
     if (inExtension) await signOutExtension();
     await supabase.auth.signOut();
     setSession(null);
   }
 
-  if (!sessionChecked) {
+  async function goTo(step: OnboardingStep) {
+    await update({
+      onboardingStatus: {
+        ...state.onboardingStatus,
+        currentStep: step,
+        completed: step === "done",
+        startedAt: state.onboardingStatus.startedAt ?? new Date().toISOString(),
+        completedAt: step === "done" ? new Date().toISOString() : state.onboardingStatus.completedAt,
+      },
+    });
+  }
+
+  function next(from: OnboardingStep) {
+    const i = FLOW.indexOf(from);
+    return () => goTo(FLOW[Math.min(i + 1, FLOW.length - 1)]);
+  }
+  function back(from: OnboardingStep) {
+    const i = FLOW.indexOf(from);
+    return () => goTo(FLOW[Math.max(i - 1, 0)]);
+  }
+
+  if (!sessionChecked || (session && !loaded)) {
     return <div className="flex h-full items-center justify-center text-muted-foreground text-sm">Loading…</div>;
   }
 
@@ -137,120 +121,28 @@ export function PopupApp() {
     );
   }
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-      className="flex h-full flex-col bg-background text-foreground"
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-5 py-4">
-        <div className="flex items-center gap-2">
-          <LogoMark size={28} />
-          <div className="leading-tight">
-            <div className="text-[13px] font-black tracking-tight">Aplyer</div>
-            <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">Companion</div>
-          </div>
-        </div>
-        <button
-          onClick={refreshSession}
-          className="rounded-md p-1.5 text-muted-foreground hover:bg-field hover:text-foreground"
-          title="Refresh"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${checking ? "animate-spin" : ""}`} />
-        </button>
-      </div>
+  const step = state.onboardingStatus.completed ? "done" : state.onboardingStatus.currentStep;
 
-      {/* Account */}
-      <div className="border-b border-border px-5 py-4">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-green/15 text-brand-green">
-            <CheckCircle2 className="h-4 w-4" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[12px] font-semibold">{session.user.email ?? "Signed in"}</div>
-            <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-brand-green">Connected</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Status cards */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2.5">
-        <StatusRow
-          icon={online ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
-          label="Sync"
-          value={online ? (status.syncedAt ? "Up to date" : "Ready") : "Offline"}
-          tone={online ? "ok" : "warn"}
+  switch (step) {
+    case "welcome":
+      return <Welcome onNext={next("welcome")} />;
+    case "resume_upload":
+      return <ResumeUpload onNext={next("resume_upload")} onBack={back("resume_upload")} />;
+    case "resume_analysis":
+      return <ResumeAnalysis onNext={next("resume_analysis")} onBack={back("resume_analysis")} />;
+    case "profile":
+      return <Profile onNext={next("profile")} onBack={back("profile")} />;
+    case "writing_samples":
+      return <WritingSamples onNext={next("writing_samples")} onBack={back("writing_samples")} />;
+    case "success":
+      return <Success onDone={() => goTo("done")} />;
+    case "done":
+    default:
+      return (
+        <Dashboard
+          onResume={() => { void goTo("resume_upload"); }}
+          onProfile={() => { void goTo("profile"); }}
         />
-        <StatusRow
-          icon={<FileText className="h-3.5 w-3.5" />}
-          label="Resume"
-          value={status.resumeName ?? "Not uploaded"}
-          tone={status.resumeName ? "ok" : "warn"}
-        />
-        <StatusRow
-          icon={<Sparkles className="h-3.5 w-3.5" />}
-          label="Plan"
-          value={status.tier === "free" ? "Free" : status.tier}
-          tone="neutral"
-        />
-      </div>
-
-      {/* Actions */}
-      <div className="border-t border-border p-3 space-y-2">
-        <button
-          onClick={() => openWebPath("/dashboard")}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-green px-3 py-2.5 text-[12px] font-semibold text-[#06140A] hover:bg-brand-green-2"
-        >
-          <ExternalLink className="h-3.5 w-3.5" />
-          Open Dashboard
-        </button>
-        <div className="flex gap-2">
-          <button
-            onClick={() => openWebPath("/dashboard/settings")}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-[11px] text-foreground hover:bg-field"
-          >
-            <SettingsIcon className="h-3.5 w-3.5" />
-            Settings
-          </button>
-          <button
-            onClick={handleSignOut}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-[11px] text-muted-foreground hover:bg-field hover:text-foreground"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            Logout
-          </button>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function StatusRow({
-  icon,
-  label,
-  value,
-  tone,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  tone: "ok" | "warn" | "neutral";
-}) {
-  const toneClass =
-    tone === "ok"
-      ? "text-brand-green"
-      : tone === "warn"
-      ? "text-brand-red"
-      : "text-muted-foreground";
-  return (
-    <div className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2.5">
-      <div className="flex items-center gap-2">
-        <span className={toneClass}>{icon}</span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{label}</span>
-      </div>
-      <span className="max-w-[180px] truncate text-[12px] font-medium text-foreground">{value}</span>
-    </div>
-  );
+      );
+  }
 }
