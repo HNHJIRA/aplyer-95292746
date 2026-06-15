@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Aplyer.ai",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Detect supported ATS application questions and prepare to generate tailored answers.",
   "permissions": ["storage", "activeTab", "tabs", "sidePanel", "scripting"],
   "host_permissions": [
     "https://*.lovable.app/*",
-    "https://aplyer.assuredtechno.com/*",
+    "https://aplyer.devssh.xyz/*",
     "https://*.greenhouse.io/*",
     "https://boards.greenhouse.io/*",
     "https://job-boards.greenhouse.io/*",
