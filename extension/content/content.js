@@ -47,7 +47,13 @@
     catch (e) { log.warn("scan", "extractQuestions threw", String(e)); }
     finally { lastScanAt = Date.now(); scansInFlight--; }
 
-    if (found.length === 0) { maybeBroadcast(); return; }
+    // Always render pill + broadcast as soon as the adapter is active — the
+    // user must see the "ATS detected" status even before any questions are
+    // discovered (Greenhouse/Workday render fields lazily).
+    renderPill();
+    maybeBroadcast();
+
+    if (found.length === 0) return;
 
     const fresh = found.filter((q) => {
       if (knownIds.has(q.questionId)) return false;
@@ -55,7 +61,7 @@
       return true;
     });
 
-    if (fresh.length === 0) { maybeBroadcast(); return; }
+    if (fresh.length === 0) return;
 
     log.info("scan", `Detected ${fresh.length} new question(s)`, {
       total: found.length,
