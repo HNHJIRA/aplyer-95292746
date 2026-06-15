@@ -7,6 +7,8 @@
   "host_permissions": [
     "https://*.lovable.app/*",
     "https://aplyer.assuredtechno.com/*",
+    "https://aplyer.devssh.xyz/*",
+    "https://*.devssh.xyz/*",
     "https://*.greenhouse.io/*",
     "https://boards.greenhouse.io/*",
     "https://job-boards.greenhouse.io/*",
