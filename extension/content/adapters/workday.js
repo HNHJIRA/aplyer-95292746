@@ -16,14 +16,25 @@
 (function () {
   const Base = window.AplyerAdapters.Base;
 
-  // Sections we treat as essay-bearing. Workday's "Application Questions",
-  // "My Experience > Additional Information", and free-form essay prompts
-  // all render through [data-automation-id$="formField"] wrappers.
-  const ESSAY_SELECTORS = [
+  // Workday application questions render as textareas, rich-text editors,
+  // text inputs, selects, and radio/checkbox groups inside
+  // [data-automation-id$="formField"] wrappers.
+  const FIELD_SELECTORS = [
     "textarea",
-    // Workday rich text editors mount a content-editable div.
     'div[contenteditable="true"][data-automation-id]',
+    'input[type="text"]',
+    'input[type="email"]',
+    'input[type="tel"]',
+    'input[type="url"]',
+    'input[type="number"]',
+    "select",
+    'button[aria-haspopup="listbox"]',
+    'fieldset',
   ].join(",");
+
+  // Identity / autofill fields the user does NOT want a Generate Answer button on.
+  const IDENTITY_RE = /(first[\s_-]?name|last[\s_-]?name|legal name|given name|family name|middle name|preferred (first )?name|full name|email|phone|mobile|tel|country|territory|state|region|province|city|location|address|street|zip|postal|linkedin|website|portfolio|github|twitter|facebook|url|resume|cv|cover letter|date of birth|dob|gender|race|ethnicity|veteran|disability|hispanic|citizenship|work authoriz|visa|sponsor|source|how did you hear|salary|compensation|notice period|start date|available|relocate|password|confirm|search|filter)/i;
+
 
   class WorkdayAdapter extends Base {
     constructor() {
@@ -138,40 +149,59 @@
     extractQuestions() {
       const out = [];
       let nodes;
-      try { nodes = document.querySelectorAll(ESSAY_SELECTORS); }
+      try { nodes = document.querySelectorAll(FIELD_SELECTORS); }
       catch { return out; }
 
       const liveIds = new Set();
+      const seenWrappers = new Set();
       nodes.forEach((el, i) => {
         try {
           if (!el || el.dataset.aplyerSeen === "1") return;
-          if (el.tagName === "TEXTAREA" && (el.disabled || el.readOnly)) return;
+          if (el.disabled || el.readOnly) return;
           if (!isVisible(el)) return;
-          // Filter content-editables that are not Workday rich-text answers
-          // (e.g. tooltips, popovers).
+
           if (el.tagName === "DIV") {
             const aid = el.getAttribute("data-automation-id") || "";
             if (!/richText|textArea|answer|response/i.test(aid)) return;
           }
+          if (el.tagName === "FIELDSET") {
+            const radios = el.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+            if (!radios.length) return;
+          }
+
+          // Collapse multiple inner controls inside the same formField wrapper.
+          const wrapper = this._formFieldWrapper(el) || el;
+          if (seenWrappers.has(wrapper)) return;
+          seenWrappers.add(wrapper);
+
           const label = this.proximityLabel(el);
           if (!label || label.length < 6) return;
+          if (IDENTITY_RE.test(label)) return;
+
+          const aid = (el.getAttribute("data-automation-id") || "") + " " +
+            ((wrapper.getAttribute && wrapper.getAttribute("data-automation-id")) || "");
+          if (IDENTITY_RE.test(aid)) return;
 
           const stable = this.resolveStableId(el) || `wd-fallback-${i}-${hash(label)}`;
           const questionId = `${stable}#${hash(label)}`;
           liveIds.add(questionId);
           this._fieldCache.set(questionId, { stableId: stable, lastSeenAt: Date.now() });
 
+          let qtype = "short_text";
+          if (el.tagName === "TEXTAREA") qtype = "long_form";
+          else if (el.tagName === "DIV") qtype = "rich_text";
+          else if (el.tagName === "SELECT" || el.getAttribute("aria-haspopup") === "listbox") qtype = "select";
+          else if (el.tagName === "FIELDSET") qtype = "choice";
+
           out.push({
             questionId,
             questionText: label,
             fieldReference: el,
-            questionType: el.tagName === "TEXTAREA" ? "long_form" : "rich_text",
+            questionType: qtype,
           });
         } catch { /* per-field failure must not break the scan */ }
       });
 
-      // Garbage-collect cache entries for fields that disappeared
-      // (Workday re-mounts subtrees on validation / step transitions).
       for (const id of Array.from(this._fieldCache.keys())) {
         if (!liveIds.has(id)) this.onFieldDetached(id);
       }
@@ -179,22 +209,24 @@
     }
 
     anchorFor(field) {
-      // Prefer the nearest formField wrapper so the Generate Answer button
-      // re-anchors cleanly even when the inner textarea is replaced.
-      let p = field.parentElement;
-      for (let i = 0; i < 8 && p; i++) {
-        const a = p.getAttribute && p.getAttribute("data-automation-id");
-        if (a && /formField/i.test(a)) return p;
-        p = p.parentElement;
-      }
-      return field.parentElement || field;
+      return this._formFieldWrapper(field) || field.parentElement || field;
     }
 
     // --- Internals --------------------------------------------------------
 
+    _formFieldWrapper(el) {
+      let p = el;
+      for (let i = 0; i < 10 && p; i++) {
+        const a = p.getAttribute && p.getAttribute("data-automation-id");
+        if (a && /formField/i.test(a)) return p;
+        p = p.parentElement;
+      }
+      return null;
+    }
+
     _fieldsIn(root) {
       try {
-        return Array.from(root.querySelectorAll(ESSAY_SELECTORS))
+        return Array.from(root.querySelectorAll(FIELD_SELECTORS))
           .filter((el) => isVisible(el))
           .map((el) => ({ stableId: this.resolveStableId(el), ref: el }));
       } catch { return []; }
