@@ -35,9 +35,12 @@
           if (!isVisible(el)) return;
           // Skip the common identity fields — those are handled by autofill, not Q&A.
           const nm = (el.name || el.id || "").toLowerCase();
-          if (/(^|_)(first_name|last_name|email|phone|resume|cover_letter|location|linkedin|website)(_|$)/.test(nm)) return;
+          if (/(^|[_-])(first[_-]?name|last[_-]?name|preferred|full[_-]?name|email|phone|tel|mobile|resume|cv|cover[_-]?letter|location|city|country|state|region|address|zip|postal|linkedin|website|portfolio|github|twitter|url)([_-]|$)/.test(nm)) return;
           const label = this._findLabel(el);
           if (!label || label.length < 6) return;
+          // Also skip by label text — Greenhouse labels often have no name hint.
+          const ll = label.toLowerCase();
+          if (/^(first name|last name|preferred (first )?name|full name|email|phone|mobile|country|state|region|city|location|address|zip|postal code|linkedin|website|portfolio|resume|cv|cover letter|locate me)\b/.test(ll)) return;
           const id = el.id || el.name || `gh-${i}-${hash(label)}`;
           const type = el.tagName === "TEXTAREA" ? "essay"
             : el.tagName === "SELECT" ? "select"
