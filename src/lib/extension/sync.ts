@@ -1,7 +1,14 @@
 // Helpers to mirror extension data to Supabase when a session is available.
 import { supabase } from "@/integrations/supabase/client";
 import type { ExtensionSession } from "@/lib/extension/runtime";
-import type { Profile, ResumeMetadata, ResumeScore, WritingSample } from "@/lib/storage/types";
+import { storage } from "@/lib/storage/storage";
+import type {
+  AplyerState,
+  Profile,
+  ResumeMetadata,
+  ResumeScore,
+  WritingSample,
+} from "@/lib/storage/types";
 
 export async function ensureSupabaseSession(session: ExtensionSession | null) {
   if (!session) return false;
