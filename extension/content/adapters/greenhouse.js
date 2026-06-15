@@ -18,28 +18,41 @@
 
     extractQuestions() {
       const results = [];
-      let textareas;
-      try { textareas = document.querySelectorAll("textarea"); }
-      catch { return results; }
+      // job-boards.greenhouse.io renders custom questions as <textarea>,
+      // <input type="text">, and <select> inside fieldsets/divs with class
+      // "application-question" or similar. Capture all three.
+      let nodes;
+      try {
+        nodes = document.querySelectorAll(
+          'textarea, input[type="text"]:not([autocomplete="off"][aria-autocomplete]), input:not([type]), select'
+        );
+      } catch { return results; }
 
-      textareas.forEach((ta, i) => {
+      nodes.forEach((el, i) => {
         try {
-          if (!ta || ta.dataset.aplyerSeen === "1") return;
-          if (ta.disabled || ta.readOnly) return;
-          if (!isVisible(ta)) return;
-          const label = this._findLabel(ta);
-          if (!label || label.length < 8) return;
-          const id = ta.id || ta.name || `gh-${i}-${hash(label)}`;
+          if (!el || el.dataset.aplyerSeen === "1") return;
+          if (el.disabled || el.readOnly) return;
+          if (!isVisible(el)) return;
+          // Skip the common identity fields — those are handled by autofill, not Q&A.
+          const nm = (el.name || el.id || "").toLowerCase();
+          if (/(^|_)(first_name|last_name|email|phone|resume|cover_letter|location|linkedin|website)(_|$)/.test(nm)) return;
+          const label = this._findLabel(el);
+          if (!label || label.length < 6) return;
+          const id = el.id || el.name || `gh-${i}-${hash(label)}`;
+          const type = el.tagName === "TEXTAREA" ? "essay"
+            : el.tagName === "SELECT" ? "select"
+            : "short_text";
           results.push({
             questionId: id,
             questionText: label,
-            fieldReference: ta,
-            questionType: "essay",
+            fieldReference: el,
+            questionType: type,
           });
         } catch { /* per-field failure must not break the scan */ }
       });
       return results;
     }
+
 
     _findLabel(el) {
       try {
