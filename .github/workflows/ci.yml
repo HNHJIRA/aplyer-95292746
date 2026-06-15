@@ -1,0 +1,98 @@
+name: 🚀 Deploy on push main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  web-deploy:
+    name: 🎉 Deploy
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@master
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: 🗜️ Rebuild extension zip (fresh, uncorrupted)
+        run: |
+          sudo apt-get update && sudo apt-get install -y zip
+          rm -f public/aplyer-extension.zip extension/aplyer-extension.zip
+          cd extension && zip -r ../public/aplyer-extension.zip . \
+            -x "aplyer-extension.zip" "extension-src/*" "extension-src"
+          cd .. && ls -la public/aplyer-extension.zip
+          unzip -t public/aplyer-extension.zip | tail -5
+          base64 -w 0 public/aplyer-extension.zip > public/aplyer-extension.zip.b64
+          base64 -d public/aplyer-extension.zip.b64 > /tmp/aplyer-extension-from-b64.zip
+          unzip -t /tmp/aplyer-extension-from-b64.zip | tail -5
+
+      - name: 🔨 Build Project
+        run: |
+          npx yarn install
+          npx yarn run build
+
+
+      - name: 📝 Add SPA .htaccess for deep links
+        run: |
+          cat > dist/client/.htaccess << 'EOF'
+          DirectoryIndex index.html
+
+          <IfModule mod_rewrite.c>
+            RewriteEngine On
+            RewriteBase /
+            RewriteRule ^index\.html$ - [L]
+            RewriteCond %{REQUEST_FILENAME} !-f
+            RewriteCond %{REQUEST_FILENAME} !-d
+            RewriteRule . /index.html [L]
+          </IfModule>
+          EOF
+
+      - name: ✅ Verify encoded extension in build output
+        run: |
+          ls -la dist/client/aplyer-extension.zip.b64
+          base64 -d dist/client/aplyer-extension.zip.b64 > /tmp/verify-build.zip
+          unzip -t /tmp/verify-build.zip | tail -3
+          rm -f dist/client/aplyer-extension.zip
+
+      - name: List output files
+        run: find dist/client -print
+
+
+      - name: 📂 Sync files via lftp (forces binary mode)
+        env:
+          FTP_SERVER: ${{ secrets.SERVER }}
+          FTP_USER: ${{ secrets.FTP_USERNAME }}
+          FTP_PASS: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y lftp
+          lftp -c "
+            set ftp:ssl-allow no;
+            set ssl:verify-certificate no;
+            set ftp:passive-mode true;
+            set net:max-retries 3;
+            set net:timeout 30;
+            set xfer:clobber on;
+            open -u \"$FTP_USER\",\"$FTP_PASS\" \"$FTP_SERVER\";
+            mirror -R --verbose --delete-first --parallel=4 \
+              --exclude-glob '.git*' \
+              --exclude-glob 'node_modules/' \
+              ./dist/client/ /;
+          "
+
+      - name: ✅ Verify uploaded zip
+        run: |
+          sleep 5
+          curl -sI "https://${{ secrets.SITE_DOMAIN || 'aplyer.assuredtechno.com' }}/aplyer-extension.zip.b64"
+          curl -s "https://${{ secrets.SITE_DOMAIN || 'aplyer.assuredtechno.com' }}/aplyer-extension.zip.b64" -o /tmp/verify.zip.b64
+          base64 -d /tmp/verify.zip.b64 > /tmp/verify.zip
+          unzip -t /tmp/verify.zip | tail -3
+

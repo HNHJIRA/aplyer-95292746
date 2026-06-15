@@ -31,4 +31,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-deploy/.cpanel.env

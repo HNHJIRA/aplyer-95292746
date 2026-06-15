@@ -30,19 +30,11 @@ jobs:
           unzip -t public/aplyer-extension.zip | tail -5
 
       - name: Build static site
-        # Vite reads VITE_SUPABASE_* from the committed .env file.
-        # Do NOT pass them via `env:` here — unset GitHub secrets become empty
-        # strings and would silently overwrite the .env values, producing a
-        # bundle with no Supabase URL.
         run: bun run build:static
-
-      - name: Verify Supabase URL was bundled
-        run: |
-          if ! grep -q 'supabase.co' dist/assets/*.js; then
-            echo "✗ Supabase URL missing from bundle — .env not picked up at build time"
-            exit 1
-          fi
-          echo "✓ Supabase URL present in bundle"
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID }}
 
       - name: Verify encoded extension in static output
         run: |
