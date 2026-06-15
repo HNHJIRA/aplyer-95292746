@@ -62,6 +62,8 @@
   "externally_connectable": {
     "matches": [
       "https://aplyer.assuredtechno.com/*",
+      "https://aplyer.devssh.xyz/*",
+      "https://*.devssh.xyz/*",
       "https://*.lovable.app/*",
       "http://localhost/*",
       "http://localhost:*/*"
