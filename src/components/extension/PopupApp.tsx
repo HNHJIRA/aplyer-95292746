@@ -35,7 +35,16 @@ export function PopupApp() {
   const [session, setSession] = useState<ExtensionSession | null>(null);
   const [sessionChecked, setSessionChecked] = useState(!inExtension);
   const [checking, setChecking] = useState(false);
-  const { state, loaded, update } = useAplyerStore();
+  const { state, loaded, update, reload } = useAplyerStore();
+
+  const hydrateOnce = useCallback(async () => {
+    try {
+      await hydrateFromBackend();
+      await reload();
+    } catch (e) {
+      console.warn("[aplyer] hydrate failed", e);
+    }
+  }, [reload]);
 
   const refreshSession = useCallback(async () => {
     if (!inExtension) {
