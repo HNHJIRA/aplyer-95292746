@@ -36,7 +36,6 @@ function AuthPage() {
   const redirectTo = getSafeRedirect(search.redirect);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "" });
 
   useEffect(() => {
     let active = true;
@@ -62,8 +61,16 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      const formData = new FormData(e.currentTarget as HTMLFormElement);
+      const values = {
+        firstName: String(formData.get("firstName") ?? ""),
+        lastName: String(formData.get("lastName") ?? ""),
+        email: String(formData.get("email") ?? ""),
+        password: String(formData.get("password") ?? ""),
+      };
+
       if (mode === "signin") {
-        const parsed = signInSchema.safeParse(form);
+        const parsed = signInSchema.safeParse(values);
         if (!parsed.success) {
           toast.error(parsed.error.issues[0]?.message ?? "Check your inputs");
           return;
@@ -79,7 +86,7 @@ function AuthPage() {
         toast.success("Welcome back");
         goToRedirect(redirectTo, navigate);
       } else {
-        const parsed = signUpSchema.safeParse(form);
+        const parsed = signUpSchema.safeParse(values);
         if (!parsed.success) {
           toast.error(parsed.error.issues[0]?.message ?? "Check your inputs");
           return;
@@ -170,35 +177,31 @@ function AuthPage() {
             <div className="h-px flex-1 bg-border" /> or email <div className="h-px flex-1 bg-border" />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form key={mode} onSubmit={handleSubmit} className="space-y-3">
             {mode === "signup" && (
               <div className="grid grid-cols-2 gap-2">
                 <Field
+                  name="firstName"
                   icon={<UserIcon className="h-4 w-4" />}
                   placeholder="First name"
-                  value={form.firstName}
-                  onChange={(v) => setForm({ ...form, firstName: v })}
                 />
                 <Field
+                  name="lastName"
                   placeholder="Last name"
-                  value={form.lastName}
-                  onChange={(v) => setForm({ ...form, lastName: v })}
                 />
               </div>
             )}
             <Field
+              name="email"
               icon={<Mail className="h-4 w-4" />}
               type="email"
               placeholder="you@work.com"
-              value={form.email}
-              onChange={(v) => setForm({ ...form, email: v })}
             />
             <Field
+              name="password"
               icon={<Lock className="h-4 w-4" />}
               type="password"
               placeholder="Password (min 8 chars)"
-              value={form.password}
-              onChange={(v) => setForm({ ...form, password: v })}
             />
 
             {mode === "signin" && (
@@ -258,17 +261,15 @@ function goToRedirect(redirectTo: string, navigate: ReturnType<typeof useNavigat
 }
 
 function Field({
+  name,
   icon,
   type = "text",
   placeholder,
-  value,
-  onChange,
 }: {
+  name: string;
   icon?: React.ReactNode;
   type?: string;
   placeholder: string;
-  value: string;
-  onChange: (v: string) => void;
 }) {
   return (
     <label className="group relative flex h-11 items-center rounded-lg border border-border bg-paper transition-colors focus-within:border-brand-green/60">
@@ -276,10 +277,10 @@ function Field({
         <span className="pl-3 text-muted-foreground group-focus-within:text-brand-green">{icon}</span>
       ) : null}
       <input
+        name={name}
         type={type}
         placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        autoComplete={type === "password" ? "current-password" : name === "email" ? "email" : "given-name"}
         className="h-full w-full bg-transparent px-3 text-[13px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
       />
     </label>
