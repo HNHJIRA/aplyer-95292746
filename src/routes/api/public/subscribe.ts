@@ -162,17 +162,23 @@ export const Route = createFileRoute("/api/public/subscribe")({
                 signal: AbortSignal.timeout(8000),
               });
               const txt = await emailRes.text().catch(() => "");
+              let messageId: string | undefined;
+              try {
+                messageId = (JSON.parse(txt) as { messageId?: string }).messageId;
+              } catch {
+                // ignore
+              }
               if (!emailRes.ok) {
-                console.warn(
-                  "[subscribe] brevo email non-ok",
-                  emailRes.status,
-                  txt.slice(0, 500),
+                console.error(
+                  `[subscribe] brevo email FAIL to=${email} status=${emailRes.status} body=${txt.slice(0, 800)}`,
                 );
               } else {
-                console.log("[subscribe] brevo email ok", txt.slice(0, 200));
+                console.log(
+                  `[subscribe] brevo email OK to=${email} status=${emailRes.status} messageId=${messageId ?? "n/a"}`,
+                );
               }
             } catch (e) {
-              console.warn("[subscribe] brevo email error", e);
+              console.error(`[subscribe] brevo email THREW to=${email}`, e);
             }
           }
 
