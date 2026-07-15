@@ -59,7 +59,7 @@ export const Route = createFileRoute("/api/public/waitlist-upload")({
           if (files.length > MAX_FILES) {
             return jsonWithCors({ error: `Too many files (max ${MAX_FILES}).` }, 400);
           }
-          for (const f of files) {
+          for (const { field, file: f } of files) {
             if (f.size > MAX_FILE_BYTES) {
               return jsonWithCors(
                 { error: `File "${f.name}" exceeds 15 MB limit.` },
@@ -71,8 +71,17 @@ export const Route = createFileRoute("/api/public/waitlist-upload")({
           const ts = new Date().toISOString().replace(/[:.]/g, "-");
           const folder = `waitlist/${slugEmail(email)}/${ts}`;
 
+          const normalizeField = (raw: string): string => {
+            const k = raw.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+            if (/(resume|cv)/.test(k)) return "resume";
+            if (/cover/.test(k)) return "cover_letter";
+            if (/(writing|sample|portfolio)/.test(k)) return "writing_sample";
+            return k || "file";
+          };
+
           const uploaded: Array<{
             field: string;
+            category: string;
             fileName: string;
             size: number;
             contentType: string;
@@ -82,9 +91,10 @@ export const Route = createFileRoute("/api/public/waitlist-upload")({
           }> = [];
 
           for (let i = 0; i < files.length; i++) {
-            const f = files[i];
+            const { field, file: f } = files[i];
+            const category = normalizeField(field);
             const buf = Buffer.from(await f.arrayBuffer());
-            const key = `${folder}/${String(i + 1).padStart(2, "0")}-${safeName(f.name)}`;
+            const key = `${folder}/${String(i + 1).padStart(2, "0")}-${category}-${safeName(f.name)}`;
             const result = await s3PutObject({
               bucket,
               region,
@@ -95,13 +105,16 @@ export const Route = createFileRoute("/api/public/waitlist-upload")({
                 email,
                 name: encodeURIComponent(name),
                 source: source || "",
+                category,
+                "field-name": field,
                 "original-name": encodeURIComponent(f.name),
               },
               accessKeyId,
               secretAccessKey,
             });
             uploaded.push({
-              field: "file",
+              field,
+              category,
               fileName: f.name,
               size: f.size,
               contentType: f.type || "application/octet-stream",
