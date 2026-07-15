@@ -156,7 +156,7 @@ export const Route = createFileRoute("/api/public/subscribe")({
                 headers: brevoHeaders,
                 body: JSON.stringify({
                   to: [{ email }],
-                  templateId: 3,
+                  templateId: 5,
                   params: { SOURCE: source ?? "" },
                 }),
                 signal: AbortSignal.timeout(8000),
