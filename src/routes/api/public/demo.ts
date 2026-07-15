@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { jsonWithCors, preflight } from "@/lib/cors";
 
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+const CLAUDE_MODEL = "claude-sonnet-4-5";
 
 function str(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
@@ -25,9 +26,9 @@ export const Route = createFileRoute("/api/public/demo")({
             );
           }
 
-          const apiKey = process.env.LOVABLE_API_KEY;
+          const apiKey = process.env.ANTHROPIC_API_KEY;
           if (!apiKey) {
-            console.error("[demo] Missing LOVABLE_API_KEY");
+            console.error("[demo] Missing ANTHROPIC_API_KEY");
             return jsonWithCors({ error: "Server misconfigured." }, 500);
           }
 
@@ -40,25 +41,25 @@ export const Route = createFileRoute("/api/public/demo")({
 
           const user = `Resume:\n"""\n${capResume}\n"""\n\nJob Description:\n"""\n${capJd}\n"""\n\nQuestion:\n${capQ}\n\nWrite a 2–4 paragraph answer to the question. Separate paragraphs with a blank line. Return only the answer text.`;
 
-          const res = await fetch(GATEWAY_URL, {
+          const res = await fetch(ANTHROPIC_URL, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
+              "x-api-key": apiKey,
+              "anthropic-version": "2023-06-01",
             },
             body: JSON.stringify({
-              model: "google/gemini-2.5-flash",
-              messages: [
-                { role: "system", content: system },
-                { role: "user", content: user },
-              ],
+              model: CLAUDE_MODEL,
+              max_tokens: 1500,
+              system,
+              messages: [{ role: "user", content: user }],
             }),
           });
 
           if (!res.ok) {
             const text = await res.text().catch(() => "");
-            console.error("[demo] gateway error", res.status, text.slice(0, 500));
-            if (res.status === 429 || res.status === 402) {
+            console.error("[demo] anthropic error", res.status, text.slice(0, 500));
+            if (res.status === 429 || res.status === 529) {
               return jsonWithCors(
                 { error: "The demo is busy. Please try again in a moment." },
                 503,
@@ -68,9 +69,9 @@ export const Route = createFileRoute("/api/public/demo")({
           }
 
           const data = (await res.json()) as {
-            choices?: Array<{ message?: { content?: string } }>;
+            content?: Array<{ type: string; text?: string }>;
           };
-          const answer = data.choices?.[0]?.message?.content?.trim();
+          const answer = data.content?.find((c) => c.type === "text")?.text?.trim();
           if (!answer) {
             return jsonWithCors({ error: "Empty response from model." }, 500);
           }
