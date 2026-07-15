@@ -150,36 +150,9 @@ export const Route = createFileRoute("/api/public/subscribe")({
               console.warn("[subscribe] brevo contact error", e);
             }
 
-            try {
-              const emailRes = await fetch("https://api.brevo.com/v3/smtp/email", {
-                method: "POST",
-                headers: brevoHeaders,
-                body: JSON.stringify({
-                  to: [{ email }],
-                  templateId: 3,
-                  params: { SOURCE: source ?? "" },
-                }),
-                signal: AbortSignal.timeout(8000),
-              });
-              const txt = await emailRes.text().catch(() => "");
-              let messageId: string | undefined;
-              try {
-                messageId = (JSON.parse(txt) as { messageId?: string }).messageId;
-              } catch {
-                // ignore
-              }
-              if (!emailRes.ok) {
-                console.error(
-                  `[subscribe] brevo email FAIL to=${email} status=${emailRes.status} body=${txt.slice(0, 800)}`,
-                );
-              } else {
-                console.log(
-                  `[subscribe] brevo email OK to=${email} status=${emailRes.status} messageId=${messageId ?? "n/a"}`,
-                );
-              }
-            } catch (e) {
-              console.error(`[subscribe] brevo email THREW to=${email}`, e);
-            }
+            // Welcome email is sent by Brevo automation triggered on list #3 add.
+            // Do NOT send template directly here — it would race/duplicate the automation.
+
           }
 
           return jsonWithCors({ ok: true });
