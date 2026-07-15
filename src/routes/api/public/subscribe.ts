@@ -161,13 +161,15 @@ export const Route = createFileRoute("/api/public/subscribe")({
                 }),
                 signal: AbortSignal.timeout(8000),
               });
+              const txt = await emailRes.text().catch(() => "");
               if (!emailRes.ok) {
-                const txt = await emailRes.text().catch(() => "");
                 console.warn(
                   "[subscribe] brevo email non-ok",
                   emailRes.status,
-                  txt.slice(0, 300),
+                  txt.slice(0, 500),
                 );
+              } else {
+                console.log("[subscribe] brevo email ok", txt.slice(0, 200));
               }
             } catch (e) {
               console.warn("[subscribe] brevo email error", e);
