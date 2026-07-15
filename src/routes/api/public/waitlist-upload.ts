@@ -151,6 +151,8 @@ export const Route = createFileRoute("/api/public/waitlist-upload")({
             folder,
             count: uploaded.length,
             files: uploaded.map((u) => ({
+              field: u.field,
+              category: u.category,
               fileName: u.fileName,
               size: u.size,
               key: u.key,
