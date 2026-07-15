@@ -19,6 +19,7 @@ import { Route as ApiResumeMatchRouteImport } from './routes/api/resume-match'
 import { Route as ApiResumeAuditRouteImport } from './routes/api/resume-audit'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
+import { Route as ApiPublicWaitlistUploadRouteImport } from './routes/api/public/waitlist-upload'
 import { Route as ApiPublicSubscribeRouteImport } from './routes/api/public/subscribe'
 import { Route as ApiPublicDemoRouteImport } from './routes/api/public/demo'
 import { Route as AuthenticatedDashboardWritingRouteImport } from './routes/_authenticated/dashboard.writing'
@@ -78,6 +79,11 @@ const AuthenticatedDashboardIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const ApiPublicWaitlistUploadRoute = ApiPublicWaitlistUploadRouteImport.update({
+  id: '/api/public/waitlist-upload',
+  path: '/api/public/waitlist-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSubscribeRoute = ApiPublicSubscribeRouteImport.update({
   id: '/api/public/subscribe',
   path: '/api/public/subscribe',
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
   '/api/public/demo': typeof ApiPublicDemoRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
+  '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesByTo {
@@ -160,6 +167,7 @@ export interface FileRoutesByTo {
   '/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
   '/api/public/demo': typeof ApiPublicDemoRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
+  '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesById {
@@ -181,6 +189,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
   '/api/public/demo': typeof ApiPublicDemoRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
+  '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRouteTypes {
@@ -202,6 +211,7 @@ export interface FileRouteTypes {
     | '/dashboard/writing'
     | '/api/public/demo'
     | '/api/public/subscribe'
+    | '/api/public/waitlist-upload'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -220,6 +230,7 @@ export interface FileRouteTypes {
     | '/dashboard/writing'
     | '/api/public/demo'
     | '/api/public/subscribe'
+    | '/api/public/waitlist-upload'
     | '/dashboard'
   id:
     | '__root__'
@@ -240,6 +251,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/writing'
     | '/api/public/demo'
     | '/api/public/subscribe'
+    | '/api/public/waitlist-upload'
     | '/_authenticated/dashboard/'
   fileRoutesById: FileRoutesById
 }
@@ -253,6 +265,7 @@ export interface RootRouteChildren {
   ApiResumeMatchRoute: typeof ApiResumeMatchRoute
   ApiPublicDemoRoute: typeof ApiPublicDemoRoute
   ApiPublicSubscribeRoute: typeof ApiPublicSubscribeRoute
+  ApiPublicWaitlistUploadRoute: typeof ApiPublicWaitlistUploadRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -326,6 +339,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/'
       preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/api/public/waitlist-upload': {
+      id: '/api/public/waitlist-upload'
+      path: '/api/public/waitlist-upload'
+      fullPath: '/api/public/waitlist-upload'
+      preLoaderRoute: typeof ApiPublicWaitlistUploadRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/subscribe': {
       id: '/api/public/subscribe'
@@ -444,6 +464,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiResumeMatchRoute: ApiResumeMatchRoute,
   ApiPublicDemoRoute: ApiPublicDemoRoute,
   ApiPublicSubscribeRoute: ApiPublicSubscribeRoute,
+  ApiPublicWaitlistUploadRoute: ApiPublicWaitlistUploadRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

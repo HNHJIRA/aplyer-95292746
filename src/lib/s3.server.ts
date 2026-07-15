@@ -74,7 +74,7 @@ export async function s3PutObject(p: S3PutParams): Promise<{ url: string; etag: 
   const res = await fetch(url, {
     method: "PUT",
     headers: { ...headers, Authorization: authorization },
-    body: p.body,
+    body: new Uint8Array(p.body),
   });
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
