@@ -20,6 +20,7 @@ import { Route as ApiResumeAuditRouteImport } from './routes/api/resume-audit'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
 import { Route as ApiPublicSubscribeRouteImport } from './routes/api/public/subscribe'
+import { Route as ApiPublicDemoRouteImport } from './routes/api/public/demo'
 import { Route as AuthenticatedDashboardWritingRouteImport } from './routes/_authenticated/dashboard.writing'
 import { Route as AuthenticatedDashboardSupportRouteImport } from './routes/_authenticated/dashboard.support'
 import { Route as AuthenticatedDashboardSubscriptionRouteImport } from './routes/_authenticated/dashboard.subscription'
@@ -82,6 +83,11 @@ const ApiPublicSubscribeRoute = ApiPublicSubscribeRouteImport.update({
   path: '/api/public/subscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDemoRoute = ApiPublicDemoRouteImport.update({
+  id: '/api/public/demo',
+  path: '/api/public/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedDashboardWritingRoute =
   AuthenticatedDashboardWritingRouteImport.update({
     id: '/writing',
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/subscription': typeof AuthenticatedDashboardSubscriptionRoute
   '/dashboard/support': typeof AuthenticatedDashboardSupportRoute
   '/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
+  '/api/public/demo': typeof ApiPublicDemoRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/dashboard/subscription': typeof AuthenticatedDashboardSubscriptionRoute
   '/dashboard/support': typeof AuthenticatedDashboardSupportRoute
   '/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
+  '/api/public/demo': typeof ApiPublicDemoRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
 }
@@ -171,6 +179,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/subscription': typeof AuthenticatedDashboardSubscriptionRoute
   '/_authenticated/dashboard/support': typeof AuthenticatedDashboardSupportRoute
   '/_authenticated/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
+  '/api/public/demo': typeof ApiPublicDemoRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
@@ -191,6 +200,7 @@ export interface FileRouteTypes {
     | '/dashboard/subscription'
     | '/dashboard/support'
     | '/dashboard/writing'
+    | '/api/public/demo'
     | '/api/public/subscribe'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/dashboard/subscription'
     | '/dashboard/support'
     | '/dashboard/writing'
+    | '/api/public/demo'
     | '/api/public/subscribe'
     | '/dashboard'
   id:
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/subscription'
     | '/_authenticated/dashboard/support'
     | '/_authenticated/dashboard/writing'
+    | '/api/public/demo'
     | '/api/public/subscribe'
     | '/_authenticated/dashboard/'
   fileRoutesById: FileRoutesById
@@ -239,6 +251,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiResumeAuditRoute: typeof ApiResumeAuditRoute
   ApiResumeMatchRoute: typeof ApiResumeMatchRoute
+  ApiPublicDemoRoute: typeof ApiPublicDemoRoute
   ApiPublicSubscribeRoute: typeof ApiPublicSubscribeRoute
 }
 
@@ -319,6 +332,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/subscribe'
       fullPath: '/api/public/subscribe'
       preLoaderRoute: typeof ApiPublicSubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/demo': {
+      id: '/api/public/demo'
+      path: '/api/public/demo'
+      fullPath: '/api/public/demo'
+      preLoaderRoute: typeof ApiPublicDemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard/writing': {
@@ -422,6 +442,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ApiResumeAuditRoute: ApiResumeAuditRoute,
   ApiResumeMatchRoute: ApiResumeMatchRoute,
+  ApiPublicDemoRoute: ApiPublicDemoRoute,
   ApiPublicSubscribeRoute: ApiPublicSubscribeRoute,
 }
 export const routeTree = rootRouteImport
