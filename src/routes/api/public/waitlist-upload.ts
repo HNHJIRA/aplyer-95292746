@@ -45,11 +45,11 @@ export const Route = createFileRoute("/api/public/waitlist-upload")({
             return jsonWithCors({ error: "Please enter a valid email address." }, 400);
           }
 
-          const files: File[] = [];
+          const files: Array<{ field: string; file: File }> = [];
           for (const [key, value] of form.entries()) {
             if (value instanceof File && value.size > 0) {
               if (key === "email" || key === "name" || key === "firstName" || key === "source") continue;
-              files.push(value);
+              files.push({ field: key, file: value });
             }
           }
 
