@@ -6,6 +6,7 @@ import { useAplyerStore } from "@/lib/storage/useAplyerStore";
 import { Confetti } from "@/components/writedna/Confetti";
 import { ProgressRing } from "@/components/writedna/ProgressRing";
 import { stageColor } from "@/lib/writedna";
+import { supabase } from "@/integrations/supabase/client";
 
 export function VoiceCard({ onDone }: { onDone: () => void }) {
   const { state, update } = useAplyerStore();
@@ -13,6 +14,15 @@ export function VoiceCard({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     if (!state.writeDna.celebratedStrong) {
       void update({ writeDna: { ...state.writeDna, celebratedStrong: true } });
+      void (async () => {
+        const { data: u } = await supabase.auth.getUser();
+        if (u.user) {
+          await supabase
+            .from("profiles")
+            .update({ celebrated_strong: true })
+            .eq("id", u.user.id);
+        }
+      })();
     }
      
   }, []);
