@@ -52,6 +52,7 @@ function ExtensionAuthPage() {
       }
 
       setStatus("sending");
+      try { localStorage.setItem("aplyer.ext_id", extensionId); } catch { /* noop */ }
       const payload = {
         type: "APLYER_AUTH_SET",
         session: {
