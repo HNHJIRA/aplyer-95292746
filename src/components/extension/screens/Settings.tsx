@@ -71,9 +71,13 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
                 <Button variant="outline" size="sm" className="mt-3 w-full" onClick={reset}>
                   <RotateCcw className="h-3.5 w-3.5" /> Reset Onboarding
                 </Button>
-                <Button variant="ghost" size="sm" className="mt-1.5 w-full text-brand-red hover:text-brand-red">
-                  <LogOut className="h-3.5 w-3.5" /> Sign Out
-                </Button>
+                <button
+                  onClick={() => setConfirmLogout(true)}
+                  className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-md border border-brand-red/30 bg-brand-red/10 px-3 py-2 text-[12px] font-semibold text-brand-red transition hover:bg-brand-red/15"
+                >
+                  <LogOut className="h-3.5 w-3.5" /> Logout
+                </button>
+
               </Card>
             )}
 
