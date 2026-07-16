@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   APP_WEB_URL,
+  clearExtensionLocal,
   getExtensionSession,
   isExtensionRuntime,
   openAuthInTab,
@@ -12,6 +13,8 @@ import { ensureSupabaseSession, hydrateFromBackend } from "@/lib/extension/sync"
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
 import type { OnboardingStep } from "@/lib/storage/types";
 import { SignIn } from "./screens/SignIn";
+import { Settings } from "./screens/Settings";
+
 import { Welcome } from "./screens/Welcome";
 import { ResumeUpload } from "./screens/ResumeUpload";
 import { ResumeAnalysis } from "./screens/ResumeAnalysis";
@@ -39,7 +42,9 @@ export function PopupApp() {
   const [session, setSession] = useState<ExtensionSession | null>(null);
   const [sessionChecked, setSessionChecked] = useState(!inExtension);
   const [checking, setChecking] = useState(false);
-  const { state, loaded, update, reload } = useAplyerStore();
+  const [showSettings, setShowSettings] = useState(false);
+  const { state, loaded, update, reload, reset } = useAplyerStore();
+
 
   const hydrateOnce = useCallback(async () => {
     try {
@@ -97,12 +102,24 @@ export function PopupApp() {
     return () => c?.storage?.onChanged?.removeListener(onChanged);
   }, [refreshSession, hydrateOnce]);
 
-  void handleSignOut;
   async function handleSignOut() {
-    if (inExtension) await signOutExtension();
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } catch (e) {
+      console.warn("[aplyer] supabase signOut failed", e);
+    }
+    try {
+      if (inExtension) await signOutExtension();
+      await clearExtensionLocal();
+    } catch (e) {
+      console.warn("[aplyer] clear extension state failed", e);
+    }
+    await reset();
+    setShowSettings(false);
     setSession(null);
+    setSessionChecked(true);
   }
+
 
   async function goTo(step: OnboardingStep) {
     await update({
@@ -139,6 +156,10 @@ export function PopupApp() {
     );
   }
 
+  if (showSettings) {
+    return <Settings onBack={() => setShowSettings(false)} onLogout={handleSignOut} />;
+  }
+
   const step = state.onboardingStatus.completed ? "done" : state.onboardingStatus.currentStep;
 
   switch (step) {
@@ -171,7 +192,9 @@ export function PopupApp() {
         <Dashboard
           onResume={() => { void goTo("resume_upload"); }}
           onProfile={() => { void goTo("profile"); }}
+          onSettings={() => setShowSettings(true)}
         />
       );
   }
 }
+

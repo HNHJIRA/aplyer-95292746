@@ -40,9 +40,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
   if (message.type === "APLYER_SIGN_OUT") {
-    chrome.storage.local.remove(SESSION_KEY, () => sendResponse({ ok: true }));
+    chrome.storage.local.clear(() => sendResponse({ ok: true }));
     return true;
   }
+  if (message.type === "APLYER_CLEAR_ALL") {
+    chrome.storage.local.clear(() => sendResponse({ ok: true }));
+    return true;
+  }
+
 
   // Content-script -> background: ATS status update
   if (message.type === "APLYER_ATS_STATUS" && message.payload) {
