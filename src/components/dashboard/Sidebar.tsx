@@ -34,6 +34,15 @@ export function Sidebar() {
   async function signOut() {
     await qc.cancelQueries();
     qc.clear();
+    // Notify the Chrome extension (if installed & previously connected) to clear its session.
+    try {
+      const extId = typeof localStorage !== "undefined" ? localStorage.getItem("aplyer.ext_id") : null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const c = (window as any).chrome;
+      if (extId && c?.runtime?.sendMessage) {
+        c.runtime.sendMessage(extId, { type: "APLYER_AUTH_CLEAR" }, () => void c.runtime.lastError);
+      }
+    } catch { /* noop */ }
     await supabase.auth.signOut();
     toast.success("Signed out");
     navigate({ to: "/auth", replace: true });
