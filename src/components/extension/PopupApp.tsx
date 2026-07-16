@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   APP_WEB_URL,
+  clearExtensionLocal,
   getExtensionSession,
   isExtensionRuntime,
   openAuthInTab,
@@ -12,6 +13,8 @@ import { ensureSupabaseSession, hydrateFromBackend } from "@/lib/extension/sync"
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
 import type { OnboardingStep } from "@/lib/storage/types";
 import { SignIn } from "./screens/SignIn";
+import { Settings } from "./screens/Settings";
+
 import { Welcome } from "./screens/Welcome";
 import { ResumeUpload } from "./screens/ResumeUpload";
 import { ResumeAnalysis } from "./screens/ResumeAnalysis";
