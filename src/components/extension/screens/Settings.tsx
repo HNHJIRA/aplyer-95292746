@@ -31,9 +31,12 @@ const PLANS: { id: SubscriptionTier; name: string; price: string; features: stri
   { id: "enterprise", name: "Enterprise", price: "Custom", features: ["Team workspaces", "SSO", "Dedicated support", "Custom integrations"] },
 ];
 
-export function Settings({ onBack }: { onBack: () => void }) {
+export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: () => void | Promise<void> }) {
   const { state, update, reset } = useAplyerStore();
   const [section, setSection] = useState<Section>("account");
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
 
   return (
     <div className="flex h-full flex-col">
