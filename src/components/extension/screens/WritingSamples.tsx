@@ -7,12 +7,18 @@ import type { WritingSample, WritingSampleType } from "@/lib/storage/types";
 
 const TYPES: { id: WritingSampleType; label: string }[] = [
   { id: "cover_letter", label: "Cover Letter" },
+  { id: "linkedin_post", label: "LinkedIn Post" },
   { id: "professional_email", label: "Email" },
-  { id: "personal_bio", label: "Personal Bio" },
+  { id: "blog", label: "Blog" },
+  { id: "essay", label: "Essay" },
+  { id: "free_text", label: "Free Text" },
   { id: "career_summary", label: "Career Summary" },
+  { id: "other", label: "Other" },
 ];
 
 const MAX = 10_000;
+const MIN_CHARS = 100;
+const MIN_WORDS = 30;
 
 export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
   const { state, update } = useAplyerStore();
@@ -24,9 +30,12 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
   const samples = state.writingSamples;
   const totalWords = samples.reduce((a, s) => a + s.wordCount, 0);
 
+  const trimmed = content.trim();
+  const wordCount = trimmed ? trimmed.split(/\s+/).length : 0;
+  const qualifies = trimmed.length >= MIN_CHARS && wordCount >= MIN_WORDS;
+
   async function save() {
-    if (!content.trim()) return;
-    const wordCount = content.trim().split(/\s+/).length;
+    if (!qualifies) return;
     const s: WritingSample = {
       id: crypto.randomUUID(),
       type,
