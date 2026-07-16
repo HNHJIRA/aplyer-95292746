@@ -192,9 +192,65 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
           </motion.div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {confirmLogout && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              className="mx-4 w-full max-w-[320px] rounded-2xl border border-border bg-paper p-5 shadow-2xl"
+            >
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-red/15 text-brand-red">
+                  <LogOut className="h-4 w-4" />
+                </span>
+                <h3 className="text-[15px] font-bold">Sign out?</h3>
+              </div>
+              <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
+                You'll be signed out of the extension. Your data remains safely stored in your Aplyer account.
+              </p>
+              <div className="mt-4 flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setConfirmLogout(false)}
+                  disabled={loggingOut}
+                >
+                  Cancel
+                </Button>
+                <button
+                  disabled={loggingOut}
+                  onClick={async () => {
+                    setLoggingOut(true);
+                    try {
+                      await onLogout?.();
+                    } finally {
+                      setLoggingOut(false);
+                      setConfirmLogout(false);
+                    }
+                  }}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-brand-red px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-brand-red/90 disabled:opacity-60"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  {loggingOut ? "Signing out…" : "Logout"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
