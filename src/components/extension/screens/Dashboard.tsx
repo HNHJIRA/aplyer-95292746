@@ -21,8 +21,9 @@ const PLATFORMS = [
   { name: "Workday", color: "#3B82F6" },
 ];
 
-export function Dashboard({ onResume, onProfile }: { onResume: () => void; onProfile: () => void }) {
-  const openSettings = () => openWebPath("/dashboard/settings");
+export function Dashboard({ onResume, onProfile, onSettings }: { onResume: () => void; onProfile: () => void; onSettings?: () => void }) {
+  const openSettings = onSettings ?? (() => openWebPath("/dashboard/settings"));
+
   const openSubscription = () => openWebPath("/dashboard/subscription");
   const { state } = useAplyerStore();
   const profileFields = state.profile ? Object.values(state.profile).filter(Boolean).length : 0;
