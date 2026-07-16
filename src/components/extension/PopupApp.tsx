@@ -156,6 +156,10 @@ export function PopupApp() {
     );
   }
 
+  if (showSettings) {
+    return <Settings onBack={() => setShowSettings(false)} onLogout={handleSignOut} />;
+  }
+
   const step = state.onboardingStatus.completed ? "done" : state.onboardingStatus.currentStep;
 
   switch (step) {
@@ -188,7 +192,9 @@ export function PopupApp() {
         <Dashboard
           onResume={() => { void goTo("resume_upload"); }}
           onProfile={() => { void goTo("profile"); }}
+          onSettings={() => setShowSettings(true)}
         />
       );
   }
 }
+
