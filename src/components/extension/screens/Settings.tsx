@@ -39,7 +39,7 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
 
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative flex h-full flex-col">
       <div className="flex items-center gap-2 border-b border-border bg-paper/60 px-4 py-3 backdrop-blur">
         <button onClick={onBack} className="rounded-md p-1 text-muted-foreground hover:bg-field hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
