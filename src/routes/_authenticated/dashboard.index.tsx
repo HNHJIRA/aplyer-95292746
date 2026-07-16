@@ -14,6 +14,9 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadExtension } from "@/lib/download-extension";
+import { WriteDnaCard } from "@/components/writedna/WriteDnaCard";
+import { computeWriteDna } from "@/lib/writedna";
+import type { WriteDnaState } from "@/lib/storage/types";
 
 export const Route = createFileRoute("/_authenticated/dashboard/")({
   component: DashboardHome,
@@ -93,6 +96,34 @@ function DashboardHome() {
         <Stat label="Profile" value={`${profileCompletion}%`} icon={<UserIcon className="h-4 w-4" />} tone={profileCompletion >= 80 ? "green" : "amber"} />
         <Stat label="Writing samples" value={String(data.samplesCount)} icon={<BookOpen className="h-4 w-4" />} tone={data.samplesCount > 0 ? "green" : "muted"} />
       </div>
+
+      {(() => {
+        // Prefer DB-persisted DNA (kept fresh by triggers), else compute from what we have.
+        const prof = (data.profile ?? {}) as Record<string, unknown>;
+        const dna: WriteDnaState =
+          "voice_confidence" in prof
+            ? {
+                stage:
+                  !prof.resume_uploaded
+                    ? "idle"
+                    : (prof.writing_sample_count as number) === 0
+                      ? "building"
+                      : (prof.writing_sample_count as number) === 1
+                        ? "good"
+                        : "strong",
+                voiceConfidence: Number(prof.voice_confidence ?? 0),
+                writingSampleCount: Number(prof.writing_sample_count ?? 0),
+                resumeUploaded: !!prof.resume_uploaded,
+                resumeOnly: !!prof.resume_only,
+                voiceCardStatus: (prof.voice_card_status as WriteDnaState["voiceCardStatus"]) ?? "locked",
+                celebratedStrong: !!prof.celebrated_strong,
+              }
+            : computeWriteDna({
+                resumeUploaded: !!data.resume,
+                writingSampleCount: Math.min(2, data.samplesCount),
+              });
+        return <WriteDnaCard writeDna={dna} />;
+      })()}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-6 lg:col-span-2">

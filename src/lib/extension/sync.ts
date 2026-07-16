@@ -144,17 +144,38 @@ export async function hydrateFromBackend(): Promise<AplyerState | null> {
   const current = await storage.getState();
   const patch: Partial<AplyerState> = {};
 
-  const p = profileRes.data;
+  const p = profileRes.data as (Record<string, unknown> & { [k: string]: unknown }) | null;
   if (p) {
     patch.profile = {
-      firstName: p.first_name ?? "",
-      lastName: p.last_name ?? "",
-      email: p.email ?? u.user.email ?? "",
-      phone: p.phone ?? "",
-      linkedin: p.linkedin ?? "",
-      portfolio: p.portfolio ?? "",
-      location: p.location ?? "",
+      firstName: (p.first_name as string) ?? "",
+      lastName: (p.last_name as string) ?? "",
+      email: (p.email as string) ?? u.user.email ?? "",
+      phone: (p.phone as string) ?? "",
+      linkedin: (p.linkedin as string) ?? "",
+      portfolio: (p.portfolio as string) ?? "",
+      location: (p.location as string) ?? "",
     };
+    // Hydrate WriteDNA columns if present.
+    if ("voice_confidence" in p) {
+      const stage =
+        !p.resume_uploaded
+          ? "idle"
+          : (p.writing_sample_count as number) === 0
+            ? "building"
+            : (p.writing_sample_count as number) === 1
+              ? "good"
+              : "strong";
+      patch.writeDna = {
+        ...current.writeDna,
+        stage: stage as typeof current.writeDna.stage,
+        voiceConfidence: Number(p.voice_confidence ?? 0),
+        writingSampleCount: Number(p.writing_sample_count ?? 0),
+        resumeUploaded: !!p.resume_uploaded,
+        resumeOnly: !!p.resume_only,
+        voiceCardStatus: (p.voice_card_status as typeof current.writeDna.voiceCardStatus) ?? "locked",
+        celebratedStrong: !!p.celebrated_strong,
+      };
+    }
   }
 
   const r = resumeRes.data as

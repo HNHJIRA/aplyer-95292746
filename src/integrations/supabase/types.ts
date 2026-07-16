@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          celebrated_strong: boolean
           created_at: string
           email: string | null
           first_name: string | null
@@ -25,10 +26,16 @@ export type Database = {
           location: string | null
           phone: string | null
           portfolio: string | null
+          resume_only: boolean
+          resume_uploaded: boolean
           updated_at: string
+          voice_card_status: string
+          voice_confidence: number
           website: string | null
+          writing_sample_count: number
         }
         Insert: {
+          celebrated_strong?: boolean
           created_at?: string
           email?: string | null
           first_name?: string | null
@@ -38,10 +45,16 @@ export type Database = {
           location?: string | null
           phone?: string | null
           portfolio?: string | null
+          resume_only?: boolean
+          resume_uploaded?: boolean
           updated_at?: string
+          voice_card_status?: string
+          voice_confidence?: number
           website?: string | null
+          writing_sample_count?: number
         }
         Update: {
+          celebrated_strong?: boolean
           created_at?: string
           email?: string | null
           first_name?: string | null
@@ -51,8 +64,13 @@ export type Database = {
           location?: string | null
           phone?: string | null
           portfolio?: string | null
+          resume_only?: boolean
+          resume_uploaded?: boolean
           updated_at?: string
+          voice_card_status?: string
+          voice_confidence?: number
           website?: string | null
+          writing_sample_count?: number
         }
         Relationships: []
       }
@@ -255,7 +273,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      recalc_writedna: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

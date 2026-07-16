@@ -17,6 +17,8 @@ import { ResumeUpload } from "./screens/ResumeUpload";
 import { ResumeAnalysis } from "./screens/ResumeAnalysis";
 import { Profile } from "./screens/Profile";
 import { WritingSamples } from "./screens/WritingSamples";
+import { WriteDnaProgress } from "./screens/WriteDnaProgress";
+import { VoiceCard } from "./screens/VoiceCard";
 import { Success } from "./screens/Success";
 import { Dashboard } from "./screens/Dashboard";
 
@@ -24,8 +26,10 @@ const FLOW: OnboardingStep[] = [
   "welcome",
   "resume_upload",
   "resume_analysis",
-  "profile",
+  "writedna_progress",
   "writing_samples",
+  "voice_card",
+  "profile",
   "success",
   "done",
 ];
@@ -144,10 +148,21 @@ export function PopupApp() {
       return <ResumeUpload onNext={next("resume_upload")} onBack={back("resume_upload")} />;
     case "resume_analysis":
       return <ResumeAnalysis onNext={next("resume_analysis")} onBack={back("resume_analysis")} />;
-    case "profile":
-      return <Profile onNext={next("profile")} onBack={back("profile")} />;
+    case "writedna_progress":
+      return (
+        <WriteDnaProgress
+          onNext={() => goTo("profile")}
+          onBack={back("writedna_progress")}
+          onAddSample={() => goTo("writing_samples")}
+          onCelebrate={() => goTo("voice_card")}
+        />
+      );
     case "writing_samples":
-      return <WritingSamples onNext={next("writing_samples")} onBack={back("writing_samples")} />;
+      return <WritingSamples onNext={() => goTo("writedna_progress")} onBack={() => goTo("writedna_progress")} />;
+    case "voice_card":
+      return <VoiceCard onDone={() => goTo("profile")} />;
+    case "profile":
+      return <Profile onNext={() => goTo("success")} onBack={() => goTo("writedna_progress")} />;
     case "success":
       return <Success onDone={() => goTo("done")} />;
     case "done":

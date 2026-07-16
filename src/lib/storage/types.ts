@@ -34,9 +34,13 @@ export interface Profile {
 
 export type WritingSampleType =
   | "cover_letter"
+  | "linkedin_post"
   | "professional_email"
-  | "personal_bio"
-  | "career_summary";
+  | "blog"
+  | "essay"
+  | "free_text"
+  | "career_summary"
+  | "other";
 
 export interface WritingSample {
   id: string;
@@ -65,8 +69,10 @@ export type OnboardingStep =
   | "welcome"
   | "resume_upload"
   | "resume_analysis"
-  | "profile"
+  | "writedna_progress"
   | "writing_samples"
+  | "voice_card"
+  | "profile"
   | "success"
   | "done";
 
@@ -78,6 +84,19 @@ export interface OnboardingStatus {
   skippedWritingSamples?: boolean;
 }
 
+export type WriteDnaStage = "idle" | "building" | "good" | "strong";
+export type VoiceCardStatus = "locked" | "unlocking" | "unlocked";
+
+export interface WriteDnaState {
+  stage: WriteDnaStage;
+  voiceConfidence: number;
+  resumeUploaded: boolean;
+  writingSampleCount: number;
+  resumeOnly: boolean;
+  voiceCardStatus: VoiceCardStatus;
+  celebratedStrong: boolean;
+}
+
 export interface AplyerState {
   resumeText: string | null;
   resumeMetadata: ResumeMetadata | null;
@@ -87,8 +106,19 @@ export interface AplyerState {
   subscriptionStatus: SubscriptionStatus;
   settings: Settings;
   onboardingStatus: OnboardingStatus;
+  writeDna: WriteDnaState;
   lastUpdated: string | null;
 }
+
+export const DEFAULT_WRITEDNA: WriteDnaState = {
+  stage: "idle",
+  voiceConfidence: 0,
+  resumeUploaded: false,
+  writingSampleCount: 0,
+  resumeOnly: false,
+  voiceCardStatus: "locked",
+  celebratedStrong: false,
+};
 
 export const DEFAULT_STATE: AplyerState = {
   resumeText: null,
@@ -104,5 +134,6 @@ export const DEFAULT_STATE: AplyerState = {
     telemetry: false,
   },
   onboardingStatus: { completed: false, currentStep: "welcome" },
+  writeDna: DEFAULT_WRITEDNA,
   lastUpdated: null,
 };
