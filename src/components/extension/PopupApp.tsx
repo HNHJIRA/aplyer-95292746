@@ -42,7 +42,9 @@ export function PopupApp() {
   const [session, setSession] = useState<ExtensionSession | null>(null);
   const [sessionChecked, setSessionChecked] = useState(!inExtension);
   const [checking, setChecking] = useState(false);
-  const { state, loaded, update, reload } = useAplyerStore();
+  const [showSettings, setShowSettings] = useState(false);
+  const { state, loaded, update, reload, reset } = useAplyerStore();
+
 
   const hydrateOnce = useCallback(async () => {
     try {
