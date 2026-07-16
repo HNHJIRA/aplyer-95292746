@@ -117,10 +117,15 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
                 className="mt-2 w-full resize-none rounded-lg border border-border bg-field p-3 text-[12px] leading-relaxed placeholder:text-dim focus:border-brand-green/60 focus:outline-none focus:ring-2 focus:ring-brand-green/20"
               />
               <div className="mt-1.5 flex items-center justify-between text-[10px] text-muted-foreground">
-                <span>{content.length.toLocaleString()} / {MAX.toLocaleString()} chars</span>
+                <span>
+                  {content.length.toLocaleString()} / {MAX.toLocaleString()} chars · {wordCount} words ·{" "}
+                  <span className={qualifies ? "text-brand-green" : "text-[#E5B73A]"}>
+                    {qualifies ? "Qualifies for Write DNA" : `Need ${MIN_CHARS}+ chars & ${MIN_WORDS}+ words`}
+                  </span>
+                </span>
                 <div className="flex gap-2">
                   <Button size="sm" variant="ghost" onClick={() => setAdding(false)}>Cancel</Button>
-                  <Button size="sm" onClick={save} disabled={!content.trim()}>Save Sample</Button>
+                  <Button size="sm" onClick={save} disabled={!qualifies}>Save Sample</Button>
                 </div>
               </div>
             </motion.div>
