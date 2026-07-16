@@ -102,12 +102,24 @@ export function PopupApp() {
     return () => c?.storage?.onChanged?.removeListener(onChanged);
   }, [refreshSession, hydrateOnce]);
 
-  void handleSignOut;
   async function handleSignOut() {
-    if (inExtension) await signOutExtension();
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } catch (e) {
+      console.warn("[aplyer] supabase signOut failed", e);
+    }
+    try {
+      if (inExtension) await signOutExtension();
+      await clearExtensionLocal();
+    } catch (e) {
+      console.warn("[aplyer] clear extension state failed", e);
+    }
+    await reset();
+    setShowSettings(false);
     setSession(null);
+    setSessionChecked(true);
   }
+
 
   async function goTo(step: OnboardingStep) {
     await update({
