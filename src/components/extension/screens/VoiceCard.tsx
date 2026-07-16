@@ -6,6 +6,7 @@ import { useAplyerStore } from "@/lib/storage/useAplyerStore";
 import { Confetti } from "@/components/writedna/Confetti";
 import { ProgressRing } from "@/components/writedna/ProgressRing";
 import { stageColor } from "@/lib/writedna";
+import { supabase } from "@/integrations/supabase/client";
 
 export function VoiceCard({ onDone }: { onDone: () => void }) {
   const { state, update } = useAplyerStore();
@@ -13,6 +14,15 @@ export function VoiceCard({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     if (!state.writeDna.celebratedStrong) {
       void update({ writeDna: { ...state.writeDna, celebratedStrong: true } });
+      void (async () => {
+        const { data: u } = await supabase.auth.getUser();
+        if (u.user) {
+          await supabase
+            .from("profiles")
+            .update({ celebrated_strong: true })
+            .eq("id", u.user.id);
+        }
+      })();
     }
      
   }, []);
@@ -31,13 +41,13 @@ export function VoiceCard({ onDone }: { onDone: () => void }) {
       </motion.div>
 
       <div className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-brand-green/25 bg-brand-green/10 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.18em] text-brand-green">
-        <Sparkles className="h-2.5 w-2.5" /> Voice Card unlocked
+        <Sparkles className="h-2.5 w-2.5" /> Voice Card Ready
       </div>
       <h2 className="mt-3 text-[22px] font-black tracking-tight">
-        Your Write DNA is Strong
+        Voice Card Ready
       </h2>
-      <p className="mt-1 max-w-[280px] text-[12px] text-muted-foreground">
-        Aplyer now has enough of your voice to personalize applications while sounding like you.
+      <p className="mt-1 max-w-[300px] text-[12px] text-muted-foreground">
+        You have provided enough writing to generate your Voice Card in the next phase.
       </p>
 
       <Button className="mt-6 w-full" onClick={onDone}>
