@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+
 import { ArrowLeft, Check, Crown, Lock, Shield, LifeBuoy, FileText, PenLine, User as UserIcon, Sparkles, LogOut, RotateCcw } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
