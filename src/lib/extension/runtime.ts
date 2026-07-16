@@ -42,6 +42,20 @@ export async function signOutExtension(): Promise<void> {
   });
 }
 
+export async function clearExtensionLocal(): Promise<void> {
+  const c = chromeApi();
+  if (!c) {
+    try {
+      if (typeof localStorage !== "undefined") localStorage.clear();
+    } catch { /* noop */ }
+    return;
+  }
+  return new Promise((resolve) => {
+    c.runtime.sendMessage({ type: "APLYER_CLEAR_ALL" }, () => resolve());
+  });
+}
+
+
 export function openAuthInTab(webUrl: string) {
   const c = chromeApi();
   const id = c?.runtime?.id;
