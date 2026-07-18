@@ -187,6 +187,13 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
           <Stat label="Status" value={samples.length > 0 ? "Saved" : "Empty"} small />
         </div>
 
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".txt,.md,.pdf,.doc,.docx"
+          className="hidden"
+          onChange={(e) => void handleUpload(e)}
+        />
         <AnimatePresence mode="wait">
           {adding ? (
             <motion.div
