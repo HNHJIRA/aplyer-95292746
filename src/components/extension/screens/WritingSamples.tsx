@@ -85,7 +85,7 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
       type,
       title: title || TYPES.find((t) => t.id === type)!.label,
       content: content.slice(0, MAX),
-      wordCount,
+      wordCount: wordCount,
       createdAt: new Date().toISOString(),
     };
     try {
@@ -100,12 +100,21 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
             createdAt: persisted.created_at ?? optimistic.createdAt,
           }
         : optimistic;
-      await update({ writingSamples: [...samples, finalSample] });
-      await hydrateFromBackend();
-      await reload();
-      await clearDraft();
-      // Return to WriteDNA progress screen so the user sees updated voice %.
+      await update({
+        writingSamples: [...samples, finalSample],
+        writingSampleDraft: null,
+      });
+      setAdding(false);
+      setTitle("");
+      setContent("");
+      setType("cover_letter");
+      // Navigate BEFORE the slow hydrate so the user sees the WriteDNA
+      // progress screen immediately after saving.
       onNext();
+      // Fire-and-forget backend hydrate to refresh voice %/qualifying count.
+      void hydrateFromBackend()
+        .then(() => reload())
+        .catch((e) => console.warn("[aplyer] hydrate after save failed", e));
     } catch (e) {
       console.warn("[aplyer] failed to save writing sample", e);
     } finally {
