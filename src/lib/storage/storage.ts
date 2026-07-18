@@ -53,6 +53,15 @@ async function rawRemove(key: string): Promise<void> {
   localStorage.removeItem(key);
 }
 
+type Listener = (state: AplyerState) => void;
+const listeners = new Set<Listener>();
+
+function emit(state: AplyerState) {
+  for (const l of listeners) {
+    try { l(state); } catch { /* ignore */ }
+  }
+}
+
 export const storage = {
   async getState(): Promise<AplyerState> {
     const data = await rawGet<AplyerState>(NAMESPACE);
@@ -60,15 +69,38 @@ export const storage = {
     return { ...DEFAULT_STATE, ...data, settings: { ...DEFAULT_STATE.settings, ...data.settings } };
   },
   async setState(state: AplyerState): Promise<void> {
-    await rawSet(NAMESPACE, { ...state, lastUpdated: new Date().toISOString() });
+    const next = { ...state, lastUpdated: new Date().toISOString() };
+    await rawSet(NAMESPACE, next);
+    emit(next);
   },
   async patch(partial: Partial<AplyerState>): Promise<AplyerState> {
     const current = await this.getState();
     const next = { ...current, ...partial, lastUpdated: new Date().toISOString() };
     await rawSet(NAMESPACE, next);
+    emit(next);
     return next;
   },
   async reset(): Promise<void> {
     await rawRemove(NAMESPACE);
+    emit(DEFAULT_STATE);
+  },
+  subscribe(l: Listener): () => void {
+    listeners.add(l);
+    return () => { listeners.delete(l); };
   },
 };
+
+// Cross-context sync: chrome.storage.onChanged fires across all extension
+// views. Bridge it so every useAplyerStore() instance in the same document
+// stays in sync too (fixes stale PopupApp state when a child screen updates).
+if (typeof globalThis !== "undefined") {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const c = (globalThis as any).chrome;
+  c?.storage?.onChanged?.addListener?.((changes: Record<string, { newValue?: unknown }>, area: string) => {
+    if (area !== "local") return;
+    const change = changes[NAMESPACE];
+    if (!change || !change.newValue) return;
+    const nv = change.newValue as Partial<AplyerState>;
+    emit({ ...DEFAULT_STATE, ...nv, settings: { ...DEFAULT_STATE.settings, ...(nv.settings ?? {}) } });
+  });
+}
