@@ -21,8 +21,12 @@ export function useAplyerStore() {
         setLoaded(true);
       }
     });
+    const unsub = storage.subscribe((s) => {
+      if (alive) setState(s);
+    });
     return () => {
       alive = false;
+      unsub();
     };
   }, []);
 
