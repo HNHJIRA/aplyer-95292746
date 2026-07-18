@@ -175,6 +175,7 @@ export const DEFAULT_STATE: AplyerState = {
   resumeScore: null,
   profile: null,
   writingSamples: [],
+  writingSampleDraft: null,
   subscriptionStatus: { tier: "free" },
   settings: {
     aiProvider: "claude",
