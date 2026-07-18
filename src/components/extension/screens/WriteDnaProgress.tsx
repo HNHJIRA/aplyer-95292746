@@ -24,6 +24,7 @@ export function WriteDnaProgress({ onNext, onBack, onAddSample, onCelebrate }: P
   const resumeUploaded = !!state.resumeMetadata;
   const dna = computeWriteDna({
     resumeUploaded,
+    qualifyingProseCount: qualifying,
     writingSampleCount: qualifying,
     resumeOnly: state.writeDna.resumeOnly,
     celebratedStrong: state.writeDna.celebratedStrong,
