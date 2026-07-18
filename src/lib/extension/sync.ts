@@ -246,31 +246,35 @@ export async function hydrateFromBackend(): Promise<AplyerState | null> {
 
   // Canonical routing: rebuild onboarding step from backend state, not from
   // whatever screen was cached locally (which may belong to a previous user).
+  // NOTE: The profile step was removed — sign-up already collects first/last
+  // name — so we route straight to `success`/`done` after the WriteDNA flow.
   const hasResume = !!patch.resumeMetadata;
-  const hasProfileData = !!(patch.profile?.firstName || patch.profile?.lastName);
   const dna = patch.writeDna ?? current.writeDna;
   const vcStatus = dna.voiceCardStatus;
   const qualifying = dna.qualifyingProseCount ?? 0;
   const resumeOnly = !!dna.resumeOnly;
   const abPending = vcStatus === "generated" && !resumeOnly && !dna.abDemoCompleted;
-  const onboardingComplete = hasResume && hasProfileData && (resumeOnly || dna.abDemoCompleted || vcStatus === "generated");
+  const onboardingComplete =
+    hasResume && (resumeOnly || dna.abDemoCompleted || vcStatus === "generated");
 
   let step: AplyerState["onboardingStatus"]["currentStep"];
   if (!hasResume) step = "resume_upload";
   else if (vcStatus === "generating" || vcStatus === "failed" || vcStatus === "stale") step = "voice_card";
   else if (abPending) step = "voice_card"; // AbDemo is rendered from voice_card when abPending
   else if (qualifying >= 2 && vcStatus === "eligible") step = "voice_card";
-  else if (onboardingComplete) step = "done";
-  else if (!hasProfileData && (resumeOnly || dna.abDemoCompleted || vcStatus === "generated")) step = "profile";
-  else step = "writedna_progress";
+  else if (onboardingComplete) {
+    // First time landing here → celebrate; returning users go straight to Dashboard.
+    step = current.onboardingStatus.completedAt ? "done" : "success";
+  } else step = "writedna_progress";
 
   patch.onboardingStatus = {
-    completed: onboardingComplete && hasProfileData,
+    completed: onboardingComplete && step === "done",
     currentStep: step,
     startedAt: current.onboardingStatus.startedAt ?? new Date().toISOString(),
-    completedAt: onboardingComplete && hasProfileData
-      ? (current.onboardingStatus.completedAt ?? new Date().toISOString())
-      : undefined,
+    completedAt:
+      onboardingComplete && step === "done"
+        ? (current.onboardingStatus.completedAt ?? new Date().toISOString())
+        : current.onboardingStatus.completedAt,
   };
 
   return await storage.patch(patch);
