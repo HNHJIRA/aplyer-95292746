@@ -113,9 +113,12 @@ function DashboardHome() {
                         : "strong",
                 voiceConfidence: Number(prof.voice_confidence ?? 0),
                 writingSampleCount: Number(prof.writing_sample_count ?? 0),
+                qualifyingProseCount: Number(prof.qualifying_prose_count ?? prof.writing_sample_count ?? 0),
                 resumeUploaded: !!prof.resume_uploaded,
                 resumeOnly: !!prof.resume_only,
                 voiceCardStatus: (prof.voice_card_status as WriteDnaState["voiceCardStatus"]) ?? "locked",
+                voiceCard: (prof.voice_card_data as WriteDnaState["voiceCard"]) ?? null,
+                voiceCardGeneratedAt: (prof.voice_card_generated_at as string | null) ?? null,
                 celebratedStrong: !!prof.celebrated_strong,
               }
             : computeWriteDna({
