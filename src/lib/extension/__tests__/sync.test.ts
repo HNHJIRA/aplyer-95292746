@@ -356,7 +356,7 @@ describe("canonical routing derivation", () => {
     expect(s?.onboardingStatus.currentStep).toBe("voice_card");
   });
 
-  it("generated + A/B complete + profile empty -> profile", async () => {
+  it("generated + A/B complete + profile empty -> success (profile step retired)", async () => {
     setResume();
     setProfile({
       resume_uploaded: true,
@@ -365,10 +365,10 @@ describe("canonical routing derivation", () => {
       ab_demo_completed: true,
     });
     const s = await hydrateFromBackend();
-    expect(s?.onboardingStatus.currentStep).toBe("profile");
+    expect(s?.onboardingStatus.currentStep).toBe("success");
   });
 
-  it("generated + A/B complete + profile filled -> done", async () => {
+  it("generated + A/B complete + profile filled -> success (first hydration)", async () => {
     setResume();
     setProfile({
       first_name: "Alice",
@@ -378,10 +378,10 @@ describe("canonical routing derivation", () => {
       ab_demo_completed: true,
     });
     const s = await hydrateFromBackend();
-    expect(s?.onboardingStatus.currentStep).toBe("done");
+    expect(s?.onboardingStatus.currentStep).toBe("success");
   });
 
-  it("resume-only path (no samples, resume_only=true) -> profile", async () => {
+  it("resume-only path routes to success (no profile step)", async () => {
     setResume();
     setProfile({
       resume_uploaded: true,
@@ -390,6 +390,6 @@ describe("canonical routing derivation", () => {
       voice_card_status: "locked",
     });
     const s = await hydrateFromBackend();
-    expect(s?.onboardingStatus.currentStep).toBe("profile");
+    expect(s?.onboardingStatus.currentStep).toBe("success");
   });
 });

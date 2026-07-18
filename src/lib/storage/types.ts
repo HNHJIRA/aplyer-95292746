@@ -127,6 +127,14 @@ export interface WriteDnaState {
   preferredVariantId: string | null;
 }
 
+export interface WritingSampleDraft {
+  type: WritingSampleType;
+  title: string;
+  content: string;
+  isOpen: boolean;
+  updatedAt: string;
+}
+
 export interface AplyerState {
   activeUserId: string | null;
   resumeText: string | null;
@@ -134,6 +142,7 @@ export interface AplyerState {
   resumeScore: ResumeScore | null;
   profile: Profile | null;
   writingSamples: WritingSample[];
+  writingSampleDraft: WritingSampleDraft | null;
   subscriptionStatus: SubscriptionStatus;
   settings: Settings;
   onboardingStatus: OnboardingStatus;
@@ -166,6 +175,7 @@ export const DEFAULT_STATE: AplyerState = {
   resumeScore: null,
   profile: null,
   writingSamples: [],
+  writingSampleDraft: null,
   subscriptionStatus: { tier: "free" },
   settings: {
     aiProvider: "claude",

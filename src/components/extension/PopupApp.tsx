@@ -18,7 +18,7 @@ import { Settings } from "./screens/Settings";
 import { Welcome } from "./screens/Welcome";
 import { ResumeUpload } from "./screens/ResumeUpload";
 import { ResumeAnalysis } from "./screens/ResumeAnalysis";
-import { Profile } from "./screens/Profile";
+
 import { WritingSamples } from "./screens/WritingSamples";
 import { WriteDnaProgress } from "./screens/WriteDnaProgress";
 import { VoiceCard } from "./screens/VoiceCard";
@@ -33,7 +33,6 @@ const FLOW: OnboardingStep[] = [
   "writedna_progress",
   "writing_samples",
   "voice_card",
-  "profile",
   "success",
   "done",
 ];
@@ -202,7 +201,7 @@ export function PopupApp() {
     case "writedna_progress":
       return (
         <WriteDnaProgress
-          onNext={() => goTo(state.writeDna.resumeOnly ? "profile" : "voice_card")}
+          onNext={() => goTo(state.writeDna.resumeOnly ? "success" : "voice_card")}
           onBack={back("writedna_progress")}
           onAddSample={() => goTo("writing_samples")}
           onCelebrate={() => goTo("voice_card")}
@@ -212,22 +211,24 @@ export function PopupApp() {
       return <WritingSamples onNext={() => goTo("writedna_progress")} onBack={() => goTo("writedna_progress")} />;
     case "voice_card":
       if (showAbDemo && state.writeDna.voiceCardStatus === "generated") {
-        return <AbDemo onDone={() => { void hydrateOnce().then(() => goTo("profile")); }} />;
+        return <AbDemo onDone={() => { void hydrateOnce().then(() => goTo("success")); }} />;
       }
       return (
         <VoiceCard
           onDone={() => {
-            // Refetch canonical state; PopupApp will re-route to A/B or profile.
+            // Refetch canonical state; PopupApp will re-route to A/B or success.
             void hydrateOnce().then(() => {
-              if (state.writeDna.resumeOnly) void goTo("profile");
+              if (state.writeDna.resumeOnly) void goTo("success");
               // else: showAbDemo will flip true on next render and render AbDemo.
             });
           }}
-          onSkipToProfile={() => void goTo("profile")}
+          onSkipToProfile={() => void goTo("success")}
         />
       );
     case "profile":
-      return <Profile onNext={() => goTo("success")} onBack={() => goTo("writedna_progress")} />;
+      // Profile step retired — sign-up already collects basic info.
+      // Route legacy state straight to success/dashboard.
+      return <Success onDone={() => goTo("done")} />;
     case "success":
       return <Success onDone={() => goTo("done")} />;
     case "done":
@@ -235,7 +236,7 @@ export function PopupApp() {
       return (
         <Dashboard
           onResume={() => { void goTo("resume_upload"); }}
-          onProfile={() => { void goTo("profile"); }}
+          onProfile={() => { void goTo("done"); }}
           onSettings={() => setShowSettings(true)}
         />
       );
