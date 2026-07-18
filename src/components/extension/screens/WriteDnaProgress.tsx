@@ -99,7 +99,7 @@ export function WriteDnaProgress({ onNext, onBack, onAddSample, onCelebrate }: P
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" /> Back
         </Button>
-        {dna.voiceCardStatus === "unlocked" ? (
+        {dna.qualifyingProseCount >= 2 || dna.voiceCardStatus === "generated" ? (
           <Button className="flex-1" onClick={onNext}>
             Continue <ArrowRight className="h-4 w-4" />
           </Button>
