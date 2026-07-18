@@ -36,6 +36,8 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
   const [title, setTitle] = useState<string>(draft?.title ?? "");
   const [content, setContent] = useState<string>(draft?.content ?? "");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const hydratedRef = useRef(false);
 
