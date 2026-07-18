@@ -41,9 +41,9 @@ export function WriteDnaProgress({ onNext, onBack, onAddSample, onCelebrate }: P
       stage: dna.stage,
     };
     void update({ writeDna: { ...state.writeDna, ...nextPatch } });
-    if (dna.stage === "strong" && !state.writeDna.celebratedStrong) {
-      onCelebrate();
-    }
+    // Auto-transition disabled: user clicks Continue to advance to Voice Card
+    // generation, so we never bypass the review step.
+    void onCelebrate; // referenced to keep prop stable
      
   }, [dna.voiceConfidence, dna.stage]);
 
@@ -99,7 +99,7 @@ export function WriteDnaProgress({ onNext, onBack, onAddSample, onCelebrate }: P
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" /> Back
         </Button>
-        {dna.voiceCardStatus === "unlocked" ? (
+        {dna.qualifyingProseCount >= 2 || dna.voiceCardStatus === "generated" ? (
           <Button className="flex-1" onClick={onNext}>
             Continue <ArrowRight className="h-4 w-4" />
           </Button>

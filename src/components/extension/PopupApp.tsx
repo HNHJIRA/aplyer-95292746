@@ -22,6 +22,7 @@ import { Profile } from "./screens/Profile";
 import { WritingSamples } from "./screens/WritingSamples";
 import { WriteDnaProgress } from "./screens/WriteDnaProgress";
 import { VoiceCard } from "./screens/VoiceCard";
+import { AbDemo } from "./screens/AbDemo";
 import { Success } from "./screens/Success";
 import { Dashboard } from "./screens/Dashboard";
 
@@ -43,6 +44,7 @@ export function PopupApp() {
   const [sessionChecked, setSessionChecked] = useState(!inExtension);
   const [checking, setChecking] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAbDemo, setShowAbDemo] = useState(false);
   const { state, loaded, update, reload, reset } = useAplyerStore();
 
 
@@ -172,7 +174,7 @@ export function PopupApp() {
     case "writedna_progress":
       return (
         <WriteDnaProgress
-          onNext={() => goTo("profile")}
+          onNext={() => goTo(state.writeDna.resumeOnly ? "profile" : "voice_card")}
           onBack={back("writedna_progress")}
           onAddSample={() => goTo("writing_samples")}
           onCelebrate={() => goTo("voice_card")}
@@ -181,7 +183,18 @@ export function PopupApp() {
     case "writing_samples":
       return <WritingSamples onNext={() => goTo("writedna_progress")} onBack={() => goTo("writedna_progress")} />;
     case "voice_card":
-      return <VoiceCard onDone={() => goTo("profile")} />;
+      if (showAbDemo) {
+        return <AbDemo onDone={() => { setShowAbDemo(false); void goTo("profile"); }} />;
+      }
+      return (
+        <VoiceCard
+          onDone={() => {
+            if (state.writeDna.resumeOnly) void goTo("profile");
+            else setShowAbDemo(true);
+          }}
+          onSkipToProfile={() => void goTo("profile")}
+        />
+      );
     case "profile":
       return <Profile onNext={() => goTo("success")} onBack={() => goTo("writedna_progress")} />;
     case "success":
