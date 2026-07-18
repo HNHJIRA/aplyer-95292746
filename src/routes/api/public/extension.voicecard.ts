@@ -420,16 +420,19 @@ async function callClaudeText(system: string, user: string, maxTokens: number): 
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
-  const res = await fetch(ANTHROPIC_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] }),
-    signal: controller.signal,
-  });
-  clearTimeout(timeout);
-  if (!res.ok) throw new Error(`Claude ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
-  const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
-  return data.content?.find((c) => c.type === "text")?.text?.trim() ?? "";
+  try {
+    const res = await fetch(ANTHROPIC_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`Claude ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+    const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
+    return data.content?.find((c) => c.type === "text")?.text?.trim() ?? "";
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function validateVoiceCard(d: unknown): VoiceCardData {
