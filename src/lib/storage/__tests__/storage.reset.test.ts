@@ -14,10 +14,17 @@ describe("storage reset / logout hygiene", () => {
     expect(s.activeUserId).toBeNull();
   });
 
-  it("reset() clears aplyer.v1 (logout)", async () => {
+  it("reset() clears aplyer.v1 (logout) including writingSampleDraft", async () => {
     await storage.patch({
       activeUserId: "user-a",
       resumeText: "hello",
+      writingSampleDraft: {
+        type: "cover_letter",
+        title: "Draft A",
+        content: "unsaved",
+        isOpen: true,
+        updatedAt: new Date().toISOString(),
+      },
       profile: {
         firstName: "A",
         lastName: "A",
@@ -30,12 +37,13 @@ describe("storage reset / logout hygiene", () => {
     });
     let s = await storage.getState();
     expect(s.activeUserId).toBe("user-a");
-    expect(s.resumeText).toBe("hello");
+    expect(s.writingSampleDraft?.title).toBe("Draft A");
 
     await storage.reset();
     s = await storage.getState();
     expect(s).toEqual(DEFAULT_STATE);
     expect(s.activeUserId).toBeNull();
+    expect(s.writingSampleDraft).toBeNull();
     expect(s.resumeText).toBeNull();
     expect(s.profile).toBeNull();
     expect(s.writingSamples).toEqual([]);
