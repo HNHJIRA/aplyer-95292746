@@ -23,13 +23,25 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Install dependencies
+        run: npx yarn install
+
       - name: 🗜️ Rebuild extension zip (fresh, uncorrupted)
         run: |
-          sudo apt-get update && sudo apt-get install -y zip
-          rm -f public/aplyer-extension.zip extension/aplyer-extension.zip
+          sudo apt-get update && sudo apt-get install -y zip unzip
+          npx yarn run build:extension
+          if grep -q "Profile Information\|Used to autofill applications" extension/popup.js; then
+            echo "Stale extension popup bundle still contains removed profile onboarding screen" >&2
+            exit 1
+          fi
+          rm -f public/aplyer-extension.zip public/aplyer-extension.zip.b64 extension/aplyer-extension.zip extension/aplyer-extension.zip.b64
           cd extension && zip -r ../public/aplyer-extension.zip . \
-            -x "aplyer-extension.zip" "extension-src/*" "extension-src"
+            -x "aplyer-extension.zip" "aplyer-extension.zip.b64" "*.zip" "*.zip.b64" "extension-src/*" "extension-src"
           cd .. && ls -la public/aplyer-extension.zip
+          if unzip -p public/aplyer-extension.zip popup.js | grep -q "Profile Information\|Used to autofill applications"; then
+            echo "Packaged extension zip contains removed profile onboarding screen" >&2
+            exit 1
+          fi
           unzip -t public/aplyer-extension.zip | tail -5
           base64 -w 0 public/aplyer-extension.zip > public/aplyer-extension.zip.b64
           base64 -d public/aplyer-extension.zip.b64 > /tmp/aplyer-extension-from-b64.zip
@@ -37,7 +49,6 @@ jobs:
 
       - name: 🔨 Build Project
         run: |
-          npx yarn install
           npx yarn run build
 
 
