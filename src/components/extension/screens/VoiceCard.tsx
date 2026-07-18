@@ -4,6 +4,11 @@ import { AlertTriangle, ArrowRight, Loader2, RefreshCw, Sparkles } from "lucide-
 import { Button } from "../ui/Button";
 import { supabase } from "@/integrations/supabase/client";
 import { hydrateFromBackend } from "@/lib/extension/sync";
+import {
+  getVoiceCardStateApi,
+  retryVoiceCardApi,
+  startVoiceCardGenerationApi,
+} from "@/lib/extension/voicecard-api";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
 
 type Status =
@@ -38,7 +43,7 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
   const { state } = useAplyerStore();
 
   const refresh = useCallback(async () => {
-    const p = (await getVoiceCardStateForExtension()) as {
+    const p = (await getVoiceCardStateApi()) as {
       voice_card_status: Status;
       voice_card_data: VoiceCardData | null;
       voice_card_error: string | null;
@@ -55,7 +60,7 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
     setBusy(true);
     setStatus("generating");
     try {
-      const res = (await startVoiceCardGenerationForExtension()) as
+      const res = (await startVoiceCardGenerationApi()) as
         | { status: "generated"; voice_card: VoiceCardData }
         | { status: "in_progress" }
         | { status: "failed"; error?: string };
@@ -104,7 +109,7 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
     setBusy(true);
     setError(null);
     try {
-      await retryVoiceCardForExtension();
+      await retryVoiceCardApi();
       startedRef.current = false;
       await beginGeneration();
     } finally {
@@ -200,102 +205,6 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
       <p className="mt-3 text-[13px] text-muted-foreground">Preparing your Voice Card…</p>
     </Center>
   );
-}
-
-async function getCurrentUserId() {
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) throw new Error("Please sign in again.");
-  return data.user.id;
-}
-
-async function getVoiceCardStateForExtension() {
-  const userId = await getCurrentUserId();
-  const { data: p, error } = await supabase
-    .from("profiles")
-    .select("voice_card_status, voice_card_data, voice_card_error, voice_card_generation_started_at")
-    .eq("id", userId)
-    .maybeSingle();
-  if (error) throw error;
-
-  if (p?.voice_card_status === "generating" && p.voice_card_generation_started_at) {
-    const startedAt = new Date(p.voice_card_generation_started_at).getTime();
-    if (Date.now() - startedAt > 2 * 60 * 1000) {
-      await supabase
-        .from("profiles")
-        .update({
-          voice_card_status: "failed",
-          voice_card_error: "Generation timed out",
-          voice_card_generation_id: null,
-          voice_card_generation_started_at: null,
-        })
-        .eq("id", userId);
-      return { ...p, voice_card_status: "failed", voice_card_error: "Generation timed out" };
-    }
-  }
-  return p;
-}
-
-async function startVoiceCardGenerationForExtension() {
-  const userId = await getCurrentUserId();
-
-  await supabase.rpc("recalc_writedna", { _user_id: userId });
-
-  const { data: prof, error: profileError } = await supabase
-    .from("profiles")
-    .select("voice_card_status, voice_card_data, voice_card_source_hash")
-    .eq("id", userId)
-    .maybeSingle();
-  if (profileError) throw profileError;
-  if (!prof) throw new Error("Profile not found");
-
-  if (prof.voice_card_status === "generated" && prof.voice_card_data) {
-    return { status: "generated" as const, voice_card: prof.voice_card_data as unknown as VoiceCardData };
-  }
-
-  const { data: locked, error: lockErr } = await supabase
-    .from("profiles")
-    .update({
-      voice_card_status: "generating",
-      voice_card_generation_id: crypto.randomUUID(),
-      voice_card_generation_started_at: new Date().toISOString(),
-      voice_card_error: null,
-    })
-    .eq("id", userId)
-    .in("voice_card_status", ["eligible", "failed", "stale"])
-    .select("voice_card_status")
-    .maybeSingle();
-  if (lockErr) throw lockErr;
-  if (!locked) return { status: "in_progress" as const };
-
-  const { data: after, error: afterError } = await supabase
-    .from("profiles")
-    .select("voice_card_status, voice_card_data, voice_card_error")
-    .eq("id", userId)
-    .maybeSingle();
-  if (afterError) throw afterError;
-  if (after?.voice_card_status === "generated" && after.voice_card_data) {
-    return { status: "generated" as const, voice_card: after.voice_card_data as unknown as VoiceCardData };
-  }
-  if (after?.voice_card_status === "failed") {
-    return { status: "failed" as const, error: after.voice_card_error ?? "Generation failed" };
-  }
-  return { status: "in_progress" as const };
-}
-
-async function retryVoiceCardForExtension() {
-  const userId = await getCurrentUserId();
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      voice_card_status: "eligible",
-      voice_card_error: null,
-      voice_card_generation_id: null,
-      voice_card_generation_started_at: null,
-    })
-    .eq("id", userId)
-    .in("voice_card_status", ["failed", "stale"]);
-  if (error) throw error;
-  return { ok: true };
 }
 
 function Center({ children }: { children: React.ReactNode }) {

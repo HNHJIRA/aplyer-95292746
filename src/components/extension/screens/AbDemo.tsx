@@ -1,35 +1,32 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Loader2, Sparkles } from "lucide-react";
-import { useServerFn } from "@tanstack/react-start";
 import { Button } from "../ui/Button";
 import {
   AB_DEMO_GENERIC,
   AB_DEMO_QUESTION,
-  completeAbDemo,
-  generateAbDemo,
-} from "@/lib/voicecard.functions";
+  completeAbDemoApi,
+  generateAbDemoApi,
+} from "@/lib/extension/voicecard-api";
 
 export function AbDemo({ onDone }: { onDone: () => void }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [withVoice, setWithVoice] = useState<string>("");
   const [reveal, setReveal] = useState(false);
-  const gen = useServerFn(generateAbDemo);
-  const complete = useServerFn(completeAbDemo);
 
   const run = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const r = (await gen()) as { question: string; generic: string; withVoice: string };
+      const r = await generateAbDemoApi();
       setWithVoice(r.withVoice);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to generate demo");
     } finally {
       setLoading(false);
     }
-  }, [gen]);
+  }, []);
 
   useEffect(() => {
     void run();
@@ -37,7 +34,7 @@ export function AbDemo({ onDone }: { onDone: () => void }) {
 
   async function finish() {
     try {
-      await complete();
+      await completeAbDemoApi();
     } catch {
       /* non-blocking */
     }
