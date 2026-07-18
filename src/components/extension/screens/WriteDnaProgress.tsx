@@ -41,9 +41,9 @@ export function WriteDnaProgress({ onNext, onBack, onAddSample, onCelebrate }: P
       stage: dna.stage,
     };
     void update({ writeDna: { ...state.writeDna, ...nextPatch } });
-    if (dna.stage === "strong" && !state.writeDna.celebratedStrong) {
-      onCelebrate();
-    }
+    // Auto-transition disabled: user clicks Continue to advance to Voice Card
+    // generation, so we never bypass the review step.
+    void onCelebrate; // referenced to keep prop stable
      
   }, [dna.voiceConfidence, dna.stage]);
 
