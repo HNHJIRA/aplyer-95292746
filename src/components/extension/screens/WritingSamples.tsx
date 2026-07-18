@@ -214,6 +214,22 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
                 maxLength={80}
                 className="mt-3 h-9 w-full rounded-lg border border-border bg-field px-3 text-[12px] placeholder:text-dim focus:border-brand-green/60 focus:outline-none focus:ring-2 focus:ring-brand-green/20"
               />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".txt,.md,.pdf,.doc,.docx"
+                className="hidden"
+                onChange={(e) => void handleUpload(e)}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-field/50 px-3 py-2 text-[11px] text-muted-foreground hover:border-brand-green/50 hover:text-brand-green disabled:opacity-50"
+              >
+                {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                {uploading ? "Extracting…" : "Upload file (PDF, DOCX, TXT)"}
+              </button>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value.slice(0, MAX))}
