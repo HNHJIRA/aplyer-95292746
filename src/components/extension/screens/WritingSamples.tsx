@@ -104,6 +104,8 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
       await hydrateFromBackend();
       await reload();
       await clearDraft();
+      // Return to WriteDNA progress screen so the user sees updated voice %.
+      onNext();
     } catch (e) {
       console.warn("[aplyer] failed to save writing sample", e);
     } finally {
