@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Plus, Trash2, FileText } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, FileText, Loader2 } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
+import {
+  syncWritingSampleToBackend,
+  deleteWritingSampleFromBackend,
+  hydrateFromBackend,
+} from "@/lib/extension/sync";
 import type { WritingSample, WritingSampleType } from "@/lib/storage/types";
 
 const TYPES: { id: WritingSampleType; label: string }[] = [
@@ -21,11 +26,41 @@ const MIN_CHARS = 100;
 const MIN_WORDS = 30;
 
 export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
-  const { state, update } = useAplyerStore();
-  const [adding, setAdding] = useState(false);
-  const [type, setType] = useState<WritingSampleType>("cover_letter");
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const { state, update, reload } = useAplyerStore();
+
+  // Restore draft (persists across popup close / tab switch).
+  const draft = state.writingSampleDraft;
+  const [adding, setAdding] = useState<boolean>(!!draft?.isOpen);
+  const [type, setType] = useState<WritingSampleType>(draft?.type ?? "cover_letter");
+  const [title, setTitle] = useState<string>(draft?.title ?? "");
+  const [content, setContent] = useState<string>(draft?.content ?? "");
+  const [saving, setSaving] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const hydratedRef = useRef(false);
+
+  // If persisted state changes (e.g. hydration after mount), reflect it once.
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    if (state.writingSampleDraft) {
+      hydratedRef.current = true;
+      setAdding(!!state.writingSampleDraft.isOpen);
+      setType(state.writingSampleDraft.type);
+      setTitle(state.writingSampleDraft.title);
+      setContent(state.writingSampleDraft.content);
+    }
+  }, [state.writingSampleDraft]);
+
+  // Persist draft on any change (debounced via microtask batching).
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void update({
+        writingSampleDraft: adding || title || content
+          ? { type, title, content, isOpen: adding, updatedAt: new Date().toISOString() }
+          : null,
+      });
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [adding, type, title, content, update]);
 
   const samples = state.writingSamples;
   const totalWords = samples.reduce((a, s) => a + s.wordCount, 0);
@@ -34,9 +69,18 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
   const wordCount = trimmed ? trimmed.split(/\s+/).length : 0;
   const qualifies = trimmed.length >= MIN_CHARS && wordCount >= MIN_WORDS;
 
+  async function clearDraft() {
+    await update({ writingSampleDraft: null });
+    setAdding(false);
+    setTitle("");
+    setContent("");
+    setType("cover_letter");
+  }
+
   async function save() {
-    if (!qualifies) return;
-    const s: WritingSample = {
+    if (!qualifies || saving) return;
+    setSaving(true);
+    const optimistic: WritingSample = {
       id: crypto.randomUUID(),
       type,
       title: title || TYPES.find((t) => t.id === type)!.label,
@@ -44,15 +88,41 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
       wordCount,
       createdAt: new Date().toISOString(),
     };
-    await update({ writingSamples: [...samples, s] });
-    setAdding(false);
-    setTitle("");
-    setContent("");
-    setType("cover_letter");
+    try {
+      const persisted = await syncWritingSampleToBackend(optimistic);
+      const finalSample: WritingSample = persisted
+        ? {
+            id: persisted.id,
+            type: (persisted.type as WritingSampleType) ?? optimistic.type,
+            title: persisted.title ?? optimistic.title,
+            content: persisted.content ?? optimistic.content,
+            wordCount: persisted.word_count ?? optimistic.wordCount,
+            createdAt: persisted.created_at ?? optimistic.createdAt,
+          }
+        : optimistic;
+      await update({ writingSamples: [...samples, finalSample] });
+      await hydrateFromBackend();
+      await reload();
+      await clearDraft();
+    } catch (e) {
+      console.warn("[aplyer] failed to save writing sample", e);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function remove(id: string) {
-    await update({ writingSamples: samples.filter((s) => s.id !== id) });
+    setRemovingId(id);
+    try {
+      await deleteWritingSampleFromBackend(id);
+      await update({ writingSamples: samples.filter((s) => s.id !== id) });
+      await hydrateFromBackend();
+      await reload();
+    } catch (e) {
+      console.warn("[aplyer] failed to delete writing sample", e);
+    } finally {
+      setRemovingId(null);
+    }
   }
 
   async function skip() {
@@ -124,8 +194,11 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
                   </span>
                 </span>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="ghost" onClick={() => setAdding(false)}>Cancel</Button>
-                  <Button size="sm" onClick={save} disabled={!qualifies}>Save Sample</Button>
+                  <Button size="sm" variant="ghost" onClick={() => void clearDraft()} disabled={saving}>Cancel</Button>
+                  <Button size="sm" onClick={() => void save()} disabled={!qualifies || saving}>
+                    {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                    {saving ? "Saving…" : "Save Sample"}
+                  </Button>
                 </div>
               </div>
             </motion.div>
@@ -145,8 +218,12 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
                     <p className="truncate text-[12px] font-semibold">{s.title}</p>
                     <p className="text-[10px] text-muted-foreground">{TYPES.find((t) => t.id === s.type)?.label} · {s.wordCount} words</p>
                   </div>
-                  <button onClick={() => remove(s.id)} className="rounded-md p-1 text-muted-foreground hover:bg-field hover:text-brand-red">
-                    <Trash2 className="h-3.5 w-3.5" />
+                  <button
+                    onClick={() => void remove(s.id)}
+                    disabled={removingId === s.id}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-field hover:text-brand-red disabled:opacity-50"
+                  >
+                    {removingId === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                   </button>
                 </div>
               ))}
@@ -160,8 +237,8 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
 
       <div className="mt-3 flex items-center gap-2 pb-1">
         <Button variant="ghost" onClick={onBack}><ArrowLeft className="h-4 w-4" /> Back</Button>
-        <Button variant="secondary" onClick={skip}>Skip</Button>
-        <Button className="flex-1" onClick={continueNext}>Continue <ArrowRight className="h-4 w-4" /></Button>
+        <Button variant="secondary" onClick={() => void skip()}>Skip</Button>
+        <Button className="flex-1" onClick={() => void continueNext()}>Continue <ArrowRight className="h-4 w-4" /></Button>
       </div>
     </div>
   );
