@@ -62,7 +62,7 @@ describe("Extension onboarding — profile removal & explicit completion", () =>
   });
 
   it("sign-up form collects a phone number and sends it in raw metadata", () => {
-    expect(authSrc).toMatch(/phone:\s*z\./);
+    expect(authSrc).toMatch(/phone:\s*z\b[\s\S]*?\.string\(/);
     expect(authSrc).toMatch(/phone:\s*parsed\.data\.phone/);
     expect(authSrc).toMatch(/placeholder="Phone number/);
   });
