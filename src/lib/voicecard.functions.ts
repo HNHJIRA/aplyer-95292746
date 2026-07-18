@@ -6,7 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const PROMPT_VERSION = "v1";
 const MODEL = "claude-haiku-4-5";
 const STALE_LOCK_MS = 45 * 1000;
-const AI_TIMEOUT_MS = 18 * 1000;
+const AI_TIMEOUT_MS = 12 * 1000;
 const RESUME_EXCERPT_CHARS = 3000;
 const SAMPLE_EXCERPT_CHARS = 1600;
 const MAX_VOICECARD_TOKENS = 900;
