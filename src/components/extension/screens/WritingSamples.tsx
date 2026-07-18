@@ -72,7 +72,28 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
   const wordCount = trimmed ? trimmed.split(/\s+/).length : 0;
   const qualifies = trimmed.length >= MIN_CHARS && wordCount >= MIN_WORDS;
 
-  async function clearDraft() {
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { text } = await parseResume(file);
+      const cleaned = text.replace(/\s+/g, " ").trim().slice(0, MAX);
+      if (cleaned.length < MIN_CHARS) {
+        console.warn("[aplyer] uploaded file too short");
+      }
+      setContent(cleaned);
+      if (!title) setTitle(file.name.replace(/\.[^.]+$/, "").slice(0, 80));
+      setAdding(true);
+    } catch (err) {
+      console.warn("[aplyer] upload parse failed", err);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+
     await update({ writingSampleDraft: null });
     setAdding(false);
     setTitle("");
