@@ -182,6 +182,15 @@ function AuthPage() {
                 />
               </div>
             )}
+            {mode === "signup" && (
+              <Field
+                icon={<Phone className="h-4 w-4" />}
+                type="tel"
+                placeholder="Phone number (e.g. +1 555 123 4567)"
+                value={form.phone}
+                onChange={(v) => setForm({ ...form, phone: v })}
+              />
+            )}
             <Field
               icon={<Mail className="h-4 w-4" />}
               type="email"
