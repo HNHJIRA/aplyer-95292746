@@ -85,15 +85,40 @@ export interface OnboardingStatus {
 }
 
 export type WriteDnaStage = "idle" | "building" | "good" | "strong";
-export type VoiceCardStatus = "locked" | "unlocking" | "unlocked";
+export type VoiceCardStatus =
+  | "locked"
+  | "collecting_samples"
+  | "eligible"
+  | "generating"
+  | "generated"
+  | "failed"
+  | "stale"
+  // Legacy — kept for backwards compat during rollout
+  | "unlocking"
+  | "unlocked";
+
+export interface VoiceCardData {
+  tone: string;
+  cadence: string;
+  formality: string;
+  vocabulary_bias: string;
+  distinctive_traits: string[];
+  hooks_and_transitions: string[];
+  values_signals: string[];
+  do_and_avoid: { do: string[]; avoid: string[] };
+  headline: string;
+}
 
 export interface WriteDnaState {
   stage: WriteDnaStage;
   voiceConfidence: number;
   resumeUploaded: boolean;
   writingSampleCount: number;
+  qualifyingProseCount: number;
   resumeOnly: boolean;
   voiceCardStatus: VoiceCardStatus;
+  voiceCard: VoiceCardData | null;
+  voiceCardGeneratedAt: string | null;
   celebratedStrong: boolean;
 }
 
@@ -115,8 +140,11 @@ export const DEFAULT_WRITEDNA: WriteDnaState = {
   voiceConfidence: 0,
   resumeUploaded: false,
   writingSampleCount: 0,
+  qualifyingProseCount: 0,
   resumeOnly: false,
   voiceCardStatus: "locked",
+  voiceCard: null,
+  voiceCardGeneratedAt: null,
   celebratedStrong: false,
 };
 
