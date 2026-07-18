@@ -93,7 +93,7 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
     }
   }
 
-
+  async function clearDraft() {
     await update({ writingSampleDraft: null });
     setAdding(false);
     setTitle("");
