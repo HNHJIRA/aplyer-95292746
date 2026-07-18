@@ -18,7 +18,7 @@ import { Settings } from "./screens/Settings";
 import { Welcome } from "./screens/Welcome";
 import { ResumeUpload } from "./screens/ResumeUpload";
 import { ResumeAnalysis } from "./screens/ResumeAnalysis";
-import { Profile } from "./screens/Profile";
+
 import { WritingSamples } from "./screens/WritingSamples";
 import { WriteDnaProgress } from "./screens/WriteDnaProgress";
 import { VoiceCard } from "./screens/VoiceCard";
