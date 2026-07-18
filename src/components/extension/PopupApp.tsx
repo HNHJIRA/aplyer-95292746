@@ -9,7 +9,7 @@ import {
   signOutExtension,
   type ExtensionSession,
 } from "@/lib/extension/runtime";
-import { ensureSupabaseSession, hydrateFromBackend } from "@/lib/extension/sync";
+import { ensureSupabaseSession, hydrateFromBackend, markExtensionOnboardingComplete } from "@/lib/extension/sync";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
 import type { OnboardingStep } from "@/lib/storage/types";
 import { SignIn } from "./screens/SignIn";
@@ -189,7 +189,29 @@ export function PopupApp() {
     return <Settings onBack={() => setShowSettings(false)} onLogout={handleSignOut} />;
   }
 
-  const step = state.onboardingStatus.completed ? "done" : state.onboardingStatus.currentStep;
+  // Canonical guard: Dashboard is ONLY shown when the backend has explicitly
+  // marked extension_onboarding_completed = true (mirrored into
+  // onboardingStatus.completed by hydrateFromBackend). Popup close, hydration,
+  // resume upload, or partial profile data must NEVER route to Dashboard.
+  if (state.onboardingStatus.completed) {
+    return (
+      <Dashboard
+        onResume={() => { void goTo("resume_upload"); }}
+        onProfile={() => openAuthInTab(`${APP_WEB_URL}/dashboard/profile`)}
+        onSettings={() => setShowSettings(true)}
+      />
+    );
+  }
+
+  // Legacy safety: any obsolete/unknown currentStep (e.g. old "profile") is
+  // coerced to the canonical resume/writedna path derived by hydration.
+  const raw = state.onboardingStatus.currentStep as string;
+  const step: OnboardingStep =
+    raw === "welcome" || raw === "resume_upload" || raw === "resume_analysis" ||
+    raw === "writedna_progress" || raw === "writing_samples" || raw === "voice_card" ||
+    raw === "success" || raw === "done"
+      ? (raw as OnboardingStep)
+      : "writedna_progress";
 
   switch (step) {
     case "welcome":
@@ -216,30 +238,27 @@ export function PopupApp() {
       return (
         <VoiceCard
           onDone={() => {
-            // Refetch canonical state; PopupApp will re-route to A/B or success.
             void hydrateOnce().then(() => {
               if (state.writeDna.resumeOnly) void goTo("success");
-              // else: showAbDemo will flip true on next render and render AbDemo.
             });
           }}
           onSkipToProfile={() => void goTo("success")}
         />
       );
-    case "profile":
-      // Profile step retired — sign-up already collects basic info.
-      // Route legacy state straight to success/dashboard.
-      return <Success onDone={() => goTo("done")} />;
     case "success":
-      return <Success onDone={() => goTo("done")} />;
     case "done":
     default:
       return (
-        <Dashboard
-          onResume={() => { void goTo("resume_upload"); }}
-          onProfile={() => { void goTo("done"); }}
-          onSettings={() => setShowSettings(true)}
+        <Success
+          onDone={async () => {
+            // EXPLICIT canonical completion — only user pressing "Go To
+            // Dashboard" flips extension_onboarding_completed to true.
+            try { await markExtensionOnboardingComplete(); } catch (e) { console.warn("[aplyer] mark complete", e); }
+            await goTo("done");
+          }}
         />
       );
   }
 }
+
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { ArrowRight, Loader2, Mail, Lock, User as UserIcon, Sparkles } from "lucide-react";
+import { ArrowRight, Loader2, Mail, Lock, User as UserIcon, Phone, Sparkles } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -28,6 +28,12 @@ const signInSchema = z.object({
 const signUpSchema = signInSchema.extend({
   firstName: z.string().trim().min(1, "Required").max(80),
   lastName: z.string().trim().min(1, "Required").max(80),
+  phone: z
+    .string()
+    .trim()
+    .min(5, "Enter a phone number")
+    .max(40)
+    .regex(/^\+?[0-9\s().-]+$/, "Digits, spaces, and + only"),
 });
 
 function AuthPage() {
@@ -36,7 +42,7 @@ function AuthPage() {
   const redirectTo = getSafeRedirect(search.redirect);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "" });
+  const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", email: "", password: "" });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -75,7 +81,11 @@ function AuthPage() {
           password: parsed.data.password,
           options: {
             emailRedirectTo: `${window.location.origin}${redirectTo}`,
-            data: { first_name: parsed.data.firstName, last_name: parsed.data.lastName },
+            data: {
+              first_name: parsed.data.firstName,
+              last_name: parsed.data.lastName,
+              phone: parsed.data.phone,
+            },
           },
         });
         if (signUpError) {
@@ -171,6 +181,15 @@ function AuthPage() {
                   onChange={(v) => setForm({ ...form, lastName: v })}
                 />
               </div>
+            )}
+            {mode === "signup" && (
+              <Field
+                icon={<Phone className="h-4 w-4" />}
+                type="tel"
+                placeholder="Phone number (e.g. +1 555 123 4567)"
+                value={form.phone}
+                onChange={(v) => setForm({ ...form, phone: v })}
+              />
             )}
             <Field
               icon={<Mail className="h-4 w-4" />}

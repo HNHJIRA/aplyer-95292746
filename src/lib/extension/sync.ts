@@ -261,38 +261,53 @@ export async function hydrateFromBackend(): Promise<AplyerState | null> {
     };
   }
 
-  // Canonical routing: rebuild onboarding step from backend state, not from
-  // whatever screen was cached locally (which may belong to a previous user).
-  // NOTE: The profile step was removed — sign-up already collects first/last
-  // name — so we route straight to `success`/`done` after the WriteDNA flow.
+  // Canonical routing derived from backend state only. Onboarding completion
+  // is EXPLICIT: only the `profiles.extension_onboarding_completed` flag can
+  // put a user on the Dashboard. Popup close, hydration, resume upload, or
+  // partial profile data must NEVER auto-complete onboarding.
+  const explicitComplete = !!(p && p.extension_onboarding_completed);
   const hasResume = !!patch.resumeMetadata;
   const dna = patch.writeDna ?? current.writeDna;
   const vcStatus = dna.voiceCardStatus;
   const qualifying = dna.qualifyingProseCount ?? 0;
   const resumeOnly = !!dna.resumeOnly;
   const abPending = vcStatus === "generated" && !resumeOnly && !dna.abDemoCompleted;
-  const onboardingComplete =
+  const flowFinished =
     hasResume && (resumeOnly || dna.abDemoCompleted || vcStatus === "generated");
 
   let step: AplyerState["onboardingStatus"]["currentStep"];
-  if (!hasResume) step = "resume_upload";
+  if (explicitComplete) step = "done";
+  else if (!hasResume) step = "resume_upload";
   else if (vcStatus === "generating" || vcStatus === "failed" || vcStatus === "stale") step = "voice_card";
-  else if (abPending) step = "voice_card"; // AbDemo is rendered from voice_card when abPending
+  else if (abPending) step = "voice_card";
   else if (qualifying >= 2 && vcStatus === "eligible") step = "voice_card";
-  else if (onboardingComplete) {
-    // First time landing here → celebrate; returning users go straight to Dashboard.
-    step = current.onboardingStatus.completedAt ? "done" : "success";
-  } else step = "writedna_progress";
+  else if (flowFinished) step = "success";
+  else step = "writedna_progress";
 
   patch.onboardingStatus = {
-    completed: onboardingComplete && step === "done",
+    completed: explicitComplete,
     currentStep: step,
     startedAt: current.onboardingStatus.startedAt ?? new Date().toISOString(),
     completedAt:
-      onboardingComplete && step === "done"
-        ? (current.onboardingStatus.completedAt ?? new Date().toISOString())
+      explicitComplete
+        ? ((p?.extension_onboarding_completed_at as string | undefined) ??
+           current.onboardingStatus.completedAt ??
+           new Date().toISOString())
         : current.onboardingStatus.completedAt,
   };
 
   return await storage.patch(patch);
+}
+
+/**
+ * Explicit canonical completion. Only called from the Success screen's
+ * "Go To Dashboard" button — never from popup unmount or hydration.
+ */
+export async function markExtensionOnboardingComplete(): Promise<void> {
+  const { data: u } = await supabase.auth.getUser();
+  if (!u.user) return;
+  const now = new Date().toISOString();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const payload: any = { extension_onboarding_completed: true, extension_onboarding_completed_at: now };
+  await supabase.from("profiles").update(payload).eq("id", u.user.id);
 }
