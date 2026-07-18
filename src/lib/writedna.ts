@@ -54,21 +54,19 @@ export function computeWriteDna(input: {
 }): WriteDnaState {
   const { resumeUploaded, qualifyingProseCount } = input;
   const writingSampleCount = input.writingSampleCount ?? qualifyingProseCount;
+  // Resume does NOT contribute to WriteDNA confidence. Score is based only
+  // on qualifying prose samples: 0 → 0%, 1 → 50%, 2+ → 90%, generated → 100%.
   let voiceConfidence = 0;
-  let stage: WriteDnaStage = "idle";
-  let derivedStatus: VoiceCardStatus = "locked";
+  let stage: WriteDnaStage;
+  let derivedStatus: VoiceCardStatus;
 
-  if (!resumeUploaded) {
-    stage = "idle";
+  if (qualifyingProseCount === 0) {
+    stage = resumeUploaded ? "building" : "idle";
     voiceConfidence = 0;
-    derivedStatus = "locked";
-  } else if (qualifyingProseCount === 0) {
-    stage = "building";
-    voiceConfidence = 35;
     derivedStatus = "locked";
   } else if (qualifyingProseCount === 1) {
     stage = "good";
-    voiceConfidence = 70;
+    voiceConfidence = 50;
     derivedStatus = "collecting_samples";
   } else {
     stage = "strong";

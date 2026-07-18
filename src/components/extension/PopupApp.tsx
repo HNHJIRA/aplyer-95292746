@@ -43,6 +43,7 @@ export function PopupApp() {
   const [session, setSession] = useState<ExtensionSession | null>(null);
   const [sessionChecked, setSessionChecked] = useState(!inExtension);
   const [checking, setChecking] = useState(false);
+  const [hydrating, setHydrating] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const { state, loaded, update, reload, reset } = useAplyerStore();
 
@@ -53,11 +54,14 @@ export function PopupApp() {
     !state.writeDna.abDemoCompleted;
 
   const hydrateOnce = useCallback(async () => {
+    setHydrating(true);
     try {
       await hydrateFromBackend();
       await reload();
     } catch (e) {
       console.warn("[aplyer] hydrate failed", e);
+    } finally {
+      setHydrating(false);
     }
   }, [reload]);
 
@@ -168,7 +172,7 @@ export function PopupApp() {
     return () => goTo(FLOW[Math.max(i - 1, 0)]);
   }
 
-  if (!sessionChecked || (session && !loaded)) {
+  if (!sessionChecked || (session && !loaded) || hydrating) {
     return <div className="flex h-full items-center justify-center text-muted-foreground text-sm">Loading…</div>;
   }
 

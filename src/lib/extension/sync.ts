@@ -126,6 +126,15 @@ export async function hydrateFromBackend(): Promise<AplyerState | null> {
   if (!u.user) return null;
   const uid = u.user.id;
 
+  // Account switch guard: if the cached activeUserId differs from the
+  // currently authenticated user, wipe all local extension state before
+  // hydrating with the new user's canonical data. This prevents User A's
+  // resume/samples/WriteDNA/Voice Card from leaking into User B's session.
+  const before = await storage.getState();
+  if (before.activeUserId && before.activeUserId !== uid) {
+    await storage.reset();
+  }
+
   const [profileRes, resumeRes, samplesRes, subRes, settingsRes] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
     supabase
@@ -142,7 +151,7 @@ export async function hydrateFromBackend(): Promise<AplyerState | null> {
   ]);
 
   const current = await storage.getState();
-  const patch: Partial<AplyerState> = {};
+  const patch: Partial<AplyerState> = { activeUserId: uid };
 
   const p = profileRes.data as (Record<string, unknown> & { [k: string]: unknown }) | null;
   if (p) {
@@ -155,7 +164,6 @@ export async function hydrateFromBackend(): Promise<AplyerState | null> {
       portfolio: (p.portfolio as string) ?? "",
       location: (p.location as string) ?? "",
     };
-    // Hydrate WriteDNA columns if present.
     if ("voice_confidence" in p) {
       patch.writeDna = {
         ...current.writeDna,
@@ -204,18 +212,21 @@ export async function hydrateFromBackend(): Promise<AplyerState | null> {
         suggestions: (sc.suggestions as string[]) ?? [],
       };
     }
+  } else {
+    // No current resume on backend — clear stale local resume state.
+    patch.resumeText = null;
+    patch.resumeMetadata = null;
+    patch.resumeScore = null;
   }
 
-  if (samplesRes.data?.length) {
-    patch.writingSamples = samplesRes.data.map((s) => ({
-      id: s.id,
-      type: s.type as WritingSample["type"],
-      title: s.title,
-      content: s.content,
-      wordCount: s.word_count,
-      createdAt: s.created_at,
-    }));
-  }
+  patch.writingSamples = (samplesRes.data ?? []).map((s) => ({
+    id: s.id,
+    type: s.type as WritingSample["type"],
+    title: s.title,
+    content: s.content,
+    wordCount: s.word_count,
+    createdAt: s.created_at,
+  }));
 
   if (subRes.data) {
     patch.subscriptionStatus = {
@@ -233,17 +244,34 @@ export async function hydrateFromBackend(): Promise<AplyerState | null> {
     };
   }
 
-  // If returning user already has resume + profile, skip the wizard.
-  const hasResume = !!patch.resumeMetadata || !!current.resumeMetadata;
-  const hasProfile = !!patch.profile || !!current.profile;
-  if (hasResume && hasProfile && !current.onboardingStatus.completed) {
-    patch.onboardingStatus = {
-      completed: true,
-      currentStep: "done",
-      startedAt: current.onboardingStatus.startedAt ?? new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-    };
-  }
+  // Canonical routing: rebuild onboarding step from backend state, not from
+  // whatever screen was cached locally (which may belong to a previous user).
+  const hasResume = !!patch.resumeMetadata;
+  const hasProfileData = !!(patch.profile?.firstName || patch.profile?.lastName);
+  const dna = patch.writeDna ?? current.writeDna;
+  const vcStatus = dna.voiceCardStatus;
+  const qualifying = dna.qualifyingProseCount ?? 0;
+  const resumeOnly = !!dna.resumeOnly;
+  const abPending = vcStatus === "generated" && !resumeOnly && !dna.abDemoCompleted;
+  const onboardingComplete = hasResume && hasProfileData && (resumeOnly || dna.abDemoCompleted || vcStatus === "generated");
+
+  let step: AplyerState["onboardingStatus"]["currentStep"];
+  if (!hasResume) step = "resume_upload";
+  else if (vcStatus === "generating" || vcStatus === "failed" || vcStatus === "stale") step = "voice_card";
+  else if (abPending) step = "voice_card"; // AbDemo is rendered from voice_card when abPending
+  else if (qualifying >= 2 && vcStatus === "eligible") step = "voice_card";
+  else if (onboardingComplete) step = "done";
+  else if (!hasProfileData && (resumeOnly || dna.abDemoCompleted || vcStatus === "generated")) step = "profile";
+  else step = "writedna_progress";
+
+  patch.onboardingStatus = {
+    completed: onboardingComplete && hasProfileData,
+    currentStep: step,
+    startedAt: current.onboardingStatus.startedAt ?? new Date().toISOString(),
+    completedAt: onboardingComplete && hasProfileData
+      ? (current.onboardingStatus.completedAt ?? new Date().toISOString())
+      : undefined,
+  };
 
   return await storage.patch(patch);
 }
