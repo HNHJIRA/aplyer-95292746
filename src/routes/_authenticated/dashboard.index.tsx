@@ -98,19 +98,14 @@ function DashboardHome() {
       </div>
 
       {(() => {
-        // Prefer DB-persisted DNA (kept fresh by triggers), else compute from what we have.
+        // Prefer DB-persisted DNA (kept fresh by triggers + recalc_writedna). If the
+        // canonical profile row exists we ONLY read from it; we never fall back to
+        // client-side compute when the server is the source of truth.
         const prof = (data.profile ?? {}) as Record<string, unknown>;
         const dna: WriteDnaState =
           "voice_confidence" in prof
             ? {
-                stage:
-                  !prof.resume_uploaded
-                    ? "idle"
-                    : (prof.writing_sample_count as number) === 0
-                      ? "building"
-                      : (prof.writing_sample_count as number) === 1
-                        ? "good"
-                        : "strong",
+                stage: (prof.writedna_stage as WriteDnaState["stage"]) ?? "idle",
                 voiceConfidence: Number(prof.voice_confidence ?? 0),
                 writingSampleCount: Number(prof.writing_sample_count ?? 0),
                 qualifyingProseCount: Number(prof.qualifying_prose_count ?? prof.writing_sample_count ?? 0),
@@ -119,7 +114,12 @@ function DashboardHome() {
                 voiceCardStatus: (prof.voice_card_status as WriteDnaState["voiceCardStatus"]) ?? "locked",
                 voiceCard: (prof.voice_card_data as WriteDnaState["voiceCard"]) ?? null,
                 voiceCardGeneratedAt: (prof.voice_card_generated_at as string | null) ?? null,
+                voiceCardError: (prof.voice_card_error as string | null) ?? null,
                 celebratedStrong: !!prof.celebrated_strong,
+                abDemoCompleted: !!prof.ab_demo_completed,
+                abDemoAnswer: (prof.ab_demo_answer as string | null) ?? null,
+                fallbackChoiceCompleted: !!prof.fallback_choice_completed,
+                preferredVariantId: (prof.preferred_variant_id as string | null) ?? null,
               }
             : computeWriteDna({
                 resumeUploaded: !!data.resume,
