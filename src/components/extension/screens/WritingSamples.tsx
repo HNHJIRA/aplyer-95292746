@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Plus, Trash2, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, FileText, Loader2, Upload } from "lucide-react";
+import { parseResume } from "@/lib/resume/parse";
 import { Button } from "../ui/Button";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
 import {
@@ -35,6 +36,8 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
   const [title, setTitle] = useState<string>(draft?.title ?? "");
   const [content, setContent] = useState<string>(draft?.content ?? "");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const hydratedRef = useRef(false);
 
@@ -68,6 +71,27 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
   const trimmed = content.trim();
   const wordCount = trimmed ? trimmed.split(/\s+/).length : 0;
   const qualifies = trimmed.length >= MIN_CHARS && wordCount >= MIN_WORDS;
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { text } = await parseResume(file);
+      const cleaned = text.replace(/\s+/g, " ").trim().slice(0, MAX);
+      if (cleaned.length < MIN_CHARS) {
+        console.warn("[aplyer] uploaded file too short");
+      }
+      setContent(cleaned);
+      if (!title) setTitle(file.name.replace(/\.[^.]+$/, "").slice(0, 80));
+      setAdding(true);
+    } catch (err) {
+      console.warn("[aplyer] upload parse failed", err);
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function clearDraft() {
     await update({ writingSampleDraft: null });
@@ -163,6 +187,13 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
           <Stat label="Status" value={samples.length > 0 ? "Saved" : "Empty"} small />
         </div>
 
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".txt,.md,.pdf,.doc,.docx"
+          className="hidden"
+          onChange={(e) => void handleUpload(e)}
+        />
         <AnimatePresence mode="wait">
           {adding ? (
             <motion.div
@@ -190,6 +221,15 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
                 maxLength={80}
                 className="mt-3 h-9 w-full rounded-lg border border-border bg-field px-3 text-[12px] placeholder:text-dim focus:border-brand-green/60 focus:outline-none focus:ring-2 focus:ring-brand-green/20"
               />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-field/50 px-3 py-2 text-[11px] text-muted-foreground hover:border-brand-green/50 hover:text-brand-green disabled:opacity-50"
+              >
+                {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                {uploading ? "Extracting…" : "Upload file (PDF, DOCX, TXT)"}
+              </button>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value.slice(0, MAX))}
@@ -238,9 +278,15 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
                   </button>
                 </div>
               ))}
-              <Button variant="outline" className="w-full" onClick={() => setAdding(true)}>
-                <Plus className="h-4 w-4" /> Add Writing Sample
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" onClick={() => setAdding(true)}>
+                  <Plus className="h-4 w-4" /> Add
+                </Button>
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {uploading ? "Extracting…" : "Upload"}
+                </Button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
