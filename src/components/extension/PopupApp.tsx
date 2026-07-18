@@ -22,6 +22,7 @@ import { Profile } from "./screens/Profile";
 import { WritingSamples } from "./screens/WritingSamples";
 import { WriteDnaProgress } from "./screens/WriteDnaProgress";
 import { VoiceCard } from "./screens/VoiceCard";
+import { AbDemo } from "./screens/AbDemo";
 import { Success } from "./screens/Success";
 import { Dashboard } from "./screens/Dashboard";
 
