@@ -175,6 +175,20 @@ export function PopupApp() {
     return <div className="flex h-full items-center justify-center text-muted-foreground text-sm">Loading…</div>;
   }
 
+  if (!session) {
+    return (
+      <SignIn
+        onSignIn={() => (inExtension ? openAuthInTab(APP_WEB_URL) : (window.location.href = "/auth"))}
+        onRefresh={refreshSession}
+        checking={checking}
+      />
+    );
+  }
+
+  if (showSettings) {
+    return <Settings onBack={() => setShowSettings(false)} onLogout={handleSignOut} />;
+  }
+
   // Canonical guard: Dashboard is ONLY shown when the backend has explicitly
   // marked extension_onboarding_completed = true (mirrored into
   // onboardingStatus.completed by hydrateFromBackend). Popup close, hydration,
