@@ -14,12 +14,25 @@ export const Route = createFileRoute("/_authenticated/dashboard/writing")({
 const TYPES = [
   { v: "cover_letter", l: "Cover Letter" },
   { v: "professional_email", l: "Professional Email" },
-  { v: "personal_bio", l: "Personal Bio" },
+  { v: "linkedin_post", l: "LinkedIn Post" },
+  { v: "blog", l: "Blog" },
+  { v: "essay", l: "Essay" },
   { v: "career_summary", l: "Career Summary" },
+  { v: "free_text", l: "Free Text" },
+  { v: "other", l: "Other" },
 ] as const;
 
 const schema = z.object({
-  type: z.enum(["cover_letter", "professional_email", "personal_bio", "career_summary"]),
+  type: z.enum([
+    "cover_letter",
+    "professional_email",
+    "linkedin_post",
+    "blog",
+    "essay",
+    "career_summary",
+    "free_text",
+    "other",
+  ]),
   title: z.string().trim().min(1).max(160),
   content: z.string().trim().min(20).max(20000),
 });
