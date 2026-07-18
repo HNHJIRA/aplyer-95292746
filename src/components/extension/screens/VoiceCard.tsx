@@ -249,7 +249,7 @@ async function startVoiceCardGenerationForExtension() {
   if (!prof) throw new Error("Profile not found");
 
   if (prof.voice_card_status === "generated" && prof.voice_card_data) {
-    return { status: "generated" as const, voice_card: prof.voice_card_data as VoiceCardData };
+    return { status: "generated" as const, voice_card: prof.voice_card_data as unknown as VoiceCardData };
   }
 
   const { data: locked, error: lockErr } = await supabase
@@ -274,7 +274,7 @@ async function startVoiceCardGenerationForExtension() {
     .maybeSingle();
   if (afterError) throw afterError;
   if (after?.voice_card_status === "generated" && after.voice_card_data) {
-    return { status: "generated" as const, voice_card: after.voice_card_data as VoiceCardData };
+    return { status: "generated" as const, voice_card: after.voice_card_data as unknown as VoiceCardData };
   }
   if (after?.voice_card_status === "failed") {
     return { status: "failed" as const, error: after.voice_card_error ?? "Generation failed" };
