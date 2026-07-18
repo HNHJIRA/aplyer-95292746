@@ -119,7 +119,12 @@ export interface WriteDnaState {
   voiceCardStatus: VoiceCardStatus;
   voiceCard: VoiceCardData | null;
   voiceCardGeneratedAt: string | null;
+  voiceCardError: string | null;
   celebratedStrong: boolean;
+  abDemoCompleted: boolean;
+  abDemoAnswer: string | null;
+  fallbackChoiceCompleted: boolean;
+  preferredVariantId: string | null;
 }
 
 export interface AplyerState {
@@ -145,7 +150,12 @@ export const DEFAULT_WRITEDNA: WriteDnaState = {
   voiceCardStatus: "locked",
   voiceCard: null,
   voiceCardGeneratedAt: null,
+  voiceCardError: null,
   celebratedStrong: false,
+  abDemoCompleted: false,
+  abDemoAnswer: null,
+  fallbackChoiceCompleted: false,
+  preferredVariantId: null,
 };
 
 export const DEFAULT_STATE: AplyerState = {
