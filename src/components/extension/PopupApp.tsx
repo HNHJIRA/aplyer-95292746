@@ -187,14 +187,17 @@ export function PopupApp() {
     case "writing_samples":
       return <WritingSamples onNext={() => goTo("writedna_progress")} onBack={() => goTo("writedna_progress")} />;
     case "voice_card":
-      if (showAbDemo) {
-        return <AbDemo onDone={() => { setShowAbDemo(false); void goTo("profile"); }} />;
+      if (showAbDemo && state.writeDna.voiceCardStatus === "generated") {
+        return <AbDemo onDone={() => { void hydrateOnce().then(() => goTo("profile")); }} />;
       }
       return (
         <VoiceCard
           onDone={() => {
-            if (state.writeDna.resumeOnly) void goTo("profile");
-            else setShowAbDemo(true);
+            // Refetch canonical state; PopupApp will re-route to A/B or profile.
+            void hydrateOnce().then(() => {
+              if (state.writeDna.resumeOnly) void goTo("profile");
+              // else: showAbDemo will flip true on next render and render AbDemo.
+            });
           }}
           onSkipToProfile={() => void goTo("profile")}
         />
