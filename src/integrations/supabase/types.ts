@@ -16,9 +16,16 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          ab_demo_answer: string | null
+          ab_demo_completed: boolean
+          ab_demo_completed_at: string | null
+          ab_demo_created_at: string | null
+          ab_demo_generation_id: string | null
+          ab_demo_model: string | null
           celebrated_strong: boolean
           created_at: string
           email: string | null
+          fallback_choice_completed: boolean
           first_name: string | null
           id: string
           last_name: string | null
@@ -26,18 +33,38 @@ export type Database = {
           location: string | null
           phone: string | null
           portfolio: string | null
+          preferred_variant_id: string | null
+          qualifying_prose_count: number
           resume_only: boolean
           resume_uploaded: boolean
           updated_at: string
+          voice_card_data: Json | null
+          voice_card_error: string | null
+          voice_card_generated_at: string | null
+          voice_card_generation_id: string | null
+          voice_card_generation_started_at: string | null
+          voice_card_model: string | null
+          voice_card_prompt_version: string | null
+          voice_card_source_hash: string | null
+          voice_card_source_resume_id: string | null
+          voice_card_source_sample_ids: string[] | null
           voice_card_status: string
           voice_confidence: number
           website: string | null
+          writedna_stage: string
           writing_sample_count: number
         }
         Insert: {
+          ab_demo_answer?: string | null
+          ab_demo_completed?: boolean
+          ab_demo_completed_at?: string | null
+          ab_demo_created_at?: string | null
+          ab_demo_generation_id?: string | null
+          ab_demo_model?: string | null
           celebrated_strong?: boolean
           created_at?: string
           email?: string | null
+          fallback_choice_completed?: boolean
           first_name?: string | null
           id: string
           last_name?: string | null
@@ -45,18 +72,38 @@ export type Database = {
           location?: string | null
           phone?: string | null
           portfolio?: string | null
+          preferred_variant_id?: string | null
+          qualifying_prose_count?: number
           resume_only?: boolean
           resume_uploaded?: boolean
           updated_at?: string
+          voice_card_data?: Json | null
+          voice_card_error?: string | null
+          voice_card_generated_at?: string | null
+          voice_card_generation_id?: string | null
+          voice_card_generation_started_at?: string | null
+          voice_card_model?: string | null
+          voice_card_prompt_version?: string | null
+          voice_card_source_hash?: string | null
+          voice_card_source_resume_id?: string | null
+          voice_card_source_sample_ids?: string[] | null
           voice_card_status?: string
           voice_confidence?: number
           website?: string | null
+          writedna_stage?: string
           writing_sample_count?: number
         }
         Update: {
+          ab_demo_answer?: string | null
+          ab_demo_completed?: boolean
+          ab_demo_completed_at?: string | null
+          ab_demo_created_at?: string | null
+          ab_demo_generation_id?: string | null
+          ab_demo_model?: string | null
           celebrated_strong?: boolean
           created_at?: string
           email?: string | null
+          fallback_choice_completed?: boolean
           first_name?: string | null
           id?: string
           last_name?: string | null
@@ -64,12 +111,25 @@ export type Database = {
           location?: string | null
           phone?: string | null
           portfolio?: string | null
+          preferred_variant_id?: string | null
+          qualifying_prose_count?: number
           resume_only?: boolean
           resume_uploaded?: boolean
           updated_at?: string
+          voice_card_data?: Json | null
+          voice_card_error?: string | null
+          voice_card_generated_at?: string | null
+          voice_card_generation_id?: string | null
+          voice_card_generation_started_at?: string | null
+          voice_card_model?: string | null
+          voice_card_prompt_version?: string | null
+          voice_card_source_hash?: string | null
+          voice_card_source_resume_id?: string | null
+          voice_card_source_sample_ids?: string[] | null
           voice_card_status?: string
           voice_confidence?: number
           website?: string | null
+          writedna_stage?: string
           writing_sample_count?: number
         }
         Relationships: []
@@ -238,6 +298,7 @@ export type Database = {
       writing_samples: {
         Row: {
           content: string
+          content_hash: string | null
           created_at: string
           id: string
           title: string
@@ -248,6 +309,7 @@ export type Database = {
         }
         Insert: {
           content: string
+          content_hash?: string | null
           created_at?: string
           id?: string
           title: string
@@ -258,6 +320,7 @@ export type Database = {
         }
         Update: {
           content?: string
+          content_hash?: string | null
           created_at?: string
           id?: string
           title?: string
@@ -273,6 +336,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_qualifying_prose: {
+        Args: { _content: string; _type: string }
+        Returns: boolean
+      }
+      prose_content_hash: { Args: { _content: string }; Returns: string }
       recalc_writedna: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
