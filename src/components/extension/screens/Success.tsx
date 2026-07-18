@@ -52,7 +52,6 @@ export function Success({ onDone }: { onDone: () => void }) {
           className="mt-6 w-full space-y-2"
         >
           <Row ok>Resume Uploaded</Row>
-          <Row ok>Profile Completed</Row>
           <Row ok={!skipped}>{skipped ? "Writing Samples Skipped" : "Writing Samples Saved"}</Row>
         </motion.div>
       </div>
