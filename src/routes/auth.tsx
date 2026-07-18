@@ -28,6 +28,12 @@ const signInSchema = z.object({
 const signUpSchema = signInSchema.extend({
   firstName: z.string().trim().min(1, "Required").max(80),
   lastName: z.string().trim().min(1, "Required").max(80),
+  phone: z
+    .string()
+    .trim()
+    .min(5, "Enter a phone number")
+    .max(40)
+    .regex(/^\+?[0-9\s().-]+$/, "Digits, spaces, and + only"),
 });
 
 function AuthPage() {
