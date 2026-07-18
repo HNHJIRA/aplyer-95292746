@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Plus, Trash2, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, FileText, Loader2, Upload } from "lucide-react";
+import { parseResume } from "@/lib/resume/parse";
 import { Button } from "../ui/Button";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
 import {
