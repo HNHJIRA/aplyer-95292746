@@ -174,7 +174,7 @@ export function PopupApp() {
     case "writedna_progress":
       return (
         <WriteDnaProgress
-          onNext={() => goTo("profile")}
+          onNext={() => goTo(state.writeDna.resumeOnly ? "profile" : "voice_card")}
           onBack={back("writedna_progress")}
           onAddSample={() => goTo("writing_samples")}
           onCelebrate={() => goTo("voice_card")}
