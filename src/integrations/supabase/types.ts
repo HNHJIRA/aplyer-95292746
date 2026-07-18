@@ -25,6 +25,8 @@ export type Database = {
           celebrated_strong: boolean
           created_at: string
           email: string | null
+          extension_onboarding_completed: boolean
+          extension_onboarding_completed_at: string | null
           fallback_choice_completed: boolean
           first_name: string | null
           id: string
@@ -64,6 +66,8 @@ export type Database = {
           celebrated_strong?: boolean
           created_at?: string
           email?: string | null
+          extension_onboarding_completed?: boolean
+          extension_onboarding_completed_at?: string | null
           fallback_choice_completed?: boolean
           first_name?: string | null
           id: string
@@ -103,6 +107,8 @@ export type Database = {
           celebrated_strong?: boolean
           created_at?: string
           email?: string | null
+          extension_onboarding_completed?: boolean
+          extension_onboarding_completed_at?: string | null
           fallback_choice_completed?: boolean
           first_name?: string | null
           id?: string
