@@ -44,6 +44,7 @@ export function PopupApp() {
   const [sessionChecked, setSessionChecked] = useState(!inExtension);
   const [checking, setChecking] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAbDemo, setShowAbDemo] = useState(false);
   const { state, loaded, update, reload, reset } = useAplyerStore();
 
 
