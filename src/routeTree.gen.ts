@@ -28,6 +28,7 @@ import { Route as AuthenticatedDashboardSubscriptionRouteImport } from './routes
 import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard.settings'
 import { Route as AuthenticatedDashboardResumeRouteImport } from './routes/_authenticated/dashboard.resume'
 import { Route as AuthenticatedDashboardProfileRouteImport } from './routes/_authenticated/dashboard.profile'
+import { Route as ApiPublicExtensionVoicecardRouteImport } from './routes/api/public/extension.voicecard'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -130,6 +131,12 @@ const AuthenticatedDashboardProfileRoute =
     path: '/profile',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const ApiPublicExtensionVoicecardRoute =
+  ApiPublicExtensionVoicecardRouteImport.update({
+    id: '/api/public/extension/voicecard',
+    path: '/api/public/extension/voicecard',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -150,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
   '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/api/public/extension/voicecard': typeof ApiPublicExtensionVoicecardRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -169,6 +177,7 @@ export interface FileRoutesByTo {
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
   '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
+  '/api/public/extension/voicecard': typeof ApiPublicExtensionVoicecardRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -191,6 +200,7 @@ export interface FileRoutesById {
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
   '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/api/public/extension/voicecard': typeof ApiPublicExtensionVoicecardRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -213,6 +223,7 @@ export interface FileRouteTypes {
     | '/api/public/subscribe'
     | '/api/public/waitlist-upload'
     | '/dashboard/'
+    | '/api/public/extension/voicecard'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/api/public/subscribe'
     | '/api/public/waitlist-upload'
     | '/dashboard'
+    | '/api/public/extension/voicecard'
   id:
     | '__root__'
     | '/'
@@ -253,6 +265,7 @@ export interface FileRouteTypes {
     | '/api/public/subscribe'
     | '/api/public/waitlist-upload'
     | '/_authenticated/dashboard/'
+    | '/api/public/extension/voicecard'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -266,6 +279,7 @@ export interface RootRouteChildren {
   ApiPublicDemoRoute: typeof ApiPublicDemoRoute
   ApiPublicSubscribeRoute: typeof ApiPublicSubscribeRoute
   ApiPublicWaitlistUploadRoute: typeof ApiPublicWaitlistUploadRoute
+  ApiPublicExtensionVoicecardRoute: typeof ApiPublicExtensionVoicecardRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -403,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardProfileRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/api/public/extension/voicecard': {
+      id: '/api/public/extension/voicecard'
+      path: '/api/public/extension/voicecard'
+      fullPath: '/api/public/extension/voicecard'
+      preLoaderRoute: typeof ApiPublicExtensionVoicecardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -465,6 +486,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicDemoRoute: ApiPublicDemoRoute,
   ApiPublicSubscribeRoute: ApiPublicSubscribeRoute,
   ApiPublicWaitlistUploadRoute: ApiPublicWaitlistUploadRoute,
+  ApiPublicExtensionVoicecardRoute: ApiPublicExtensionVoicecardRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

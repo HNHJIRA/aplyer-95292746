@@ -3,13 +3,12 @@ import { motion } from "framer-motion";
 import { AlertTriangle, ArrowRight, Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { Button } from "../ui/Button";
 import { supabase } from "@/integrations/supabase/client";
-import { useServerFn } from "@tanstack/react-start";
-import {
-  getVoiceCardState,
-  retryVoiceCard,
-  startVoiceCardGeneration,
-} from "@/lib/voicecard.functions";
 import { hydrateFromBackend } from "@/lib/extension/sync";
+import {
+  getVoiceCardStateApi,
+  retryVoiceCardApi,
+  startVoiceCardGenerationApi,
+} from "@/lib/extension/voicecard-api";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
 
 type Status =
@@ -41,13 +40,10 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const startedRef = useRef(false);
-  const getState = useServerFn(getVoiceCardState);
-  const start = useServerFn(startVoiceCardGeneration);
-  const retry = useServerFn(retryVoiceCard);
   const { state } = useAplyerStore();
 
   const refresh = useCallback(async () => {
-    const p = (await getState()) as {
+    const p = (await getVoiceCardStateApi()) as {
       voice_card_status: Status;
       voice_card_data: VoiceCardData | null;
       voice_card_error: string | null;
@@ -56,7 +52,7 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
     setStatus(p.voice_card_status);
     setCard(p.voice_card_data);
     setError(p.voice_card_error);
-  }, [getState]);
+  }, []);
 
   const beginGeneration = useCallback(async () => {
     if (startedRef.current || busy) return;
@@ -64,7 +60,7 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
     setBusy(true);
     setStatus("generating");
     try {
-      const res = (await start()) as
+      const res = (await startVoiceCardGenerationApi()) as
         | { status: "generated"; voice_card: VoiceCardData }
         | { status: "in_progress" }
         | { status: "failed"; error?: string };
@@ -89,7 +85,7 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
         /* ignore */
       }
     }
-  }, [start, busy, refresh]);
+  }, [busy, refresh]);
 
   useEffect(() => {
     void (async () => {
@@ -113,7 +109,7 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
     setBusy(true);
     setError(null);
     try {
-      await retry();
+      await retryVoiceCardApi();
       startedRef.current = false;
       await beginGeneration();
     } finally {

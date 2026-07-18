@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Plus, ShieldCheck } from "lucide-react";
-import { useServerFn } from "@tanstack/react-start";
 import { Button } from "../ui/Button";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
 import {
@@ -11,7 +10,7 @@ import {
   stageLabel,
 } from "@/lib/writedna";
 import { ProgressRing } from "@/components/writedna/ProgressRing";
-import { setResumeOnly } from "@/lib/voicecard.functions";
+import { setResumeOnlyApi } from "@/lib/extension/voicecard-api";
 
 interface Props {
   onNext: () => void;
@@ -22,7 +21,6 @@ interface Props {
 
 export function WriteDnaProgress({ onNext, onBack, onAddSample, onCelebrate }: Props) {
   const { state, update } = useAplyerStore();
-  const persistResumeOnly = useServerFn(setResumeOnly);
   const qualifying = countQualifyingSamples(state.writingSamples);
   const resumeUploaded = !!state.resumeMetadata;
   const dna = computeWriteDna({
@@ -53,7 +51,7 @@ export function WriteDnaProgress({ onNext, onBack, onAddSample, onCelebrate }: P
       writeDna: { ...state.writeDna, resumeOnly: true, fallbackChoiceCompleted: true },
     });
     try {
-      await persistResumeOnly({ data: { resumeOnly: true } });
+      await setResumeOnlyApi(true);
     } catch (e) {
       console.warn("[aplyer] setResumeOnly failed", e);
     }
