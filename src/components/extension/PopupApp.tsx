@@ -183,7 +183,18 @@ export function PopupApp() {
     case "writing_samples":
       return <WritingSamples onNext={() => goTo("writedna_progress")} onBack={() => goTo("writedna_progress")} />;
     case "voice_card":
-      return <VoiceCard onDone={() => goTo("profile")} />;
+      if (showAbDemo) {
+        return <AbDemo onDone={() => { setShowAbDemo(false); void goTo("profile"); }} />;
+      }
+      return (
+        <VoiceCard
+          onDone={() => {
+            if (state.writeDna.resumeOnly) void goTo("profile");
+            else setShowAbDemo(true);
+          }}
+          onSkipToProfile={() => void goTo("profile")}
+        />
+      );
     case "profile":
       return <Profile onNext={() => goTo("success")} onBack={() => goTo("writedna_progress")} />;
     case "success":
