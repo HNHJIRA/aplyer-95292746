@@ -89,7 +89,12 @@ export function computeWriteDna(input: {
     voiceCardStatus,
     voiceCard: input.voiceCard ?? null,
     voiceCardGeneratedAt: input.voiceCardGeneratedAt ?? null,
+    voiceCardError: null,
     celebratedStrong: !!input.celebratedStrong,
+    abDemoCompleted: false,
+    abDemoAnswer: null,
+    fallbackChoiceCompleted: false,
+    preferredVariantId: null,
   };
 }
 

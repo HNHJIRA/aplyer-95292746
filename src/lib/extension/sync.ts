@@ -157,17 +157,9 @@ export async function hydrateFromBackend(): Promise<AplyerState | null> {
     };
     // Hydrate WriteDNA columns if present.
     if ("voice_confidence" in p) {
-      const stage =
-        !p.resume_uploaded
-          ? "idle"
-          : (p.writing_sample_count as number) === 0
-            ? "building"
-            : (p.writing_sample_count as number) === 1
-              ? "good"
-              : "strong";
       patch.writeDna = {
         ...current.writeDna,
-        stage: stage as typeof current.writeDna.stage,
+        stage: (p.writedna_stage as typeof current.writeDna.stage) ?? "idle",
         voiceConfidence: Number(p.voice_confidence ?? 0),
         writingSampleCount: Number(p.writing_sample_count ?? 0),
         qualifyingProseCount: Number(p.qualifying_prose_count ?? p.writing_sample_count ?? 0),
@@ -176,7 +168,12 @@ export async function hydrateFromBackend(): Promise<AplyerState | null> {
         voiceCardStatus: (p.voice_card_status as typeof current.writeDna.voiceCardStatus) ?? "locked",
         voiceCard: (p.voice_card_data as typeof current.writeDna.voiceCard) ?? null,
         voiceCardGeneratedAt: (p.voice_card_generated_at as string | null) ?? null,
+        voiceCardError: (p.voice_card_error as string | null) ?? null,
         celebratedStrong: !!p.celebrated_strong,
+        abDemoCompleted: !!p.ab_demo_completed,
+        abDemoAnswer: (p.ab_demo_answer as string | null) ?? null,
+        fallbackChoiceCompleted: !!p.fallback_choice_completed,
+        preferredVariantId: (p.preferred_variant_id as string | null) ?? null,
       };
     }
   }
