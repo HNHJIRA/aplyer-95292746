@@ -106,14 +106,31 @@ export async function syncResumeToBackend(
 
 export async function syncWritingSampleToBackend(sample: WritingSample) {
   const { data: u } = await supabase.auth.getUser();
+  if (!u.user) return null;
+  const { data, error } = await supabase
+    .from("writing_samples")
+    .insert({
+      user_id: u.user.id,
+      title: sample.title,
+      type: sample.type,
+      content: sample.content,
+      word_count: sample.wordCount,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteWritingSampleFromBackend(id: string) {
+  const { data: u } = await supabase.auth.getUser();
   if (!u.user) return;
-  await supabase.from("writing_samples").insert({
-    user_id: u.user.id,
-    title: sample.title,
-    type: sample.type,
-    content: sample.content,
-    word_count: sample.wordCount,
-  });
+  const { error } = await supabase
+    .from("writing_samples")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", u.user.id);
+  if (error) throw error;
 }
 
 /**
