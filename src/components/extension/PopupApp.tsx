@@ -172,7 +172,7 @@ export function PopupApp() {
     return () => goTo(FLOW[Math.max(i - 1, 0)]);
   }
 
-  if (!sessionChecked || (session && !loaded)) {
+  if (!sessionChecked || (session && !loaded) || hydrating) {
     return <div className="flex h-full items-center justify-center text-muted-foreground text-sm">Loading…</div>;
   }
 
