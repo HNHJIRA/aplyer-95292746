@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Plus, ShieldCheck } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { Button } from "../ui/Button";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
 import {
@@ -10,6 +11,7 @@ import {
   stageLabel,
 } from "@/lib/writedna";
 import { ProgressRing } from "@/components/writedna/ProgressRing";
+import { setResumeOnly } from "@/lib/voicecard.functions";
 
 interface Props {
   onNext: () => void;
