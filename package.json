@@ -11,6 +11,8 @@
     "build:extension": "vite build --config vite.extension.config.ts",
     "preview": "vite preview",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "format": "prettier --write ."
   },
   "dependencies": {
