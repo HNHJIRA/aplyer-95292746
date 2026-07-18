@@ -81,7 +81,11 @@ function AuthPage() {
           password: parsed.data.password,
           options: {
             emailRedirectTo: `${window.location.origin}${redirectTo}`,
-            data: { first_name: parsed.data.firstName, last_name: parsed.data.lastName },
+            data: {
+              first_name: parsed.data.firstName,
+              last_name: parsed.data.lastName,
+              phone: parsed.data.phone,
+            },
           },
         });
         if (signUpError) {
