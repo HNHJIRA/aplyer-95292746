@@ -278,9 +278,15 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
                   </button>
                 </div>
               ))}
-              <Button variant="outline" className="w-full" onClick={() => setAdding(true)}>
-                <Plus className="h-4 w-4" /> Add Writing Sample
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" onClick={() => setAdding(true)}>
+                  <Plus className="h-4 w-4" /> Add
+                </Button>
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {uploading ? "Extracting…" : "Upload"}
+                </Button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
