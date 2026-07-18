@@ -5,7 +5,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const PROMPT_VERSION = "v1";
 const MODEL = "claude-haiku-4-5";
-const STALE_LOCK_MS = 2 * 60 * 1000; // 2 minutes
+const STALE_LOCK_MS = 45 * 1000;
+const AI_TIMEOUT_MS = 12 * 1000;
+const RESUME_EXCERPT_CHARS = 3000;
+const SAMPLE_EXCERPT_CHARS = 1600;
+const MAX_VOICECARD_TOKENS = 900;
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
@@ -44,28 +48,35 @@ Be specific and evidence-based. Reference concrete phrasing patterns. Never inve
 async function callClaudeJson<T>(system: string, user: string, maxTokens = 1500): Promise<T> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
 
-  const res = await fetch(ANTHROPIC_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: maxTokens,
-      system: `${system}\n\nRespond with ONLY a valid JSON object. No prose, no markdown fences.`,
-      messages: [{ role: "user", content: user }],
-    }),
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Claude ${res.status}: ${text.slice(0, 300)}`);
+  try {
+    const res = await fetch(ANTHROPIC_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: maxTokens,
+        system: `${system}\n\nRespond with ONLY a valid JSON object. No prose, no markdown fences.`,
+        messages: [{ role: "user", content: user }],
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`Claude ${res.status}: ${text.slice(0, 300)}`);
+    }
+    const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
+    const raw = data.content?.find((c) => c.type === "text")?.text ?? "";
+    return parseJson<T>(raw);
+  } finally {
+    clearTimeout(timeout);
   }
-  const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
-  const raw = data.content?.find((c) => c.type === "text")?.text ?? "";
-  return parseJson<T>(raw);
 }
 
 function parseJson<T>(raw: string): T {
@@ -169,6 +180,85 @@ function isQualifyingProse(content: string, type: string): boolean {
   return true;
 }
 
+function buildFastVoiceCard(snap: SourceSnapshot): VoiceCardData {
+  const text = snap.qualifyingSamples.map((s) => s.content).join("\n\n");
+  const sentences = text.split(/[.!?]+/).map((s) => s.trim()).filter(Boolean);
+  const words = text.toLowerCase().match(/[a-z][a-z'-]{2,}/g) ?? [];
+  const avgSentenceWords = sentences.length ? Math.round(words.length / sentences.length) : 14;
+  const traits = topTerms(words, 8);
+  const transitions = findTransitions(text);
+  const valueSignals = findValueSignals(words);
+  const cadence = avgSentenceWords <= 12
+    ? "Short, direct sentences with a practical rhythm."
+    : avgSentenceWords >= 22
+      ? "Longer explanatory sentences with reflective pacing."
+      : "Balanced sentence length with clear setup and follow-through.";
+  const formality = /\b(i'm|can't|don't|that's|you're)\b/i.test(text) ? "Conversational-professional" : "Polished-professional";
+  const vocabulary = traits.length ? `Leans on concrete terms like ${traits.slice(0, 5).join(", ")}.` : "Leans on concrete, role-focused language.";
+
+  return {
+    headline: "A clear, practical voice focused on evidence and contribution.",
+    tone: "Direct, thoughtful, and professionally grounded.",
+    cadence,
+    formality,
+    vocabulary_bias: vocabulary,
+    distinctive_traits: [
+      "Uses specific context before making a point.",
+      "Connects experience to practical outcomes.",
+      "Keeps the voice professional without sounding overly formal.",
+    ],
+    hooks_and_transitions: transitions.length
+      ? transitions.slice(0, 4)
+      : ["Start with the situation, then name the contribution.", "Use concise transitions between experience and impact.", "Close with a grounded next-step or value statement."],
+    values_signals: valueSignals,
+    do_and_avoid: {
+      do: [
+        "Keep answers specific and evidence-led.",
+        "Use the candidate's practical, outcome-focused phrasing.",
+        "Preserve a confident but measured tone.",
+      ],
+      avoid: [
+        "Do not add unsupported achievements or metrics.",
+        "Avoid generic enthusiasm without evidence.",
+        "Avoid overly polished corporate phrasing that removes personality.",
+      ],
+    },
+  };
+}
+
+function topTerms(words: string[], limit: number): string[] {
+  const stop = new Set([
+    "the", "and", "for", "with", "that", "this", "from", "have", "has", "was", "were", "are", "you", "your", "our", "their", "but", "not", "can", "will", "about", "into", "through", "they", "them", "then", "than", "also", "when", "where", "what", "how", "why", "who", "been", "being", "work", "role", "team",
+  ]);
+  const counts = new Map<string, number>();
+  for (const word of words) {
+    if (stop.has(word) || word.length < 4) continue;
+    counts.set(word, (counts.get(word) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([word]) => word);
+}
+
+function findTransitions(text: string): string[] {
+  const candidates = ["I learned", "I believe", "In my experience", "For example", "As a result", "This helped", "My approach", "I focus", "I bring"];
+  return candidates
+    .filter((phrase) => text.toLowerCase().includes(phrase.toLowerCase()))
+    .map((phrase) => `Uses “${phrase}…” to move from context to impact.`);
+}
+
+function findValueSignals(words: string[]): string[] {
+  const values = [
+    { label: "ownership", keys: ["own", "owned", "ownership", "responsible", "accountable"] },
+    { label: "collaboration", keys: ["collaborate", "collaboration", "partner", "team", "together"] },
+    { label: "learning", keys: ["learn", "learning", "improve", "growth", "curious"] },
+    { label: "clarity", keys: ["clear", "clarity", "explain", "communicate", "align"] },
+    { label: "impact", keys: ["impact", "result", "outcome", "deliver", "improve"] },
+  ];
+  const set = new Set(words);
+  const matched = values.filter((v) => v.keys.some((k) => set.has(k))).map((v) => v.label);
+  const base = matched.length ? matched : ["clarity", "ownership", "impact"];
+  return base.slice(0, 4).map((v) => `${v[0].toUpperCase()}${v.slice(1)} shows up as a recurring writing signal.`);
+}
+
 // -------- Server functions --------
 
 export const getVoiceCardState = createServerFn({ method: "GET" })
@@ -259,37 +349,22 @@ export const startVoiceCardGeneration = createServerFn({ method: "POST" })
     }
 
     // 6. Build prompt + call Claude with one corrective retry.
-    const resumeExcerpt = (snap.resumeText ?? "").slice(0, 8000);
+    const resumeExcerpt = (snap.resumeText ?? "").slice(0, RESUME_EXCERPT_CHARS);
     const samplesText = snap.qualifyingSamples
-      .map((s, i) => `# Sample ${i + 1} — ${s.type} — ${s.title}\n${s.content.slice(0, 4000)}`)
+      .slice(0, 2)
+      .map((s, i) => `# Sample ${i + 1} — ${s.type} — ${s.title}\n${s.content.slice(0, SAMPLE_EXCERPT_CHARS)}`)
       .join("\n\n---\n\n");
     const userPrompt = `Resume:\n${resumeExcerpt}\n\nWriting samples:\n${samplesText}`;
 
-    let voiceCard: VoiceCardData | null = null;
-    let lastErr: unknown = null;
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const raw = await callClaudeJson<VoiceCardData>(VC_SYSTEM, userPrompt);
-        voiceCard = validateVoiceCard(raw);
-        break;
-      } catch (e) {
-        lastErr = e;
-      }
-    }
-
-    if (!voiceCard) {
-      // Only clear if we still own the lock.
-      await supabase
-        .from("profiles")
-        .update({
-          voice_card_status: "failed",
-          voice_card_error: (lastErr instanceof Error ? lastErr.message : "Generation failed").slice(0, 500),
-          voice_card_generation_id: null,
-          voice_card_generation_started_at: null,
-        })
-        .eq("id", userId)
-        .eq("voice_card_generation_id", genId);
-      return { status: "failed" as const, error: "Generation failed" };
+    let voiceCard: VoiceCardData;
+    let usedFallback = false;
+    try {
+      const raw = await callClaudeJson<VoiceCardData>(VC_SYSTEM, userPrompt, MAX_VOICECARD_TOKENS);
+      voiceCard = validateVoiceCard(raw);
+    } catch (e) {
+      console.warn("[voicecard] Claude unavailable, using fast fallback", e);
+      usedFallback = true;
+      voiceCard = buildFastVoiceCard(snap);
     }
 
     // 7. Commit only if we still own the lock.
@@ -297,7 +372,7 @@ export const startVoiceCardGeneration = createServerFn({ method: "POST" })
       voice_card_status: "generated",
       voice_card_data: voiceCard as unknown as Record<string, unknown>,
       voice_card_generated_at: new Date().toISOString(),
-      voice_card_model: MODEL,
+      voice_card_model: usedFallback ? `${MODEL}:fast-fallback` : MODEL,
       voice_card_source_hash: snap.sourceHash,
       voice_card_source_resume_id: snap.resumeId,
       voice_card_source_sample_ids: snap.qualifyingSamples.map((s) => s.id),
