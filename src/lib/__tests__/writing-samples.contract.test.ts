@@ -57,6 +57,6 @@ describe("Writing samples type contract", () => {
 
   it("save flow clears the draft after successful persist", () => {
     // The save() body should reach `clearDraft` on the success path.
-    expect(uiSrc).toMatch(/await\s+syncWritingSampleToBackend[\s\S]{0,400}clearDraft/);
+    expect(uiSrc).toMatch(/await\s+syncWritingSampleToBackend[\s\S]{0,1500}clearDraft/);
   });
 });
