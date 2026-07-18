@@ -42,7 +42,7 @@ function AuthPage() {
   const redirectTo = getSafeRedirect(search.redirect);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "" });
+  const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", email: "", password: "" });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
