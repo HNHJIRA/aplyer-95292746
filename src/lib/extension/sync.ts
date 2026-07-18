@@ -170,9 +170,12 @@ export async function hydrateFromBackend(): Promise<AplyerState | null> {
         stage: stage as typeof current.writeDna.stage,
         voiceConfidence: Number(p.voice_confidence ?? 0),
         writingSampleCount: Number(p.writing_sample_count ?? 0),
+        qualifyingProseCount: Number(p.qualifying_prose_count ?? p.writing_sample_count ?? 0),
         resumeUploaded: !!p.resume_uploaded,
         resumeOnly: !!p.resume_only,
         voiceCardStatus: (p.voice_card_status as typeof current.writeDna.voiceCardStatus) ?? "locked",
+        voiceCard: (p.voice_card_data as typeof current.writeDna.voiceCard) ?? null,
+        voiceCardGeneratedAt: (p.voice_card_generated_at as string | null) ?? null,
         celebratedStrong: !!p.celebrated_strong,
       };
     }
