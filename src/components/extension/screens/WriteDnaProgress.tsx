@@ -22,6 +22,7 @@ interface Props {
 
 export function WriteDnaProgress({ onNext, onBack, onAddSample, onCelebrate }: Props) {
   const { state, update } = useAplyerStore();
+  const persistResumeOnly = useServerFn(setResumeOnly);
   const qualifying = countQualifyingSamples(state.writingSamples);
   const resumeUploaded = !!state.resumeMetadata;
   const dna = computeWriteDna({
@@ -33,26 +34,29 @@ export function WriteDnaProgress({ onNext, onBack, onAddSample, onCelebrate }: P
   });
   const color = stageColor(dna.stage);
 
-  // Persist current DNA state and fire celebration when Strong is first reached.
   useEffect(() => {
     const nextPatch: Partial<typeof state.writeDna> = {
       voiceConfidence: dna.voiceConfidence,
       writingSampleCount: dna.writingSampleCount,
+      qualifyingProseCount: dna.qualifyingProseCount,
       resumeUploaded: dna.resumeUploaded,
       voiceCardStatus: dna.voiceCardStatus,
       stage: dna.stage,
     };
     void update({ writeDna: { ...state.writeDna, ...nextPatch } });
-    // Auto-transition disabled: user clicks Continue to advance to Voice Card
-    // generation, so we never bypass the review step.
-    void onCelebrate; // referenced to keep prop stable
-     
+    void onCelebrate;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dna.voiceConfidence, dna.stage]);
 
   async function chooseResumeOnly() {
     await update({
-      writeDna: { ...state.writeDna, resumeOnly: true },
+      writeDna: { ...state.writeDna, resumeOnly: true, fallbackChoiceCompleted: true },
     });
+    try {
+      await persistResumeOnly({ data: { resumeOnly: true } });
+    } catch (e) {
+      console.warn("[aplyer] setResumeOnly failed", e);
+    }
     onNext();
   }
 
