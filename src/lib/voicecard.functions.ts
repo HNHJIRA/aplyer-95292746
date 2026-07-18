@@ -105,10 +105,8 @@ interface SourceSnapshot {
   sourceHash: string;
 }
 
-async function fetchSourceSnapshot(
-  supabase: NonNullable<Parameters<typeof requireSupabaseAuth>[0]> extends never ? never : any, // eslint-disable-line @typescript-eslint/no-explicit-any
-  userId: string,
-): Promise<SourceSnapshot> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function fetchSourceSnapshot(supabase: any, userId: string): Promise<SourceSnapshot> {
   const [resumeRes, samplesRes] = await Promise.all([
     supabase
       .from("resumes")
