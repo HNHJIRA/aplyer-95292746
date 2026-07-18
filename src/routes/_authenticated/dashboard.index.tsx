@@ -123,6 +123,7 @@ function DashboardHome() {
               }
             : computeWriteDna({
                 resumeUploaded: !!data.resume,
+                qualifyingProseCount: Math.min(2, data.samplesCount),
                 writingSampleCount: Math.min(2, data.samplesCount),
               });
         return <WriteDnaCard writeDna={dna} />;
