@@ -293,22 +293,24 @@ export const startVoiceCardGeneration = createServerFn({ method: "POST" })
     }
 
     // 7. Commit only if we still own the lock.
+    const commitPayload: Record<string, unknown> = {
+      voice_card_status: "generated",
+      voice_card_data: voiceCard as unknown as Record<string, unknown>,
+      voice_card_generated_at: new Date().toISOString(),
+      voice_card_model: MODEL,
+      voice_card_source_hash: snap.sourceHash,
+      voice_card_source_resume_id: snap.resumeId,
+      voice_card_source_sample_ids: snap.qualifyingSamples.map((s) => s.id),
+      voice_card_prompt_version: PROMPT_VERSION,
+      voice_card_error: null,
+      voice_card_generation_id: null,
+      voice_card_generation_started_at: null,
+      voice_confidence: 100,
+    };
     const { data: committed } = await supabase
       .from("profiles")
-      .update({
-        voice_card_status: "generated",
-        voice_card_data: voiceCard as unknown as Record<string, unknown>,
-        voice_card_generated_at: new Date().toISOString(),
-        voice_card_model: MODEL,
-        voice_card_source_hash: snap.sourceHash,
-        voice_card_source_resume_id: snap.resumeId,
-        voice_card_source_sample_ids: snap.qualifyingSamples.map((s) => s.id),
-        voice_card_prompt_version: PROMPT_VERSION,
-        voice_card_error: null,
-        voice_card_generation_id: null,
-        voice_card_generation_started_at: null,
-        voice_confidence: 100,
-      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update(commitPayload as any)
       .eq("id", userId)
       .eq("voice_card_generation_id", genId)
       .select("voice_card_data")
