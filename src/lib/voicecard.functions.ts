@@ -297,7 +297,7 @@ export const startVoiceCardGeneration = createServerFn({ method: "POST" })
       .from("profiles")
       .update({
         voice_card_status: "generated",
-        voice_card_data: voiceCard,
+        voice_card_data: voiceCard as unknown as Record<string, unknown>,
         voice_card_generated_at: new Date().toISOString(),
         voice_card_model: MODEL,
         voice_card_source_hash: snap.sourceHash,
