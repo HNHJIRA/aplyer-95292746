@@ -108,6 +108,26 @@ export function PopupApp() {
     return () => c?.storage?.onChanged?.removeListener(onChanged);
   }, [refreshSession, hydrateOnce]);
 
+  // Recovery: snap the current onboarding step to voice_card whenever the
+  // canonical Voice Card status is mid-lifecycle (generating/failed/stale) or
+  // generated-but-A/B-pending. This overrides local navigation history so a
+  // returning user always lands on the correct screen.
+  useEffect(() => {
+    if (!loaded || !session || state.onboardingStatus.completed) return;
+    const s = state.writeDna.voiceCardStatus;
+    const mid = s === "generating" || s === "failed" || s === "stale";
+    const abPending =
+      s === "generated" &&
+      !state.writeDna.resumeOnly &&
+      !state.writeDna.abDemoCompleted;
+    if ((mid || abPending) && state.onboardingStatus.currentStep !== "voice_card") {
+      void update({
+        onboardingStatus: { ...state.onboardingStatus, currentStep: "voice_card" },
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, session, state.writeDna.voiceCardStatus, state.writeDna.abDemoCompleted, state.writeDna.resumeOnly]);
+
   async function handleSignOut() {
     try {
       await supabase.auth.signOut({ scope: "local" });
