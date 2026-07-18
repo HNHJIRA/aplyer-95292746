@@ -128,6 +128,7 @@ export interface WriteDnaState {
 }
 
 export interface AplyerState {
+  activeUserId: string | null;
   resumeText: string | null;
   resumeMetadata: ResumeMetadata | null;
   resumeScore: ResumeScore | null;
@@ -159,6 +160,7 @@ export const DEFAULT_WRITEDNA: WriteDnaState = {
 };
 
 export const DEFAULT_STATE: AplyerState = {
+  activeUserId: null,
   resumeText: null,
   resumeMetadata: null,
   resumeScore: null,
