@@ -72,7 +72,6 @@ export type OnboardingStep =
   | "writedna_progress"
   | "writing_samples"
   | "voice_card"
-  | "profile"
   | "success"
   | "done";
 
