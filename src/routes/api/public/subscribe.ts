@@ -69,6 +69,15 @@ export const Route = createFileRoute("/api/public/subscribe")({
             body["fields[email]"],
           ).toLowerCase();
           const source = firstString(body.source, body.page, body.origin).slice(0, 64) || null;
+          const firstName =
+            firstString(
+              body.firstName,
+              body.first_name,
+              body.fname,
+              body.name,
+              body.fullName,
+            ).slice(0, 60) || null;
+
 
           if (!EMAIL_RE.test(email) || email.length > 254) {
             return jsonWithCors({ error: "Please enter a valid email address." }, 400);
