@@ -61,11 +61,11 @@ export function WriteDnaProgress({ onNext, onBack, onAddSample, onCelebrate }: P
   return (
     <div className="flex h-full flex-col px-6 pt-2">
       <div>
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-field px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-field px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
           Write DNA
         </div>
         <h2 className="mt-2 text-[20px] font-black tracking-tight">{stageLabel(dna.stage)}</h2>
-        <p className="mt-1 text-[12px] text-muted-foreground">
+        <p className="mt-1 text-[13px] text-muted-foreground">
           The more of your voice we learn, the more human your applications feel.
         </p>
       </div>
@@ -77,7 +77,7 @@ export function WriteDnaProgress({ onNext, onBack, onAddSample, onCelebrate }: P
           className="mt-4 flex flex-col items-center rounded-2xl border border-border bg-paper py-5"
         >
           <ProgressRing value={dna.voiceConfidence} size={148} color={color} label="Voice" />
-          <div className="mt-3 text-[12px] text-muted-foreground">
+          <div className="mt-3 text-[13px] text-muted-foreground">
             {dna.writingSampleCount} / 2 qualifying samples
           </div>
         </motion.div>
@@ -92,7 +92,7 @@ export function WriteDnaProgress({ onNext, onBack, onAddSample, onCelebrate }: P
           <button
             type="button"
             onClick={chooseResumeOnly}
-            className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-field px-3 py-2 text-[11px] text-muted-foreground hover:text-foreground"
+            className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-field px-3 py-2 text-[12px] text-muted-foreground hover:text-foreground"
           >
             <ShieldCheck className="h-3 w-3" /> Continue with resume only
           </button>
@@ -119,7 +119,7 @@ export function WriteDnaProgress({ onNext, onBack, onAddSample, onCelebrate }: P
 
 function Step({ done, label }: { done: boolean; label: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-border bg-paper px-3 py-2 text-[12px]">
+    <div className="flex items-center gap-2 rounded-lg border border-border bg-paper px-3 py-2 text-[13px]">
       <span
         className={`inline-block h-2 w-2 rounded-full ${done ? "bg-brand-green" : "bg-border"}`}
       />

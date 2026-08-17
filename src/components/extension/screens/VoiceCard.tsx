@@ -134,7 +134,7 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
       <Center>
         <Loader2 className="h-10 w-10 animate-spin text-brand-green" />
         <h2 className="mt-4 text-[20px] font-black tracking-tight">Generating your Voice Card…</h2>
-        <p className="mt-1 text-[12px] text-muted-foreground">Analyzing your writing DNA with Claude Haiku 4.5.</p>
+        <p className="mt-1 text-[13px] text-muted-foreground">Analyzing your writing DNA with Claude Haiku 4.5.</p>
       </Center>
     );
   }
@@ -144,7 +144,7 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
       <Center>
         <AlertTriangle className="h-10 w-10 text-[#E5B73A]" />
         <h2 className="mt-4 text-[20px] font-black tracking-tight">Generation failed</h2>
-        <p className="mt-1 max-w-[300px] text-[12px] text-muted-foreground">
+        <p className="mt-1 max-w-[300px] text-[13px] text-muted-foreground">
           {error ?? "Something went wrong."}
         </p>
         <Button className="mt-6 w-full" onClick={handleRetry} disabled={busy}>
@@ -154,7 +154,7 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
           <button
             type="button"
             onClick={onSkipToProfile}
-            className="mt-2 text-[11px] text-muted-foreground hover:text-foreground"
+            className="mt-2 text-[12px] text-muted-foreground hover:text-foreground"
           >
             Continue with resume only
           </button>
@@ -166,7 +166,7 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
   if (status === "generated" && card) {
     return (
       <div className="flex h-full flex-col px-6 pt-3">
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-green/25 bg-brand-green/10 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.18em] text-brand-green self-start">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-green/25 bg-brand-green/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-brand-green self-start">
           <Sparkles className="h-2.5 w-2.5" /> Voice Card Ready
         </div>
         <h2 className="mt-2 text-[20px] font-black tracking-tight">{card.headline}</h2>
@@ -178,12 +178,12 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
           <Chips label="Distinctive traits" items={card.distinctive_traits} />
           <Chips label="Hooks & transitions" items={card.hooks_and_transitions} />
           <Chips label="Values signals" items={card.values_signals} />
-          <div className="rounded-xl border border-border bg-paper p-3 text-[11px]">
-            <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Do</div>
+          <div className="rounded-xl border border-border bg-paper p-3 text-[12px]">
+            <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Do</div>
             <ul className="mt-1 list-disc space-y-0.5 pl-4">
               {card.do_and_avoid.do.map((x, i) => <li key={i}>{x}</li>)}
             </ul>
-            <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Avoid</div>
+            <div className="mt-2 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Avoid</div>
             <ul className="mt-1 list-disc space-y-0.5 pl-4">
               {card.do_and_avoid.avoid.map((x, i) => <li key={i}>{x}</li>)}
             </ul>
@@ -202,7 +202,7 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <Sparkles className="h-8 w-8 text-brand-green" />
       </motion.div>
-      <p className="mt-3 text-[13px] text-muted-foreground">Preparing your Voice Card…</p>
+      <p className="mt-3 text-[14px] text-muted-foreground">Preparing your Voice Card…</p>
     </Center>
   );
 }
@@ -216,8 +216,8 @@ function Center({ children }: { children: React.ReactNode }) {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-border bg-paper px-3 py-2">
-      <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
-      <div className="mt-0.5 text-[12px]">{value}</div>
+      <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="mt-0.5 text-[13px]">{value}</div>
     </div>
   );
 }
@@ -225,7 +225,7 @@ function Row({ label, value }: { label: string; value: string }) {
 function Chips({ label, items }: { label: string; items: string[] }) {
   return (
     <div>
-      <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
       <div className="mt-1 flex flex-wrap gap-1">
         {items.map((it, i) => (
           <span key={i} className="rounded-full border border-border bg-paper px-2 py-0.5 text-[10.5px]">

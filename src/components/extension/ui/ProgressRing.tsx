@@ -43,8 +43,8 @@ export function ProgressRing({ value, size = 120, stroke = 10, label, sublabel }
         >
           {Math.round(v)}
         </motion.span>
-        {label && <span className="mt-1 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">{label}</span>}
-        {sublabel && <span className="text-[10px] text-dim">{sublabel}</span>}
+        {label && <span className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{label}</span>}
+        {sublabel && <span className="text-[11px] text-dim">{sublabel}</span>}
       </div>
     </div>
   );

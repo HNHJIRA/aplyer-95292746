@@ -33,7 +33,7 @@ export function Logo({ size = 36, showWordmark = true, tagline = false }: LogoPr
         <div className="flex flex-col leading-none">
           <span className="text-[20px] font-bold tracking-tight text-brand-green">Aplyer.ai</span>
           {tagline && (
-            <span className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-brand-red">
+            <span className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-brand-red">
               Stop Skipping Jobs
             </span>
           )}
