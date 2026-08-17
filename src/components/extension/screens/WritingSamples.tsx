@@ -124,14 +124,9 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
             createdAt: persisted.created_at ?? optimistic.createdAt,
           }
         : optimistic;
-      await update({
-        writingSamples: [...samples, finalSample],
-        writingSampleDraft: null,
-      });
-      setAdding(false);
-      setTitle("");
-      setContent("");
-      setType("cover_letter");
+      await update({ writingSamples: [...samples, finalSample] });
+      await clearDraft();
+
       // Navigate BEFORE the slow hydrate so the user sees the WriteDNA
       // progress screen immediately after saving.
       onNext();
