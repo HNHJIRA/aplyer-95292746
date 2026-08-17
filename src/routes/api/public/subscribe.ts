@@ -133,7 +133,10 @@ export const Route = createFileRoute("/api/public/subscribe")({
                   email,
                   listIds: [3],
                   updateEnabled: true,
-                  attributes: { SOURCE: source ?? "" },
+                  attributes: {
+                    SOURCE: source ?? "",
+                    ...(firstName ? { FIRSTNAME: firstName } : {}),
+                  },
                 }),
                 signal: AbortSignal.timeout(8000),
               });
@@ -158,13 +161,22 @@ export const Route = createFileRoute("/api/public/subscribe")({
             } catch (e) {
               console.warn("[subscribe] brevo contact error", e);
             }
+          }
 
-            // Welcome email is sent by Brevo automation triggered on list #3 add.
-            // Do NOT send template directly here — it would race/duplicate the automation.
-
+          // Immediate transactional welcome email — ADDITIONAL to the list
+          // automation above, idempotent per address, and strictly fail-soft:
+          // a provider outage must never turn a valid signup into an error.
+          try {
+            const { sendWelcomeEmailOnce } = await import("@/lib/email/brevo.server");
+            await sendWelcomeEmailOnce({ email, firstName, source });
+          } catch (e) {
+            console.warn(
+              `[subscribe] welcome email dispatch failed code=${e instanceof Error ? e.name : "unknown"}`,
+            );
           }
 
           return jsonWithCors({ ok: true });
+
         } catch (err) {
           console.error("[subscribe]", err);
           return jsonWithCors({ error: "Something went wrong. Please try again." }, 500);
