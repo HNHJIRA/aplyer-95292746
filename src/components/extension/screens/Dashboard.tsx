@@ -36,7 +36,7 @@ export function Dashboard({ onResume, onProfile, onSettings }: { onResume: () =>
         <div className="flex items-center gap-2.5">
           <LogoMark size={28} />
           <div className="leading-none">
-            <p className="text-[13px] font-bold text-brand-green">Aplyer.ai</p>
+            <p className="text-[14px] font-bold text-brand-green">Aplyer.ai</p>
             <p className="mt-0.5 font-mono text-[8.5px] uppercase tracking-[0.16em] text-brand-red">Stop Skipping Jobs</p>
           </div>
         </div>
@@ -75,12 +75,12 @@ export function Dashboard({ onResume, onProfile, onSettings }: { onResume: () =>
                   transition={{ duration: 1, ease: "easeOut" }}
                 />
               </svg>
-              <span className="absolute text-[16px] font-black">{state.resumeScore?.score ?? 0}</span>
+              <span className="absolute text-[17px] font-black">{state.resumeScore?.score ?? 0}</span>
             </div>
             <div className="flex-1">
-              <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-brand-green">Resume Readiness</p>
-              <p className="mt-0.5 text-[14px] font-bold leading-tight">{getReadinessLabel(state.resumeScore?.score ?? 0)}</p>
-              <p className="text-[11px] text-muted-foreground">{state.resumeMetadata?.fileName ?? "No resume on file"}</p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-green">Resume Readiness</p>
+              <p className="mt-0.5 text-[15px] font-bold leading-tight">{getReadinessLabel(state.resumeScore?.score ?? 0)}</p>
+              <p className="text-[12px] text-muted-foreground">{state.resumeMetadata?.fileName ?? "No resume on file"}</p>
             </div>
           </div>
         </motion.div>
@@ -96,12 +96,12 @@ export function Dashboard({ onResume, onProfile, onSettings }: { onResume: () =>
         {/* Supported platforms */}
         <div className="rounded-xl border border-border bg-paper p-3">
           <div className="mb-2 flex items-center justify-between">
-            <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Supported Platforms</span>
-            <span className="font-mono text-[9px] text-brand-green">Ready</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Supported Platforms</span>
+            <span className="font-mono text-[10px] text-brand-green">Ready</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {PLATFORMS.map((p) => (
-              <span key={p.name} className="inline-flex items-center gap-1.5 rounded-md border border-border bg-field px-2 py-1 text-[11px]">
+              <span key={p.name} className="inline-flex items-center gap-1.5 rounded-md border border-border bg-field px-2 py-1 text-[12px]">
                 <span className="h-1.5 w-1.5 rounded-full" style={{ background: p.color }} />
                 {p.name}
               </span>
@@ -111,7 +111,7 @@ export function Dashboard({ onResume, onProfile, onSettings }: { onResume: () =>
 
         {/* Quick actions */}
         <div className="rounded-xl border border-border bg-paper p-3">
-          <div className="mb-2 font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Quick Actions</div>
+          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Quick Actions</div>
           <div className="space-y-1.5">
             <QuickAction icon={<Upload className="h-4 w-4" />} label="Re-upload Resume" onClick={onResume} />
             <QuickAction icon={<User className="h-4 w-4" />} label="Edit Profile" onClick={onProfile} />
@@ -132,8 +132,8 @@ export function Dashboard({ onResume, onProfile, onSettings }: { onResume: () =>
                 <Crown className="h-4 w-4" />
               </div>
               <div className="flex-1">
-                <p className="text-[13px] font-bold">Unlock Aplyer Pro</p>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">Unlimited apps, advanced AI models, priority support.</p>
+                <p className="text-[14px] font-bold">Unlock Aplyer Pro</p>
+                <p className="mt-0.5 text-[12px] text-muted-foreground">Unlimited apps, advanced AI models, priority support.</p>
               </div>
             </div>
             <Button size="sm" className="mt-2.5 w-full" onClick={openSubscription}>Upgrade</Button>
@@ -166,8 +166,8 @@ function StatusCard({ icon, label, value, ok, onClick }: { icon: React.ReactNode
         <span className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-brand-green" : "bg-brand-red"}`} />
       </div>
       <div>
-        <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
-        <p className="mt-0.5 text-[14px] font-bold">{value}</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+        <p className="mt-0.5 text-[15px] font-bold">{value}</p>
       </div>
     </motion.button>
   );
@@ -179,7 +179,7 @@ function QuickAction({ icon, label, onClick }: { icon: React.ReactNode; label: s
       onClick={onClick}
       className="flex w-full items-center justify-between rounded-lg border border-transparent bg-field px-3 py-2 text-left transition hover:border-brand-green/20 hover:bg-field-2"
     >
-      <span className="flex items-center gap-2.5 text-[12px] text-foreground">
+      <span className="flex items-center gap-2.5 text-[13px] text-foreground">
         <span className="text-brand-green">{icon}</span>
         {label}
       </span>

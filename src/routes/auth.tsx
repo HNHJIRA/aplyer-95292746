@@ -8,9 +8,9 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (search) => ({
-    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } =>
+    typeof search.redirect === "string" ? { redirect: search.redirect } : {},
+
   head: () => ({
     meta: [
       { title: "Sign in · Aplyer.ai" },

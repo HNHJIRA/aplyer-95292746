@@ -1,7 +1,16 @@
 // Aplyer content-script orchestrator — hardened for production.
 (function () {
   const log = window.AplyerLog;
-  const ORCH_VERSION = "1.1.0";
+  const ORCH_VERSION = "1.2.0";
+
+  // Single-init guard: MV3 can inject the same content script more than once
+  // (all_frames + SPA re-navigation + scripting.executeScript). A second copy
+  // would double-register observers and listeners, causing duplicate buttons.
+  if (window.__aplyerContentBooted) {
+    log.info("boot", "Content script already active in this frame — skipping re-init");
+    return;
+  }
+  window.__aplyerContentBooted = true;
 
   log.info("boot", "Content script loaded", {
     url: location.href,
@@ -198,9 +207,28 @@
     mo.observe(document.body, { childList: true, subtree: true });
   } catch (e) { log.warn("observer", "MutationObserver setup failed", String(e)); }
 
-  // Re-scan on SPA route transitions.
-  window.addEventListener("popstate", () => scheduleScan(200));
-  window.addEventListener("pageshow", () => scheduleScan(200));
-  // Tear down on unload so the observer can be GC'd.
-  window.addEventListener("pagehide", () => { try { mo?.disconnect(); } catch {} });
+  // Named handlers so every listener registered here can be removed again.
+  const onPopState = () => scheduleScan(200);
+  const onPageShow = () => scheduleScan(200);
+  window.addEventListener("popstate", onPopState);
+  window.addEventListener("pageshow", onPageShow);
+
+  let tornDown = false;
+  function teardown() {
+    if (tornDown) return;
+    tornDown = true;
+    try { mo?.disconnect(); } catch {}
+    clearTimeout(pendingScan);
+    window.removeEventListener("popstate", onPopState);
+    window.removeEventListener("pageshow", onPageShow);
+    try { pill?.remove(); } catch {}
+    pill = null;
+    window.__aplyerContentBooted = false;
+    log.info("boot", "Content script torn down", { scans: totalScans, injections: totalInjections });
+  }
+
+  // Tear down on unload so observers, timers and listeners can be GC'd.
+  window.addEventListener("pagehide", teardown, { once: true });
+  window.addEventListener("unload", teardown, { once: true });
+  window.__aplyerTeardown = teardown;
 })();

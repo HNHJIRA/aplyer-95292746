@@ -301,6 +301,54 @@ export type Database = {
         }
         Relationships: []
       }
+      welcome_email_events: {
+        Row: {
+          attempted_at: string
+          attempts: number
+          created_at: string
+          email: string
+          error_code: string | null
+          first_name: string | null
+          id: string
+          provider: string
+          provider_message_id: string | null
+          sent_at: string | null
+          source: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempted_at?: string
+          attempts?: number
+          created_at?: string
+          email: string
+          error_code?: string | null
+          first_name?: string | null
+          id?: string
+          provider?: string
+          provider_message_id?: string | null
+          sent_at?: string | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempted_at?: string
+          attempts?: number
+          created_at?: string
+          email?: string
+          error_code?: string | null
+          first_name?: string | null
+          id?: string
+          provider?: string
+          provider_message_id?: string | null
+          sent_at?: string | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       writing_samples: {
         Row: {
           content: string

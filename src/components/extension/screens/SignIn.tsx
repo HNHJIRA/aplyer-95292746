@@ -24,14 +24,14 @@ export function SignIn({
           <LogoMark size={72} />
         </motion.div>
 
-        <div className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-brand-green/25 bg-brand-green/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-brand-green">
+        <div className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-brand-green/25 bg-brand-green/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-brand-green">
           <Lock className="h-3 w-3" /> Sign in required
         </div>
 
         <h1 className="mt-4 text-[24px] font-black leading-tight tracking-tight text-foreground">
           Connect your <span className="text-brand-green">Aplyer</span> account
         </h1>
-        <p className="mt-3 text-[13px] leading-relaxed text-sub">
+        <p className="mt-3 text-[14px] leading-relaxed text-sub">
           Sign in once on the web. Your resume, profile, and writing samples
           stay synced across devices.
         </p>
@@ -44,7 +44,7 @@ export function SignIn({
         <button
           onClick={onRefresh}
           disabled={checking}
-          className="inline-flex items-center justify-center gap-1.5 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center justify-center gap-1.5 py-1 text-[12px] text-muted-foreground hover:text-foreground"
         >
           <RefreshCw className={`h-3 w-3 ${checking ? "animate-spin" : ""}`} />
           {checking ? "Checking…" : "I've signed in — check again"}
