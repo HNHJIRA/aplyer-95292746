@@ -61,6 +61,7 @@
     // discovered (Greenhouse/Workday render fields lazily).
     renderPill();
     maybeBroadcast();
+    scheduleSafety();
 
     if (found.length === 0) return;
 
@@ -124,6 +125,24 @@
   function maybeBroadcast() {
     // Even with no new questions, ensure status is published once.
     if (!lastBroadcast) broadcast();
+  }
+
+  // --- Deterministic job-safety check (tab-scoped, top frame only) ---------
+  let lastSafetyUrl = "";
+  let safetyTimer = null;
+  function checkSafety() {
+    if (window.top !== window) return;
+    const url = location.href;
+    if (url === lastSafetyUrl) return; // dedupe; URL change invalidates
+    lastSafetyUrl = url;
+    try {
+      chrome.runtime.sendMessage({ type: "APLYER_JOB_SAFETY_CHECK", url })
+        .catch(() => {});
+    } catch { /* runtime gone */ }
+  }
+  function scheduleSafety(delay = 400) {
+    clearTimeout(safetyTimer);
+    safetyTimer = setTimeout(checkSafety, delay);
   }
 
   function renderPill() {
@@ -208,7 +227,7 @@
   } catch (e) { log.warn("observer", "MutationObserver setup failed", String(e)); }
 
   // Named handlers so every listener registered here can be removed again.
-  const onPopState = () => scheduleScan(200);
+  const onPopState = () => { scheduleScan(200); scheduleSafety(200); };
   const onPageShow = () => scheduleScan(200);
   window.addEventListener("popstate", onPopState);
   window.addEventListener("pageshow", onPageShow);
@@ -219,6 +238,7 @@
     tornDown = true;
     try { mo?.disconnect(); } catch {}
     clearTimeout(pendingScan);
+    clearTimeout(safetyTimer);
     window.removeEventListener("popstate", onPopState);
     window.removeEventListener("pageshow", onPageShow);
     try { pill?.remove(); } catch {}
@@ -249,6 +269,7 @@
     knownIds.clear();
     questions.length = 0;
     lastBroadcast = "";
+    lastSafetyUrl = "";
     scheduleScan(120);
     log.info("boot", "Content script rebooted from bfcache");
   }
