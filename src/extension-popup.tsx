@@ -9,9 +9,12 @@ if (!container) throw new Error("Missing #root element");
 createRoot(container).render(
   <StrictMode>
     {/* Chrome caps popup height at 600px — anything taller gets clipped. */}
-    <div className="h-[600px] w-[420px] overflow-hidden bg-background">
+    <div className="flex h-[600px] w-[420px] flex-col overflow-hidden bg-background">
 
-      <PopupApp />
+
+      <div className="flex min-h-0 flex-1 flex-col">
+        <PopupApp />
+      </div>
     </div>
   </StrictMode>
 );

@@ -107,10 +107,10 @@ export function ResumeUpload({ onNext, onBack }: { onNext: () => void; onBack: (
                 <Upload className="h-6 w-6" />
               )}
             </div>
-            <p className="mt-3 text-[14px] font-semibold text-foreground">
+            <p className="mt-3 text-[15px] font-semibold text-foreground">
               {status === "uploading" ? "Reading your resume…" : status === "error" ? error : "Drop your resume here"}
             </p>
-            <p className="mt-1 text-[12px] text-muted-foreground">or click to browse — PDF, DOCX up to 10 MB</p>
+            <p className="mt-1 text-[13px] text-muted-foreground">or click to browse — PDF, DOCX up to 10 MB</p>
           </motion.label>
         ) : (
           <motion.div
@@ -125,10 +125,10 @@ export function ResumeUpload({ onNext, onBack }: { onNext: () => void; onBack: (
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="h-3.5 w-3.5 text-brand-green" />
-                  <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-brand-green">Stored locally</span>
+                  <span className="font-mono text-[12px] uppercase tracking-[0.14em] text-brand-green">Stored locally</span>
                 </div>
-                <p className="mt-1 truncate text-[14px] font-semibold text-foreground">{meta?.fileName}</p>
-                <p className="mt-0.5 text-[12px] text-muted-foreground">
+                <p className="mt-1 truncate text-[15px] font-semibold text-foreground">{meta?.fileName}</p>
+                <p className="mt-0.5 text-[13px] text-muted-foreground">
                   {meta && formatSize(meta.fileSize)} · {meta && new Date(meta.uploadedAt).toLocaleDateString()}
                 </p>
               </div>
@@ -143,7 +143,7 @@ export function ResumeUpload({ onNext, onBack }: { onNext: () => void; onBack: (
           </motion.div>
         )}
 
-        <ul className="mt-5 space-y-2 text-[12px] text-muted-foreground">
+        <ul className="mt-5 space-y-2 text-[13px] text-muted-foreground">
           <li className="flex items-center gap-2"><Dot /> Your file never leaves this device.</li>
           <li className="flex items-center gap-2"><Dot /> Re-upload anytime to refresh your profile.</li>
           <li className="flex items-center gap-2"><Dot /> Used only when you choose to apply.</li>
@@ -159,7 +159,7 @@ function Header({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="mb-5">
       <h2 className="text-[20px] font-black tracking-tight text-foreground">{title}</h2>
-      <p className="mt-1 text-[13px] text-muted-foreground">{subtitle}</p>
+      <p className="mt-1 text-[14px] text-muted-foreground">{subtitle}</p>
     </div>
   );
 }

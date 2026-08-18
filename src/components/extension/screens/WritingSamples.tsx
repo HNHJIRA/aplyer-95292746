@@ -168,11 +168,11 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
   return (
     <div className="flex h-full flex-col px-6 pt-2">
       <div className="mb-3">
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-field px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-field px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
           Optional
         </div>
         <h2 className="mt-2 text-[20px] font-black tracking-tight">Help Aplyer Learn Your Voice</h2>
-        <p className="mt-1 text-[13px] text-muted-foreground">Upload previous writing samples to improve future personalization.</p>
+        <p className="mt-1 text-[14px] text-muted-foreground">Upload previous writing samples to improve future personalization.</p>
       </div>
 
       <div className="popup-scroll -mx-6 flex-1 overflow-y-auto px-6">
@@ -203,7 +203,7 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
                   <button
                     key={t.id}
                     onClick={() => setType(t.id)}
-                    className={`rounded-md border px-2.5 py-1 text-[12px] transition ${type === t.id ? "border-brand-green/50 bg-brand-green/10 text-brand-green" : "border-border bg-field text-sub hover:text-foreground"}`}
+                    className={`rounded-md border px-2.5 py-1 text-[13px] transition ${type === t.id ? "border-brand-green/50 bg-brand-green/10 text-brand-green" : "border-border bg-field text-sub hover:text-foreground"}`}
                   >
                     {t.label}
                   </button>
@@ -214,13 +214,13 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Title (optional)"
                 maxLength={80}
-                className="mt-3 h-9 w-full rounded-lg border border-border bg-field px-3 text-[13px] placeholder:text-dim focus:border-brand-green/60 focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+                className="mt-3 h-9 w-full rounded-lg border border-border bg-field px-3 text-[14px] placeholder:text-dim focus:border-brand-green/60 focus:outline-none focus:ring-2 focus:ring-brand-green/20"
               />
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-field/50 px-3 py-2 text-[12px] text-muted-foreground hover:border-brand-green/50 hover:text-brand-green disabled:opacity-50"
+                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-field/50 px-3 py-2 text-[13px] text-muted-foreground hover:border-brand-green/50 hover:text-brand-green disabled:opacity-50"
               >
                 {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
                 {uploading ? "Extracting…" : "Upload file (PDF, DOCX, TXT)"}
@@ -230,9 +230,9 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
                 onChange={(e) => setContent(e.target.value.slice(0, MAX))}
                 placeholder="Paste your sample here…"
                 rows={6}
-                className="mt-2 w-full resize-none rounded-lg border border-border bg-field p-3 text-[13px] leading-relaxed placeholder:text-dim focus:border-brand-green/60 focus:outline-none focus:ring-2 focus:ring-brand-green/20"
+                className="mt-2 w-full resize-none rounded-lg border border-border bg-field p-3 text-[14px] leading-relaxed placeholder:text-dim focus:border-brand-green/60 focus:outline-none focus:ring-2 focus:ring-brand-green/20"
               />
-              <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
+              <div className="mt-1.5 flex items-center justify-between text-[12px] text-muted-foreground">
                 <span>
                   {content.length.toLocaleString()} / {MAX.toLocaleString()} chars · {wordCount} words ·{" "}
                   <span className={qualifies ? "text-brand-green" : "text-[#E5B73A]"}>
@@ -252,7 +252,7 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
             <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 space-y-2">
               {samples.length === 0 && (
                 <div className="rounded-xl border border-dashed border-border bg-paper p-5 text-center">
-                  <p className="text-[13px] text-muted-foreground">No samples yet — totally optional.</p>
+                  <p className="text-[14px] text-muted-foreground">No samples yet — totally optional.</p>
                 </div>
               )}
               {samples.map((s) => (
@@ -261,8 +261,8 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
                     <FileText className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold">{s.title}</p>
-                    <p className="text-[11px] text-muted-foreground">{TYPES.find((t) => t.id === s.type)?.label} · {s.wordCount} words</p>
+                    <p className="truncate text-[14px] font-semibold">{s.title}</p>
+                    <p className="text-[12px] text-muted-foreground">{TYPES.find((t) => t.id === s.type)?.label} · {s.wordCount} words</p>
                   </div>
                   <button
                     onClick={() => void remove(s.id)}
@@ -299,8 +299,8 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
 function Stat({ label, value, small }: { label: string; value: number | string; small?: boolean }) {
   return (
     <div className="rounded-lg border border-border bg-paper p-2.5">
-      <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
-      <div className={`mt-1 font-black text-foreground ${small ? "text-[14px]" : "text-[18px]"}`}>{value}</div>
+      <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      <div className={`mt-1 font-black text-foreground ${small ? "text-[15px]" : "text-[18px]"}`}>{value}</div>
     </div>
   );
 }

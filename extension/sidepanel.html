@@ -9,12 +9,18 @@
 <body>
   <header class="hdr">
     <div class="logo">
-      <span class="logo-dot"></span>
+      <svg class="logo-mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="50" cy="50" r="44" fill="#0D1829" stroke="#1DB954" stroke-width="3.5"/>
+        <path d="M30 34 L46 54" stroke="#E5373A" stroke-width="7" stroke-linecap="round"/>
+        <path d="M46 34 L30 54" stroke="#E5373A" stroke-width="7" stroke-linecap="round"/>
+        <path d="M52 58 L62 70 L80 40" stroke="#1DB954" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
       <span class="logo-text">Aplyer<span class="logo-accent">.ai</span></span>
     </div>
     <span id="platform-pill" class="pill pill-green">No ATS</span>
   </header>
 
+  <main class="cards">
   <section class="card">
     <div class="card-label">Status</div>
     <div class="grid">
@@ -43,7 +49,8 @@
     <p>We've detected your application and mapped the supported questions. Tailored Claude-powered answers, voice matching, and one-click autofill arrive in Milestone 4.</p>
   </section>
 
-  <footer class="ftr">Aplyer.ai · Milestone 2 build</footer>
+  </main>
+  <footer class="ftr">Aplyer.ai · Aplyer.ai</footer>
 
   <script src="sidepanel.js"></script>
 </body>

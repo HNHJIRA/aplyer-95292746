@@ -20,7 +20,7 @@ export function Welcome({ onNext }: { onNext: () => void }) {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-brand-green/25 bg-brand-green/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-brand-green"
+          className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-brand-green/25 bg-brand-green/10 px-3 py-1 font-mono text-[12px] uppercase tracking-[0.18em] text-brand-green"
         >
           <Sparkles className="h-3 w-3" /> Aplyer for Chrome
         </motion.div>
@@ -38,7 +38,7 @@ export function Welcome({ onNext }: { onNext: () => void }) {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          className="mt-3 text-[15px] leading-relaxed text-sub"
+          className="mt-3 text-[16px] leading-relaxed text-sub"
         >
           Apply and sound like yourself on every application.
         </motion.p>
@@ -47,7 +47,7 @@ export function Welcome({ onNext }: { onNext: () => void }) {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45 }}
-          className="mt-3 text-[13px] leading-relaxed text-muted-foreground"
+          className="mt-3 text-[14px] leading-relaxed text-muted-foreground"
         >
           Upload your resume once and let Aplyer assist you across supported job applications.
         </motion.p>
@@ -62,7 +62,7 @@ export function Welcome({ onNext }: { onNext: () => void }) {
         <Button size="lg" onClick={onNext} className="w-full">
           Get Started <ArrowRight className="h-4 w-4" />
         </Button>
-        <div className="flex items-center justify-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 font-mono text-[12px] uppercase tracking-[0.16em] text-muted-foreground">
           <Dot /> Workday <Dot /> Greenhouse <Dot /> Lever
         </div>
       </motion.div>

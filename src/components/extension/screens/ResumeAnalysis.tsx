@@ -11,7 +11,7 @@ export function ResumeAnalysis({ onNext, onBack }: { onNext: () => void; onBack:
   if (!score) {
     return (
       <div className="flex h-full flex-col items-center justify-center px-6">
-        <p className="text-[14px] text-muted-foreground">No resume scored yet.</p>
+        <p className="text-[15px] text-muted-foreground">No resume scored yet.</p>
         <Button className="mt-4" onClick={onBack}>Back</Button>
       </div>
     );
@@ -20,11 +20,11 @@ export function ResumeAnalysis({ onNext, onBack }: { onNext: () => void; onBack:
   return (
     <div className="flex h-full flex-col px-6 pt-2">
       <div className="mb-3">
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-green/25 bg-brand-green/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-brand-green">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-green/25 bg-brand-green/10 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.16em] text-brand-green">
           <Sparkles className="h-2.5 w-2.5" /> Resume Analysis
         </div>
         <h2 className="mt-2 text-[20px] font-black tracking-tight text-foreground">Resume Readiness</h2>
-        <p className="text-[13px] text-muted-foreground">A snapshot of how your resume performs across ATS basics.</p>
+        <p className="text-[14px] text-muted-foreground">A snapshot of how your resume performs across ATS basics.</p>
       </div>
 
       <div className="popup-scroll -mx-6 flex-1 overflow-y-auto px-6">
@@ -80,8 +80,8 @@ function Metric({ label, value }: { label: string; value: number }) {
       animate={{ opacity: 1, y: 0 }}
       className="rounded-lg border border-border bg-paper p-3"
     >
-      <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
-      <div className="mt-1.5 text-[20px] font-black text-foreground">{value}<span className="text-[12px] font-medium text-muted-foreground">/100</span></div>
+      <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="mt-1.5 text-[20px] font-black text-foreground">{value}<span className="text-[13px] font-medium text-muted-foreground">/100</span></div>
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/5">
         <motion.div
           initial={{ width: 0 }}
@@ -99,7 +99,7 @@ function Section({ title, tone, children }: { title: string; tone: "green" | "am
     <div className="mt-4">
       <div className="mb-2 flex items-center gap-2">
         <span className={`h-1.5 w-1.5 rounded-full ${tone === "green" ? "bg-brand-green" : "bg-[#E5B73A]"}`} />
-        <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{title}</span>
+        <span className="font-mono text-[12px] uppercase tracking-[0.16em] text-muted-foreground">{title}</span>
       </div>
       <div className="rounded-lg border border-border bg-paper p-3">
         <ul className="space-y-2">{children}</ul>
@@ -109,9 +109,9 @@ function Section({ title, tone, children }: { title: string; tone: "green" | "am
 }
 
 function Row({ children }: { children: React.ReactNode }) {
-  return <li className="flex items-start gap-2 text-[13px] text-sub">{children}</li>;
+  return <li className="flex items-start gap-2 text-[14px] text-sub">{children}</li>;
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <li className="text-[13px] text-muted-foreground">{children}</li>;
+  return <li className="text-[14px] text-muted-foreground">{children}</li>;
 }
