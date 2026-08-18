@@ -223,12 +223,35 @@
     window.removeEventListener("pageshow", onPageShow);
     try { pill?.remove(); } catch {}
     pill = null;
+    window.removeEventListener("pagehide", onPageHide);
     window.__aplyerContentBooted = false;
     log.info("boot", "Content script torn down", { scans: totalScans, injections: totalInjections });
   }
 
-  // Tear down on unload so observers, timers and listeners can be GC'd.
-  window.addEventListener("pagehide", teardown, { once: true });
-  window.addEventListener("unload", teardown, { once: true });
+  // Tear down on real unload only. A bfcache "pagehide" (persisted === true)
+  // must NOT tear down: the page can be restored without re-injecting the
+  // content script, which previously left the extension permanently dead.
+  const onPageHide = (e) => { if (!e.persisted) teardown(); };
+  window.addEventListener("pagehide", onPageHide);
+  // Restoring from bfcache: re-attach observers/listeners if we tore down.
+  window.addEventListener("pageshow", (e) => { if (e.persisted && tornDown) reboot(); });
+  function reboot() {
+    if (!tornDown) return;
+    tornDown = false;
+    window.__aplyerContentBooted = true;
+    try {
+      mo = new MutationObserver(() => scheduleScan());
+      mo.observe(document.body, { childList: true, subtree: true });
+    } catch (e) { log.warn("observer", "MutationObserver re-setup failed", String(e)); }
+    window.addEventListener("popstate", onPopState);
+    window.addEventListener("pageshow", onPageShow);
+    window.addEventListener("pagehide", onPageHide);
+    knownIds.clear();
+    questions.length = 0;
+    lastBroadcast = "";
+    scheduleScan(120);
+    log.info("boot", "Content script rebooted from bfcache");
+  }
+
   window.__aplyerTeardown = teardown;
 })();
