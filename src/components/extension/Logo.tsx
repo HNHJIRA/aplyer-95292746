@@ -16,11 +16,11 @@ export function LogoMark({ size = 36 }: { size?: number }) {
         </linearGradient>
       </defs>
       <circle cx="50" cy="50" r="44" fill="#0D1829" stroke="url(#aplyer-ring)" strokeWidth="3.5" />
-      {/* X (red) */}
-      <path d="M32 32 L58 64" stroke="#E5373A" strokeWidth="7" strokeLinecap="round" />
-      <path d="M44 38 L36 48" stroke="#E5373A" strokeWidth="7" strokeLinecap="round" />
+      {/* X (red) — balanced, symmetric strokes */}
+      <path d="M30 34 L46 54" stroke="#E5373A" strokeWidth="7" strokeLinecap="round" />
+      <path d="M46 34 L30 54" stroke="#E5373A" strokeWidth="7" strokeLinecap="round" />
       {/* Check (green) */}
-      <path d="M50 58 L60 70 L78 40" stroke="#1DB954" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <path d="M52 58 L62 70 L80 40" stroke="#1DB954" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" fill="none" />
     </svg>
   );
 }
