@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { runFraudScan, clearFraudScanCache, type FraudAiScanner } from "@/lib/fraud/scan";
 
-function makeScanner(): FraudAiScanner & { calls: number } {
+function makeScanner() {
   const fn = vi.fn(async ({ hostname }: { url: string; hostname: string }) => ({
     status: "needs_scan" as const,
     genuineScore: null,
@@ -14,7 +14,7 @@ function makeScanner(): FraudAiScanner & { calls: number } {
     action: "run_fraud_scan" as const,
     hostname,
   }));
-  return Object.assign(fn, { get calls() { return fn.mock.calls.length; } }) as never;
+  return { fn: fn as unknown as FraudAiScanner, get calls() { return fn.mock.calls.length; } };
 }
 
 describe("runFraudScan", () => {
@@ -27,7 +27,7 @@ describe("runFraudScan", () => {
       "https://jobs.lever.co/acme/abc",
       "https://acme.wd5.myworkdayjobs.com/en-US/careers/job/1",
     ]) {
-      const r = await runFraudScan(url, { aiScanner: ai });
+      const r = await runFraudScan(url, { aiScanner: ai.fn });
       expect(r.status).toBe("safe");
       expect(r.genuineScore).toBe(100);
       expect(r.label).toBe("Safe");
@@ -39,7 +39,7 @@ describe("runFraudScan", () => {
 
   it("routes unknown domains into the fraud pipeline", async () => {
     const ai = makeScanner();
-    const r = await runFraudScan("https://unknown-careers.example/jobs/1", { aiScanner: ai });
+    const r = await runFraudScan("https://unknown-careers.example/jobs/1", { aiScanner: ai.fn });
     expect(ai.calls).toBe(1);
     expect(r.status).toBe("needs_scan");
     expect(r.trustedAts).toBe(false);
@@ -55,7 +55,7 @@ describe("runFraudScan", () => {
   it("fails validation safely and never bypasses the scan", async () => {
     const ai = makeScanner();
     for (const bad of ["", "javascript:alert(1)", "file:///etc/passwd", "nope", "https://x.example/" + "a".repeat(3000)]) {
-      const r = await runFraudScan(bad, { aiScanner: ai });
+      const r = await runFraudScan(bad, { aiScanner: ai.fn });
       expect(r.status).toBe("invalid");
       expect(r.trustedAts).toBe(false);
       expect(r.genuineScore).toBeNull();
@@ -65,10 +65,10 @@ describe("runFraudScan", () => {
 
   it("caches per normalized url without leaking across jobs", async () => {
     const ai = makeScanner();
-    await runFraudScan("https://unknown.example/job/1", { aiScanner: ai });
-    await runFraudScan("https://unknown.example/job/1?utm=x", { aiScanner: ai });
+    await runFraudScan("https://unknown.example/job/1", { aiScanner: ai.fn });
+    await runFraudScan("https://unknown.example/job/1?utm=x", { aiScanner: ai.fn });
     expect(ai.calls).toBe(1);
-    await runFraudScan("https://unknown.example/job/2", { aiScanner: ai });
+    await runFraudScan("https://unknown.example/job/2", { aiScanner: ai.fn });
     expect(ai.calls).toBe(2);
   });
 });
