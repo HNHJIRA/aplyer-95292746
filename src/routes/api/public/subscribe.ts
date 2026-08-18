@@ -57,7 +57,7 @@ function firstString(...values: unknown[]): string {
 export const Route = createFileRoute("/api/public/subscribe")({
   server: {
     handlers: {
-      OPTIONS: async () => preflight(),
+      OPTIONS: async ({ request }) => preflight(request),
       POST: async ({ request }) => {
         try {
           const body = await readSubscribeBody(request);
@@ -80,7 +80,7 @@ export const Route = createFileRoute("/api/public/subscribe")({
 
 
           if (!EMAIL_RE.test(email) || email.length > 254) {
-            return jsonWithCors({ error: "Please enter a valid email address." }, 400);
+            return jsonWithCors({ error: "Please enter a valid email address." }, 400, request);
           }
 
           // ZeroBounce validation (best-effort; only reject on definitive "invalid")
@@ -114,7 +114,7 @@ export const Route = createFileRoute("/api/public/subscribe")({
 
           if (error) {
             console.error("[subscribe]", error);
-            return jsonWithCors({ error: "Something went wrong. Please try again." }, 500);
+            return jsonWithCors({ error: "Something went wrong. Please try again." }, 500, request);
           }
 
           // Brevo integration — best-effort, never fail the response
@@ -175,11 +175,11 @@ export const Route = createFileRoute("/api/public/subscribe")({
             );
           }
 
-          return jsonWithCors({ ok: true });
+          return jsonWithCors({ ok: true }, 200, request);
 
         } catch (err) {
           console.error("[subscribe]", err);
-          return jsonWithCors({ error: "Something went wrong. Please try again." }, 500);
+          return jsonWithCors({ error: "Something went wrong. Please try again." }, 500, request);
         }
       },
     },
