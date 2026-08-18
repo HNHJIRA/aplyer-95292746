@@ -97,6 +97,7 @@ export const Route = createFileRoute("/api/public/subscribe")({
                   return jsonWithCors(
                     { error: "This email address appears to be invalid." },
                     400,
+                    request,
                   );
                 }
               } else {
