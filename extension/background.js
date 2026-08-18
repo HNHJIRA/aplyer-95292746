@@ -96,6 +96,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
 
+  // Content-script -> background: run the deterministic job-safety check
+  if (message.type === "APLYER_JOB_SAFETY_CHECK") {
+    const tabId = sender?.tab?.id;
+    runJobSafetyCheck(tabId, message.url).then((entry) => sendResponse?.({ ok: true, entry }));
+    return true;
+  }
+
+  // Side panel / popup -> background: read tab-scoped safety state
+  if (message.type === "APLYER_GET_JOB_SAFETY") {
+    const tabId = message.tabId;
+    readSafetyMap().then((map) => sendResponse?.({ entry: map[String(tabId)] ?? null }));
+    return true;
+  }
+
   // Content-script -> background: ATS status update
   if (message.type === "APLYER_ATS_STATUS" && message.payload) {
     chrome.storage.local.set({ [STATUS_KEY]: message.payload }, () => sendResponse?.({ ok: true }));
