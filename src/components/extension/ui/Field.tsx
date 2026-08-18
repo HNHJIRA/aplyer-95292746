@@ -15,7 +15,7 @@ export const Field = forwardRef<HTMLInputElement, Props>(function Field(
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={inputId} className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+        <label htmlFor={inputId} className="font-mono text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
           {label}
         </label>
       )}
@@ -23,7 +23,7 @@ export const Field = forwardRef<HTMLInputElement, Props>(function Field(
         ref={ref}
         id={inputId}
         className={cn(
-          "h-10 w-full rounded-lg border border-border bg-field px-3 text-[14px] text-foreground placeholder:text-dim",
+          "h-10 w-full rounded-lg border border-border bg-field px-3 text-[15px] text-foreground placeholder:text-dim",
           "focus:border-brand-green/60 focus:outline-none focus:ring-2 focus:ring-brand-green/20",
           error && "border-brand-red/60 focus:border-brand-red focus:ring-brand-red/20",
           className,
@@ -31,9 +31,9 @@ export const Field = forwardRef<HTMLInputElement, Props>(function Field(
         {...rest}
       />
       {error ? (
-        <span className="text-[12px] text-brand-red">{error}</span>
+        <span className="text-[13px] text-brand-red">{error}</span>
       ) : hint ? (
-        <span className="text-[12px] text-dim">{hint}</span>
+        <span className="text-[13px] text-dim">{hint}</span>
       ) : null}
     </div>
   );

@@ -40,7 +40,7 @@ export function Success({ onDone }: { onDone: () => void }) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          className="mt-2 text-[14px] text-sub"
+          className="mt-2 text-[15px] text-sub"
         >
           Aplyer is now prepared to assist you when you visit supported job applications.
         </motion.p>
@@ -73,7 +73,7 @@ export function Success({ onDone }: { onDone: () => void }) {
 function Row({ children, ok = true }: { children: React.ReactNode; ok?: boolean }) {
   return (
     <div className="flex items-center justify-between rounded-lg border border-border bg-paper px-3 py-2.5">
-      <span className="text-[13px] text-foreground">{children}</span>
+      <span className="text-[14px] text-foreground">{children}</span>
       <span className={`flex h-5 w-5 items-center justify-center rounded-full ${ok ? "bg-brand-green/20 text-brand-green" : "bg-field text-muted-foreground"}`}>
         <Check className="h-3 w-3" strokeWidth={3} />
       </span>
