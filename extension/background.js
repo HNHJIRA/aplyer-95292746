@@ -2,6 +2,53 @@
 const SESSION_KEY = "aplyer.session.v1";
 const STATUS_KEY = "aplyer.ats_status.v1";
 const SELECTED_KEY = "aplyer.selected_question.v1";
+const SAFETY_KEY = "aplyer.job_safety_by_tab.v1";
+
+const API_BASE = "https://aplyer.devssh.xyz";
+const SAFETY_TTL_MS = 10 * 60 * 1000;
+
+// Tab-scoped fraud-scan state: fraudScanByTab[tabId] = { url, hostname, result, scannedAt }
+async function readSafetyMap() {
+  const res = await chrome.storage.local.get(SAFETY_KEY);
+  return res[SAFETY_KEY] || {};
+}
+async function writeSafetyEntry(tabId, entry) {
+  const map = await readSafetyMap();
+  if (entry) map[String(tabId)] = entry;
+  else delete map[String(tabId)];
+  await chrome.storage.local.set({ [SAFETY_KEY]: map });
+}
+
+async function runJobSafetyCheck(tabId, url) {
+  if (!tabId || typeof url !== "string" || !url) return null;
+  let hostname = "";
+  try { hostname = new URL(url).hostname; } catch { return null; }
+
+  const map = await readSafetyMap();
+  const prev = map[String(tabId)];
+  // Invalidate whenever the URL changed (SPA navigation included).
+  if (prev && prev.url === url && Date.now() - prev.scannedAt < SAFETY_TTL_MS) return prev;
+
+  let result = null;
+  try {
+    const res = await fetch(`${API_BASE}/api/public/job-safety-check`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      // The server independently parses the URL; we never send trusted/provider.
+      body: JSON.stringify({ url }),
+    });
+    const json = await res.json().catch(() => null);
+    if (json?.ok && json.result) result = json.result;
+  } catch (e) {
+    console.warn("[Aplyer] job safety check failed", String(e));
+  }
+
+  const entry = { url, hostname, result, scannedAt: Date.now() };
+  await writeSafetyEntry(tabId, entry);
+  return entry;
+}
+
+chrome.tabs?.onRemoved?.addListener((tabId) => { writeSafetyEntry(tabId, null); });
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") console.log("[Aplyer.ai] Extension installed.");
