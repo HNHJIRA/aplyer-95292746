@@ -12,7 +12,9 @@ createRoot(container).render(
     <div className="flex h-[600px] w-[420px] flex-col overflow-hidden bg-background">
 
 
-      <PopupApp />
+      <div className="flex min-h-0 flex-1 flex-col">
+        <PopupApp />
+      </div>
     </div>
   </StrictMode>
 );
