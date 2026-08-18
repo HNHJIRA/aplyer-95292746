@@ -126,6 +126,24 @@
     if (!lastBroadcast) broadcast();
   }
 
+  // --- Deterministic job-safety check (tab-scoped, top frame only) ---------
+  let lastSafetyUrl = "";
+  let safetyTimer = null;
+  function checkSafety() {
+    if (window.top !== window) return;
+    const url = location.href;
+    if (url === lastSafetyUrl) return; // dedupe; URL change invalidates
+    lastSafetyUrl = url;
+    try {
+      chrome.runtime.sendMessage({ type: "APLYER_JOB_SAFETY_CHECK", url })
+        .catch(() => {});
+    } catch { /* runtime gone */ }
+  }
+  function scheduleSafety(delay = 400) {
+    clearTimeout(safetyTimer);
+    safetyTimer = setTimeout(checkSafety, delay);
+  }
+
   function renderPill() {
     // Only render the floating status pill in the top frame — otherwise
     // each iframe would render its own pill (Greenhouse embed forms run
