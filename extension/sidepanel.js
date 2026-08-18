@@ -3,12 +3,41 @@
 const KEY_STATUS = "aplyer.ats_status.v1";
 const KEY_QUESTION = "aplyer.selected_question.v1";
 const KEY_SESSION = "aplyer.session.v1";
+const KEY_SAFETY = "aplyer.job_safety_by_tab.v1";
 
 const $ = (id) => document.getElementById(id);
 
 function safeText(v, fallback = "—") {
   if (v === null || v === undefined || v === "") return fallback;
   return String(v);
+}
+
+function renderSafety(entry) {
+  const card = $("safety-card");
+  const badge = $("safety-badge");
+  const score = $("safety-score");
+  const copy = $("safety-copy");
+  const host = $("safety-host");
+  if (!entry) { card.style.display = "none"; return; }
+  card.style.display = "";
+  host.textContent = entry.hostname || "";
+  const r = entry.result;
+  badge.classList.remove("is-safe", "is-unknown");
+  if (r && r.status === "safe") {
+    badge.textContent = "Safe";
+    badge.classList.add("is-safe");
+    score.textContent = "100% Genuine";
+    copy.textContent = "Hosted on a recognized applicant tracking platform. This confirms the hosting platform, not the employer or the individual listing.";
+  } else if (r && r.status === "needs_scan") {
+    badge.textContent = "Unverified";
+    badge.classList.add("is-unknown");
+    score.textContent = "";
+    copy.textContent = "Not a recognized applicant tracking platform — a full safety scan is required before we can rate this listing.";
+  } else {
+    badge.textContent = "Checking…";
+    score.textContent = "";
+    copy.textContent = "Running the job safety check…";
+  }
 }
 
 function render(state) {
@@ -52,7 +81,15 @@ function render(state) {
 
 async function load() {
   try {
-    const data = await chrome.storage.local.get([KEY_STATUS, KEY_QUESTION, KEY_SESSION]);
+    const data = await chrome.storage.local.get([KEY_STATUS, KEY_QUESTION, KEY_SESSION, KEY_SAFETY]);
+    // Fraud-scan state is strictly tab-scoped: only show the active tab's entry.
+    let safety = null;
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const map = data[KEY_SAFETY] || {};
+      if (tab?.id != null) safety = map[String(tab.id)] || null;
+    } catch { /* no tabs access */ }
+    renderSafety(safety);
     render({
       status: data[KEY_STATUS] || null,
       question: data[KEY_QUESTION] || null,
@@ -67,7 +104,7 @@ async function load() {
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
-  if (changes[KEY_STATUS] || changes[KEY_QUESTION] || changes[KEY_SESSION]) load();
+  if (changes[KEY_STATUS] || changes[KEY_QUESTION] || changes[KEY_SESSION] || changes[KEY_SAFETY]) load();
 });
 
 document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
