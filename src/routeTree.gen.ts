@@ -21,6 +21,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
 import { Route as ApiPublicWaitlistUploadRouteImport } from './routes/api/public/waitlist-upload'
 import { Route as ApiPublicSubscribeRouteImport } from './routes/api/public/subscribe'
+import { Route as ApiPublicJobSafetyCheckRouteImport } from './routes/api/public/job-safety-check'
 import { Route as ApiPublicDemoRouteImport } from './routes/api/public/demo'
 import { Route as AuthenticatedDashboardWritingRouteImport } from './routes/_authenticated/dashboard.writing'
 import { Route as AuthenticatedDashboardSupportRouteImport } from './routes/_authenticated/dashboard.support'
@@ -90,6 +91,11 @@ const ApiPublicSubscribeRoute = ApiPublicSubscribeRouteImport.update({
   path: '/api/public/subscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicJobSafetyCheckRoute = ApiPublicJobSafetyCheckRouteImport.update({
+  id: '/api/public/job-safety-check',
+  path: '/api/public/job-safety-check',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicDemoRoute = ApiPublicDemoRouteImport.update({
   id: '/api/public/demo',
   path: '/api/public/demo',
@@ -154,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/support': typeof AuthenticatedDashboardSupportRoute
   '/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
   '/api/public/demo': typeof ApiPublicDemoRoute
+  '/api/public/job-safety-check': typeof ApiPublicJobSafetyCheckRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
   '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/dashboard/support': typeof AuthenticatedDashboardSupportRoute
   '/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
   '/api/public/demo': typeof ApiPublicDemoRoute
+  '/api/public/job-safety-check': typeof ApiPublicJobSafetyCheckRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
   '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
@@ -197,6 +205,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/support': typeof AuthenticatedDashboardSupportRoute
   '/_authenticated/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
   '/api/public/demo': typeof ApiPublicDemoRoute
+  '/api/public/job-safety-check': typeof ApiPublicJobSafetyCheckRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
   '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
@@ -220,6 +229,7 @@ export interface FileRouteTypes {
     | '/dashboard/support'
     | '/dashboard/writing'
     | '/api/public/demo'
+    | '/api/public/job-safety-check'
     | '/api/public/subscribe'
     | '/api/public/waitlist-upload'
     | '/dashboard/'
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/dashboard/support'
     | '/dashboard/writing'
     | '/api/public/demo'
+    | '/api/public/job-safety-check'
     | '/api/public/subscribe'
     | '/api/public/waitlist-upload'
     | '/dashboard'
@@ -262,6 +273,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/support'
     | '/_authenticated/dashboard/writing'
     | '/api/public/demo'
+    | '/api/public/job-safety-check'
     | '/api/public/subscribe'
     | '/api/public/waitlist-upload'
     | '/_authenticated/dashboard/'
@@ -277,6 +289,7 @@ export interface RootRouteChildren {
   ApiResumeAuditRoute: typeof ApiResumeAuditRoute
   ApiResumeMatchRoute: typeof ApiResumeMatchRoute
   ApiPublicDemoRoute: typeof ApiPublicDemoRoute
+  ApiPublicJobSafetyCheckRoute: typeof ApiPublicJobSafetyCheckRoute
   ApiPublicSubscribeRoute: typeof ApiPublicSubscribeRoute
   ApiPublicWaitlistUploadRoute: typeof ApiPublicWaitlistUploadRoute
   ApiPublicExtensionVoicecardRoute: typeof ApiPublicExtensionVoicecardRoute
@@ -366,6 +379,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/subscribe'
       fullPath: '/api/public/subscribe'
       preLoaderRoute: typeof ApiPublicSubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/job-safety-check': {
+      id: '/api/public/job-safety-check'
+      path: '/api/public/job-safety-check'
+      fullPath: '/api/public/job-safety-check'
+      preLoaderRoute: typeof ApiPublicJobSafetyCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/demo': {
@@ -484,6 +504,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiResumeAuditRoute: ApiResumeAuditRoute,
   ApiResumeMatchRoute: ApiResumeMatchRoute,
   ApiPublicDemoRoute: ApiPublicDemoRoute,
+  ApiPublicJobSafetyCheckRoute: ApiPublicJobSafetyCheckRoute,
   ApiPublicSubscribeRoute: ApiPublicSubscribeRoute,
   ApiPublicWaitlistUploadRoute: ApiPublicWaitlistUploadRoute,
   ApiPublicExtensionVoicecardRoute: ApiPublicExtensionVoicecardRoute,
