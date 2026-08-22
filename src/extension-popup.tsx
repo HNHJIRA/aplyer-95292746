@@ -14,7 +14,7 @@ createRoot(container).render(
         <PopupApp />
       </div>
       <div className="shrink-0 border-t border-border bg-paper px-4 py-2 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-        Powered by WriteDNA Technology™
+        Powered by WriteDNA Technology™ · <a className="text-brand-green hover:underline" href="https://www.aplyer.ai/" target="_blank" rel="noreferrer">aplyer.ai</a>
       </div>
     </div>
   </StrictMode>
