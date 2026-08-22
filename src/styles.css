@@ -12,19 +12,19 @@
   --radius-2xl: 20px;
 
   --color-background: var(--bg);
-  --color-foreground: var(--white);
+  --color-foreground: var(--fg);
   --color-card: var(--paper);
-  --color-card-foreground: var(--white);
+  --color-card-foreground: var(--fg);
   --color-popover: var(--paper);
-  --color-popover-foreground: var(--white);
+  --color-popover-foreground: var(--fg);
   --color-primary: var(--green);
-  --color-primary-foreground: #06140A;
+  --color-primary-foreground: var(--on-green);
   --color-secondary: var(--field);
-  --color-secondary-foreground: var(--white);
+  --color-secondary-foreground: var(--fg);
   --color-muted: var(--field);
   --color-muted-foreground: var(--muted);
   --color-accent: var(--field2);
-  --color-accent-foreground: var(--white);
+  --color-accent-foreground: var(--fg);
   --color-destructive: var(--red);
   --color-destructive-foreground: #fff;
   --color-border: var(--border);
@@ -39,42 +39,89 @@
   --color-field-2: var(--field2);
   --color-sub: var(--sub);
   --color-dim: var(--dim);
+  --color-navy: var(--navy);
+  --color-border-2: var(--border2);
 
   --font-sans: "Lato", system-ui, sans-serif;
   --font-mono: "DM Mono", ui-monospace, monospace;
 }
 
 :root {
-  --bg: #080F1A;
-  --paper: #0D1829;
-  --field: #122038;
-  --field2: #162540;
-  --green: #1DB954;
-  --green2: #22C55E;
-  --red: #E5373A;
-  --white: #F5F5F5;
-  --white2: #E2E2E2;
-  --sub: #E2E2E2;
-  --muted: #9BA3AE;
-  --dim: #AAAAAA;
-  --border: rgba(255,255,255,0.07);
-  --border2: rgba(100,160,255,0.15);
+  /* surfaces */
+  --bg: oklch(1.0000 0.0000 89.88);          /* #FFFFFF */
+  --paper: oklch(0.9755 0.0045 258.32);      /* #F5F7FA */
+  --field: oklch(0.9487 0.0058 264.53);      /* #ECEEF2 */
+  --field2: oklch(0.9608 0.0058 264.53);     /* #F0F2F6 */
+  --navy: oklch(0.2083 0.0376 258.83);       /* #0D1829 */
+
+  /* brand */
+  --green: oklch(0.6888 0.1870 148.92);      /* #1DB954 */
+  --green2: oklch(0.7227 0.1920 149.58);     /* #22C55E */
+  --green-dim: rgba(29, 185, 84, 0.10);
+  --green-border: rgba(29, 185, 84, 0.25);
+  --red: oklch(0.6072 0.2099 25.35);         /* #E5373A */
+  --red-dim: rgba(229, 55, 58, 0.08);
+  --red-border: rgba(229, 55, 58, 0.25);
+  --on-green: oklch(0 0 0);                  /* #000 */
+
+  /* text */
+  --fg: oklch(0.1776 0.0000 89.88);          /* #111111 */
+  --white: oklch(0.1776 0.0000 89.88);       /* legacy alias -> foreground */
+  --white2: oklch(0.2520 0.0000 89.88);
+  --sub: oklch(0.2520 0.0000 89.88);         /* #222222 */
+  --muted: oklch(0.3211 0.0000 89.88);       /* #333333 */
+  --dim: oklch(0.4495 0.0000 89.88);         /* #555555 */
+
+  --border: rgba(0, 0, 0, 0.08);
+  --border2: rgba(0, 0, 0, 0.10);
 }
 
-.dark { color-scheme: dark; }
+.dark { color-scheme: light; }
 
 @layer base {
   * { border-color: var(--color-border); }
-  html, body { background: var(--bg); color: var(--white); font-family: var(--font-sans); }
+  html, body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1.6;
+  }
+  h1, h2, h3, h4 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+  h1 { letter-spacing: -0.03em; line-height: 1.05; }
 }
 
 /* Custom scrollbar inside popup */
 .popup-scroll::-webkit-scrollbar { width: 6px; }
 .popup-scroll::-webkit-scrollbar-track { background: transparent; }
-.popup-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
-.popup-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+.popup-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 4px; }
+.popup-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
 
 /* Brand glow */
 .brand-glow {
-  background: radial-gradient(60% 60% at 50% 0%, rgba(29,185,84,0.18), transparent 70%);
+  background: radial-gradient(60% 60% at 50% 0%, rgba(29,185,84,0.10), transparent 70%);
 }
+
+/* Aplyer design-system utilities */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--green);
+}
+.stat-num {
+  font-family: var(--font-mono);
+  font-size: 34px;
+  color: var(--green);
+  line-height: 1.1;
+}
+.hero-bar {
+  background: linear-gradient(90deg, #E5373A, #1DB954);
+  height: 4px;
+}
+.grid-hairline { background: var(--border2); gap: 2px; }
