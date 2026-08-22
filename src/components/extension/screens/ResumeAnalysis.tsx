@@ -82,7 +82,7 @@ function Metric({ label, value }: { label: string; value: number }) {
     >
       <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
       <div className="mt-1.5 text-[20px] font-black text-foreground">{value}<span className="text-[13px] font-medium text-muted-foreground">/100</span></div>
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/5">
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-field">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${value}%` }}

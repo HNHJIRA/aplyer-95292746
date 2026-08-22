@@ -8,7 +8,7 @@ export function StepDots({ total, current }: { total: number; current: number })
           key={i}
           className={cn(
             "h-1 rounded-full transition-all duration-300",
-            i === current ? "w-6 bg-brand-green" : i < current ? "w-3 bg-brand-green/50" : "w-3 bg-white/10",
+            i === current ? "w-6 bg-brand-green" : i < current ? "w-3 bg-brand-green/50" : "w-3 bg-border",
           )}
         />
       ))}

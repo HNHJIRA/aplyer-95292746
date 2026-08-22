@@ -12,7 +12,7 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-brand-green text-[#06140A] hover:bg-brand-green-2 active:scale-[0.98] shadow-[0_8px_24px_-12px_rgba(29,185,84,0.6)]",
+    "bg-brand-green text-white hover:bg-brand-green-2 active:scale-[0.98] shadow-[0_8px_24px_-12px_rgba(29,185,84,0.6)]",
   secondary:
     "bg-field text-foreground hover:bg-field-2 border border-border",
   outline:

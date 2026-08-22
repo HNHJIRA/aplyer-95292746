@@ -78,7 +78,7 @@ export function AbDemo({ onDone }: { onDone: () => void }) {
             <button
               type="button"
               onClick={run}
-              className="mt-2 inline-flex items-center gap-1 rounded-md bg-brand-green px-2.5 py-1 text-[13px] font-semibold text-[#06140A]"
+              className="mt-2 inline-flex items-center gap-1 rounded-md bg-brand-green px-2.5 py-1 text-[13px] font-semibold text-white"
             >
               Retry
             </button>

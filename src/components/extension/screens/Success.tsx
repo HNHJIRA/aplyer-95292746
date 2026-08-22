@@ -23,7 +23,7 @@ export function Success({ onDone }: { onDone: () => void }) {
             transition={{ duration: 1.4, repeat: Infinity }}
             className="absolute inset-0 rounded-full bg-brand-green/30"
           />
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-brand-green text-[#06140A] shadow-[0_10px_40px_-10px_rgba(29,185,84,0.8)]">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-brand-green text-white shadow-[0_10px_40px_-10px_rgba(29,185,84,0.8)]">
             <Check className="h-12 w-12" strokeWidth={3} />
           </div>
         </motion.div>

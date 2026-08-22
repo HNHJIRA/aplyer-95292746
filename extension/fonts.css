@@ -1,0 +1,5 @@
+@font-face{font-family:'Lato';font-style:normal;font-weight:400;font-display:swap;src:url('./fonts/Lato-400.woff2') format('woff2');}
+@font-face{font-family:'Lato';font-style:normal;font-weight:700;font-display:swap;src:url('./fonts/Lato-700.woff2') format('woff2');}
+@font-face{font-family:'Lato';font-style:normal;font-weight:900;font-display:swap;src:url('./fonts/Lato-900.woff2') format('woff2');}
+@font-face{font-family:'DM Mono';font-style:normal;font-weight:400;font-display:swap;src:url('./fonts/DMMono-400.woff2') format('woff2');}
+@font-face{font-family:'DM Mono';font-style:normal;font-weight:500;font-display:swap;src:url('./fonts/DMMono-500.woff2') format('woff2');}
