@@ -155,7 +155,7 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
                       className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition ${active ? "border-brand-green/40 bg-brand-green/5" : "border-border bg-paper hover:border-border"}`}
                     >
                       <span className={`mt-0.5 flex h-4 w-4 items-center justify-center rounded-full border ${active ? "border-brand-green bg-brand-green" : "border-border"}`}>
-                        {active && <Check className="h-2.5 w-2.5 text-[#06140A]" strokeWidth={4} />}
+                        {active && <Check className="h-2.5 w-2.5 text-white" strokeWidth={4} />}
                       </span>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
@@ -199,7 +199,7 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            className="absolute inset-0 z-50 flex items-center justify-center bg-navy/40 backdrop-blur-sm"
           >
             <motion.div
               initial={{ scale: 0.92, opacity: 0 }}
