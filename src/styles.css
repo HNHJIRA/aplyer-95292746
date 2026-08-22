@@ -40,6 +40,8 @@
   --color-sub: var(--sub);
   --color-dim: var(--dim);
   --color-navy: var(--navy);
+  --color-green-dim: rgba(29,185,84,0.18);
+  --color-red-dim: rgba(229,55,58,0.18);
   --color-border-2: var(--border2);
 
   --font-sans: "Lato", system-ui, sans-serif;
