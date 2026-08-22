@@ -60,7 +60,7 @@ export function Dashboard({ onResume, onProfile, onSettings }: { onResume: () =>
           <div className="relative flex items-center gap-4">
             <div className="relative flex h-16 w-16 items-center justify-center">
               <svg className="-rotate-90" width={64} height={64}>
-                <circle cx={32} cy={32} r={28} stroke="rgba(255,255,255,0.06)" strokeWidth={6} fill="none" />
+                <circle cx={32} cy={32} r={28} stroke="rgba(0,0,0,0.08)" strokeWidth={6} fill="none" />
                 <motion.circle
                   cx={32}
                   cy={32}
