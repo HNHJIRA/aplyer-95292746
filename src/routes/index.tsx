@@ -104,7 +104,7 @@ function AmbientBackground() {
         className="absolute inset-0 opacity-[0.06]"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
+            "linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px)",
           backgroundSize: "48px 48px",
           maskImage:
             "radial-gradient(ellipse at center, black 40%, transparent 75%)",
@@ -375,7 +375,7 @@ function BrowserPane({ variant }: { variant: "bad" | "good" }) {
           Why do you want to work here?
         </div>
         {bad ? (
-          <div className="rounded-md border border-dashed border-brand-red/40 bg-black/40 p-4 text-[13px] italic text-brand-red/70">
+          <div className="rounded-md border border-dashed border-brand-red/40 bg-red-dim p-4 text-[13px] italic text-brand-red/70">
             Start typing your answer...
           </div>
         ) : (
@@ -417,7 +417,7 @@ function Typewriter({ text }: { text: string }) {
     };
   }, [text, reduce]);
   return (
-    <div className="min-h-[120px] rounded-md border border-brand-green/40 bg-black/30 p-4 text-[13px] leading-relaxed text-brand-green">
+    <div className="min-h-[120px] rounded-md border border-brand-green/40 bg-green-dim p-4 text-[13px] leading-relaxed text-brand-green">
       {shown}
       <span className="ml-0.5 inline-block h-[1em] w-[2px] translate-y-1 animate-pulse bg-brand-green" />
     </div>
