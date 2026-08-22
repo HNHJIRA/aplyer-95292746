@@ -354,8 +354,8 @@ function BrowserPane({ variant }: { variant: "bad" | "good" }) {
       transition={{ type: "spring", stiffness: 250, damping: 20 }}
       className={`overflow-hidden rounded-2xl border ${
         bad
-          ? "border-brand-red/30 bg-[#180606]"
-          : "border-brand-green/30 bg-[#061a0c]"
+          ? "border-brand-red/30 bg-red-dim"
+          : "border-brand-green/30 bg-green-dim"
       }`}
     >
       <div
@@ -365,7 +365,7 @@ function BrowserPane({ variant }: { variant: "bad" | "good" }) {
       >
         <span className="h-2 w-2 rounded-full bg-brand-red/60" />
         <span className="h-2 w-2 rounded-full bg-yellow-500/60" />
-        <span className={`h-2 w-2 rounded-full ${bad ? "bg-white/20" : "bg-brand-green"}`} />
+        <span className={`h-2 w-2 rounded-full ${bad ? "bg-foreground/20" : "bg-brand-green"}`} />
         <span className="ml-2 font-mono text-[11px] text-muted-foreground">
           careers.company.com
         </span>
