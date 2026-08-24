@@ -249,6 +249,7 @@
     try { mo?.disconnect(); } catch {}
     clearTimeout(pendingScan);
     clearTimeout(safetyTimer);
+    clearInterval(safetyPoll);
     window.removeEventListener("popstate", onPopState);
     window.removeEventListener("pageshow", onPageShow);
     try { pill?.remove(); } catch {}
@@ -281,6 +282,9 @@
     lastBroadcast = "";
     lastSafetyUrl = "";
     scheduleScan(120);
+    scheduleSafety(150);
+    clearInterval(safetyPoll);
+    safetyPoll = setInterval(() => { if (location.href !== lastSafetyUrl) checkSafety(false); }, 3000);
     log.info("boot", "Content script rebooted from bfcache");
   }
 
