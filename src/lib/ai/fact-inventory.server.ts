@@ -93,7 +93,7 @@ interface CurrentResume {
 export async function resolveCurrentResume(supabase: Db, userId: string): Promise<CurrentResume> {
   const { data } = await supabase
     .from("resumes")
-    .select("id, resume_text")
+    .select("id, resume_text, storage_path, file_name")
     .eq("user_id", userId)
     .eq("is_current", true)
     .order("uploaded_at", { ascending: false })
@@ -101,12 +101,32 @@ export async function resolveCurrentResume(supabase: Db, userId: string): Promis
     .maybeSingle();
 
   if (!data?.id) throw new FactInventoryError("no_resume", "No current resume found for this user.");
-  const text = typeof data.resume_text === "string" ? data.resume_text.trim() : "";
+  let text = typeof data.resume_text === "string" ? data.resume_text.trim() : "";
+
+  // Legacy rows stored raw PDF/DOCX bytes in `resume_text`. Grounding can never
+  // succeed against those, so re-extract once from the original stored file
+  // using the canonical extractor before failing.
+  try {
+    const { needsTextRepair, repairResumeText } = await import("@/lib/resume/repair.server");
+    if (needsTextRepair(text) && data.storage_path) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const repaired = await repairResumeText(supabaseAdmin, {
+        id: data.id,
+        storage_path: data.storage_path,
+        file_name: data.file_name,
+      });
+      if (repaired) text = repaired.trim();
+    }
+  } catch {
+    /* repair is best-effort; fall through to the normal validation below */
+  }
+
   if (text.length < MIN_RESUME_CHARS) {
     throw new FactInventoryError("empty_resume", "The stored resume has no usable text.");
   }
   return { id: data.id, resumeText: text };
 }
+
 
 function rowToState(row: Record<string, any> | null, resumeId: string | null): InventoryState {
   if (!row) {
@@ -368,3 +388,49 @@ export async function requireReadyFactInventory(
     sourceHash: expected,
   };
 }
+
+/**
+ * AUTOMATIC GROUNDING GATE.
+ *
+ * Same contract as `requireReadyFactInventory`, but the user is never expected
+ * to know that P0 exists: a missing / stale / previously failed inventory is
+ * extracted inline, and an extraction started by a concurrent request is
+ * awaited. Still fails closed — it only ever returns a fully valid inventory.
+ */
+export async function ensureReadyFactInventory(
+  supabase: Db,
+  userId: string,
+  opts: { writeDb?: Db; waitMs?: number; pollMs?: number } = {},
+): Promise<{ inventory: ResumeFactInventory; resumeId: string; model: string; sourceHash: string }> {
+  try {
+    return await requireReadyFactInventory(supabase, userId);
+  } catch (e) {
+    if (!(e instanceof FactInventoryError)) throw e;
+    // Real blockers (no resume / unusable resume) must surface as-is.
+    if (e.code !== "inventory_missing" && e.code !== "inventory_not_ready" && e.code !== "inventory_stale") {
+      throw e;
+    }
+  }
+
+  const state = await ensureFactInventory(supabase, userId, {
+    force: true,
+    writeDb: opts.writeDb,
+  });
+
+  if (state.status === "extracting") {
+    // A concurrent request owns the lock — wait for it rather than failing.
+    const deadline = Date.now() + (opts.waitMs ?? 60_000);
+    const pollMs = opts.pollMs ?? 1_500;
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, pollMs));
+      const s = await getFactInventoryState(supabase, userId);
+      if (s.status === "ready") break;
+      if (s.status === "failed") {
+        throw new FactInventoryError(s.error ?? "extraction_failed", "We couldn't prepare your profile context.");
+      }
+    }
+  }
+
+  return requireReadyFactInventory(supabase, userId);
+}
+
