@@ -94,6 +94,7 @@ function scanResult(opts: {
 function script(draft: string, scans: ReturnType<typeof scanResult>[]) {
   let scanIndex = 0;
   runPromptValidated.mockImplementation(async (spec: { id: string }) => {
+    console.log("CALLARG", spec && spec.id, typeof spec);
     if (spec.id === "A_ANSWER_GENERATION") {
       return {
         value: { answer: draft, factIdsUsed: ["f1"], wordCount: draft.split(/\s+/).length },
