@@ -50,6 +50,14 @@ async function runJobSafetyCheck(tabId, url) {
 
 chrome.tabs?.onRemoved?.addListener((tabId) => { writeSafetyEntry(tabId, null); });
 
+// Proactive path: tab URL access is granted by host_permissions for supported
+// ATS hosts, so the check runs even if the content script never messages us.
+chrome.tabs?.onUpdated?.addListener((tabId, changeInfo, tab) => {
+  const url = changeInfo.url || (changeInfo.status === "complete" ? tab?.url : null);
+  if (url && /^https?:/i.test(url)) runJobSafetyCheck(tabId, url);
+});
+
+
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") console.log("[Aplyer.ai] Extension installed.");
 });
