@@ -13,7 +13,6 @@ import { PromptError, runPromptValidated } from "@/lib/ai/run-prompt.server";
 const PROMPT_VERSION = PROMPT_B_VOICE_CARD.version;
 const MODEL = PROMPT_B_VOICE_CARD.model;
 const STALE_LOCK_MS = 45 * 1000;
-const AI_TIMEOUT_MS = 12 * 1000;
 const RESUME_EXCERPT_CHARS = 3000;
 const SAMPLE_EXCERPT_CHARS = 1600;
 const MAX_VOICECARD_TOKENS = 900;
@@ -188,7 +187,7 @@ async function startVoiceCardGeneration(supabase: any, userId: string) {
       userPrompt,
       validateVoiceCard,
       VOICE_CARD_RETRY_INSTRUCTION,
-      { timeoutMs: AI_TIMEOUT_MS, maxTokens: MAX_VOICECARD_TOKENS },
+      { maxTokens: MAX_VOICECARD_TOKENS },
     );
     voiceCard = run.value;
   } catch (e) {
@@ -328,19 +327,12 @@ async function sha256Hex(input: string): Promise<string> {
 async function callClaudeText(system: string, user: string, maxTokens: number): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
-  try {
-    const res = await fetch(ANTHROPIC_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] }),
-      signal: controller.signal,
-    });
-    if (!res.ok) throw new Error(`Claude ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
-    const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
-    return data.content?.find((c) => c.type === "text")?.text?.trim() ?? "";
-  } finally {
-    clearTimeout(timeout);
-  }
+  const res = await fetch(ANTHROPIC_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] }),
+  });
+  if (!res.ok) throw new Error(`Claude ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+  const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
+  return data.content?.find((c) => c.type === "text")?.text?.trim() ?? "";
 }

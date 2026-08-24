@@ -26,7 +26,6 @@ export const Route = createFileRoute("/api/resume-audit")({
             buildResumeAuditUser(capped),
             validateResumeAudit,
             RESUME_AUDIT_RETRY_INSTRUCTION,
-            { timeoutMs: 90_000 },
           );
 
           // Canonical Prompt C shape + legacy aliases so existing frontends

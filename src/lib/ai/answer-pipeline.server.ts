@@ -40,8 +40,6 @@ import type { QuestionFramework } from "./prompts/prompt-i-classification";
 
 export const ANSWERS_TABLE = "generated_answers";
 const STALE_LOCK_MS = 180 * 1000;
-const A_TIMEOUT_MS = 120 * 1000;
-const J_TIMEOUT_MS = 120 * 1000;
 const MAX_QUESTION_CHARS = 2000;
 
 export type GenerationMode = "writedna" | "resume_only_first_choice" | "resume_only_learned";
@@ -240,7 +238,6 @@ async function scan(input: GenerateOneInput, answer: string) {
     }),
     validateQualityScan,
     QUALITY_SCAN_RETRY_INSTRUCTION,
-    { timeoutMs: J_TIMEOUT_MS },
   );
   input.budget.providerCalls += run.attempts;
   return run.value;
@@ -271,7 +268,6 @@ async function generateValidatedVariant(input: GenerateOneInput): Promise<{
     }),
     (v) => validateGeneratedAnswer(v, allowedIds),
     ANSWER_RETRY_INSTRUCTION,
-    { timeoutMs: A_TIMEOUT_MS },
   );
   input.budget.providerCalls += a.attempts;
   const draft = a.value;

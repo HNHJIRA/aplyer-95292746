@@ -92,7 +92,6 @@ export async function classifyQuestion(
       buildClassificationUser(question, context),
       validateClassification,
       CLASSIFICATION_RETRY_INSTRUCTION,
-      { timeoutMs: 25_000 },
     );
     value = run.value;
   } catch (e) {

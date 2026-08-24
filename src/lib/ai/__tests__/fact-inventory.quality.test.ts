@@ -3,7 +3,11 @@
 // structural validation + grounding and assert the guarantees hold.
 import { describe, expect, it } from "vitest";
 import { applyGrounding } from "@/lib/ai/fact-inventory-grounding";
-import { validateFactInventoryShape } from "@/lib/ai/prompts/prompt-p0-fact-inventory";
+import {
+  FACT_INVENTORY_RETRY_INSTRUCTION,
+  PROMPT_P0_FACT_INVENTORY,
+  validateFactInventoryShape,
+} from "@/lib/ai/prompts/prompt-p0-fact-inventory";
 
 const RESUME = `Jane Doe
 Berlin, Germany | jane@example.com
@@ -157,5 +161,15 @@ describe("ambiguous claims are not strengthened", () => {
     const { inventory, rejections } = ground(d);
     expect(rejections.map((r) => r.reason)).toContain("unsupported_strengthening");
     expect(inventory.experience[0].facts.map((f) => f.value)).not.toContain("Led onboarding transformation");
+  });
+});
+
+describe("bounded production output", () => {
+  it("requires compact complete JSON on both attempts", () => {
+    expect(PROMPT_P0_FACT_INVENTORY.version).toBe("1.1.1");
+    expect(PROMPT_P0_FACT_INVENTORY.system).toContain("at most 60 Fact objects");
+    expect(PROMPT_P0_FACT_INVENTORY.system).toContain("Never copy a whole paragraph");
+    expect(FACT_INVENTORY_RETRY_INSTRUCTION).toContain("COMPLETE compact object");
+    expect(FACT_INVENTORY_RETRY_INSTRUCTION).toContain("no more than 40 Fact objects total");
   });
 });

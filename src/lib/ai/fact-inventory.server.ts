@@ -19,7 +19,6 @@ import { GroundingError, applyGrounding, countFacts } from "./fact-inventory-gro
 
 export const FACT_INVENTORY_TABLE = "resume_fact_inventories";
 const STALE_LOCK_MS = 90 * 1000;
-const AI_TIMEOUT_MS = 120 * 1000;
 const MAX_RESUME_CHARS = 24000;
 const MIN_RESUME_CHARS = 100;
 
@@ -267,7 +266,6 @@ export async function ensureFactInventory(
       buildFactInventoryUser(resume.resumeText.slice(0, MAX_RESUME_CHARS)),
       validateFactInventoryShape,
       FACT_INVENTORY_RETRY_INSTRUCTION,
-      { timeoutMs: AI_TIMEOUT_MS },
     );
 
     // 5. Deterministic grounding guardrails.

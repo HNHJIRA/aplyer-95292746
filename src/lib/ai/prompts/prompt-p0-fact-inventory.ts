@@ -85,7 +85,7 @@ export interface ResumeFactInventory {
 
 export const PROMPT_P0_FACT_INVENTORY: PromptSpec = {
   id: "P0_FACT_INVENTORY",
-  version: "1.1.0",
+  version: "1.1.1",
   model: MODEL_HAIKU,
   maxTokens: 8000,
   temperature: 0,
@@ -103,6 +103,9 @@ ABSOLUTE RULES
 8. confidence is "explicit" when the resume states the fact plainly, "ambiguous" when the wording is genuinely unclear. Never mark an inference as explicit; if it is an inference, do not output it at all.
 9. Leave "id" as an empty string for every item. The server assigns deterministic ids.
 10. sourceSection must name where the fact came from, e.g. "Summary", "Experience — Acme (Software Engineer)", "Education — MIT", "Skills", "Certifications", "Projects — Reporting Pipeline", "Achievements".
+11. Keep the response compact and complete. Return at most 60 Fact objects across the entire response. Prefer the most specific, decision-useful facts and never repeat the same fact in multiple arrays.
+12. For each experience entry return at most 6 facts, 8 technologies, and 4 achievements. Return at most 30 skills, 8 summary facts, 12 certifications, 10 projects, 12 top-level achievements, and 12 otherFacts.
+13. A fact value must be one concise sentence or phrase. Evidence must be the shortest verbatim fragment that proves it. Never copy a whole paragraph, whole role, or whole section into either field.
 
 OUTPUT — return ONLY this JSON object:
 {
@@ -124,7 +127,8 @@ Fact = { "id": "", "value": string, "evidence": string, "sourceSection": string,
 export const FACT_INVENTORY_RETRY_INSTRUCTION = `Your previous response was invalid.
 Return ONLY a single JSON object with exactly these top-level keys: identity, contact, professionalSummaryFacts, experience, education, skills, certifications, projects, achievements, otherFacts.
 Every fact object must be { "id": "", "value": string, "evidence": string, "sourceSection": string, "confidence": "explicit" or "ambiguous" }.
-"evidence" must be a short verbatim fragment copied from the resume. Do not invent numbers, durations, seniority, or dates. Use null and [] where the resume says nothing.`;
+"evidence" must be a short verbatim fragment copied from the resume. Do not invent numbers, durations, seniority, or dates. Use null and [] where the resume says nothing.
+Your response was too large or malformed. Return a COMPLETE compact object, never a truncated object. Use no more than 40 Fact objects total, with at most 4 facts, 6 technologies, and 3 achievements per experience entry. Keep each value concise and each evidence fragment under 25 words. Omit lower-value duplicates rather than exceeding these limits.`;
 
 /** The user message contains the canonical resume text ONLY. */
 export function buildFactInventoryUser(resumeText: string): string {

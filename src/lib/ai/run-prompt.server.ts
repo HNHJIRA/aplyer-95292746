@@ -41,8 +41,6 @@ export class PromptError extends Error {
 }
 
 export interface RunPromptOptions {
-  /** Hard timeout in ms. Generous by default — reasoning prompts are slow. */
-  timeoutMs?: number;
   maxTokens?: number;
 }
 
@@ -85,9 +83,6 @@ async function callAnthropic(spec: PromptSpec, user: string, opts: RunPromptOpti
     });
   }
 
-  const controller = new AbortController();
-  const timeoutMs = opts.timeoutMs ?? 60_000;
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(ANTHROPIC_URL, {
       method: "POST",
@@ -105,7 +100,6 @@ async function callAnthropic(spec: PromptSpec, user: string, opts: RunPromptOpti
           : spec.system,
         messages: [{ role: "user", content: user }],
       }),
-      signal: controller.signal,
     });
     const text = await res.text();
     if (!res.ok) {
@@ -135,22 +129,12 @@ async function callAnthropic(spec: PromptSpec, user: string, opts: RunPromptOpti
     return out;
   } catch (e) {
     if (e instanceof PromptError) throw e;
-    if ((e as Error)?.name === "AbortError") {
-      throw new PromptError({
-        code: "timeout",
-        promptId: spec.id,
-        model,
-        message: `${spec.id} timed out after ${timeoutMs}ms.`,
-      });
-    }
     throw new PromptError({
       code: "provider_error",
       promptId: spec.id,
       model,
       message: (e as Error)?.message ?? "Provider request failed.",
     });
-  } finally {
-    clearTimeout(timer);
   }
 }
 
