@@ -22,6 +22,7 @@ import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authe
 import { Route as ApiPublicWaitlistUploadRouteImport } from './routes/api/public/waitlist-upload'
 import { Route as ApiPublicSubscribeRouteImport } from './routes/api/public/subscribe'
 import { Route as ApiPublicJobSafetyCheckRouteImport } from './routes/api/public/job-safety-check'
+import { Route as ApiPublicFactInventoryRouteImport } from './routes/api/public/fact-inventory'
 import { Route as ApiPublicDemoRouteImport } from './routes/api/public/demo'
 import { Route as ApiAiClassifyQuestionRouteImport } from './routes/api/ai.classify-question'
 import { Route as AuthenticatedDashboardWritingRouteImport } from './routes/_authenticated/dashboard.writing'
@@ -96,6 +97,11 @@ const ApiPublicSubscribeRoute = ApiPublicSubscribeRouteImport.update({
 const ApiPublicJobSafetyCheckRoute = ApiPublicJobSafetyCheckRouteImport.update({
   id: '/api/public/job-safety-check',
   path: '/api/public/job-safety-check',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFactInventoryRoute = ApiPublicFactInventoryRouteImport.update({
+  id: '/api/public/fact-inventory',
+  path: '/api/public/fact-inventory',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicDemoRoute = ApiPublicDemoRouteImport.update({
@@ -174,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
   '/api/ai/classify-question': typeof ApiAiClassifyQuestionRoute
   '/api/public/demo': typeof ApiPublicDemoRoute
+  '/api/public/fact-inventory': typeof ApiPublicFactInventoryRoute
   '/api/public/job-safety-check': typeof ApiPublicJobSafetyCheckRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
   '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
@@ -197,6 +204,7 @@ export interface FileRoutesByTo {
   '/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
   '/api/ai/classify-question': typeof ApiAiClassifyQuestionRoute
   '/api/public/demo': typeof ApiPublicDemoRoute
+  '/api/public/fact-inventory': typeof ApiPublicFactInventoryRoute
   '/api/public/job-safety-check': typeof ApiPublicJobSafetyCheckRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
   '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
@@ -223,6 +231,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
   '/api/ai/classify-question': typeof ApiAiClassifyQuestionRoute
   '/api/public/demo': typeof ApiPublicDemoRoute
+  '/api/public/fact-inventory': typeof ApiPublicFactInventoryRoute
   '/api/public/job-safety-check': typeof ApiPublicJobSafetyCheckRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
   '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
@@ -249,6 +258,7 @@ export interface FileRouteTypes {
     | '/dashboard/writing'
     | '/api/ai/classify-question'
     | '/api/public/demo'
+    | '/api/public/fact-inventory'
     | '/api/public/job-safety-check'
     | '/api/public/subscribe'
     | '/api/public/waitlist-upload'
@@ -272,6 +282,7 @@ export interface FileRouteTypes {
     | '/dashboard/writing'
     | '/api/ai/classify-question'
     | '/api/public/demo'
+    | '/api/public/fact-inventory'
     | '/api/public/job-safety-check'
     | '/api/public/subscribe'
     | '/api/public/waitlist-upload'
@@ -297,6 +308,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/writing'
     | '/api/ai/classify-question'
     | '/api/public/demo'
+    | '/api/public/fact-inventory'
     | '/api/public/job-safety-check'
     | '/api/public/subscribe'
     | '/api/public/waitlist-upload'
@@ -315,6 +327,7 @@ export interface RootRouteChildren {
   ApiResumeMatchRoute: typeof ApiResumeMatchRoute
   ApiAiClassifyQuestionRoute: typeof ApiAiClassifyQuestionRoute
   ApiPublicDemoRoute: typeof ApiPublicDemoRoute
+  ApiPublicFactInventoryRoute: typeof ApiPublicFactInventoryRoute
   ApiPublicJobSafetyCheckRoute: typeof ApiPublicJobSafetyCheckRoute
   ApiPublicSubscribeRoute: typeof ApiPublicSubscribeRoute
   ApiPublicWaitlistUploadRoute: typeof ApiPublicWaitlistUploadRoute
@@ -413,6 +426,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/job-safety-check'
       fullPath: '/api/public/job-safety-check'
       preLoaderRoute: typeof ApiPublicJobSafetyCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/fact-inventory': {
+      id: '/api/public/fact-inventory'
+      path: '/api/public/fact-inventory'
+      fullPath: '/api/public/fact-inventory'
+      preLoaderRoute: typeof ApiPublicFactInventoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/demo': {
@@ -546,6 +566,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiResumeMatchRoute: ApiResumeMatchRoute,
   ApiAiClassifyQuestionRoute: ApiAiClassifyQuestionRoute,
   ApiPublicDemoRoute: ApiPublicDemoRoute,
+  ApiPublicFactInventoryRoute: ApiPublicFactInventoryRoute,
   ApiPublicJobSafetyCheckRoute: ApiPublicJobSafetyCheckRoute,
   ApiPublicSubscribeRoute: ApiPublicSubscribeRoute,
   ApiPublicWaitlistUploadRoute: ApiPublicWaitlistUploadRoute,
