@@ -237,19 +237,18 @@ async function classifyQuestionForTab(tabId, question) {
     return { ok: true, classification: { ...hit, cached: true } };
   }
 
-  const token = store[SESSION_KEY]?.access_token;
-  if (!token) return { ok: false, error: "Please sign in to Aplyer first.", code: "unauthenticated" };
-
   try {
-    const res = await fetch(`${API_BASE}/api/public/ai/classify-question`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ question: text, platform: question?.platformKey, fieldType: question?.questionType }),
+    const r = await authedFetch("/api/public/ai/classify-question", {
+      question: text,
+      platform: question?.platformKey,
+      fieldType: question?.questionType,
     });
-    const json = await res.json().catch(() => null);
-    if (!res.ok || !json?.ok) {
-      return { ok: false, error: json?.error || "Classification unavailable.", code: json?.code || `http_${res.status}` };
+    if (r.authFailed) return { ...AUTH_REQUIRED };
+    const json = r.json;
+    if (!r.ok || !json?.ok) {
+      return { ok: false, error: json?.error || "Classification unavailable.", code: json?.code || `http_${r.status}` };
     }
+
     const value = {
       framework: json.framework,
       reason: json.reason,
