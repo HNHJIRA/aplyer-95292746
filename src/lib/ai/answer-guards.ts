@@ -70,8 +70,17 @@ const CURRENCY_TERMS = ["currently", "at present", "right now", "these days", "t
 
 const NON_CLAIM_NUMBER_WORDS = new Set(["one", "two", "first", "second"]);
 
+/**
+ * Normalized text with sentence punctuation turned into separators so word
+ * matching is not defeated by a trailing comma. Characters that are part of
+ * tool names (. + # &) are preserved.
+ */
+function words(s: string): string {
+  return normalizeText(s).replace(/[,;:!?'"()]/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function pad(s: string): string {
-  return ` ${normalizeText(s)} `;
+  return ` ${words(s)} `;
 }
 
 function sentences(text: string): string[] {
@@ -111,7 +120,7 @@ export function runAnswerGuards(answer: string, flat: FlattenedInventory): Guard
   }
 
   const corpus = normalizeText(flat.corpus);
-  const paddedCorpus = ` ${corpus} `;
+  const paddedCorpus = pad(flat.corpus);
   const supportedNumbers = new Set(claimNumbers(flat.corpus));
 
   // 5. Metrics, team sizes, percentages and any other claim number.
