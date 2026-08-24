@@ -23,6 +23,7 @@ import { Route as ApiPublicWaitlistUploadRouteImport } from './routes/api/public
 import { Route as ApiPublicSubscribeRouteImport } from './routes/api/public/subscribe'
 import { Route as ApiPublicJobSafetyCheckRouteImport } from './routes/api/public/job-safety-check'
 import { Route as ApiPublicDemoRouteImport } from './routes/api/public/demo'
+import { Route as ApiAiClassifyQuestionRouteImport } from './routes/api/ai.classify-question'
 import { Route as AuthenticatedDashboardWritingRouteImport } from './routes/_authenticated/dashboard.writing'
 import { Route as AuthenticatedDashboardSupportRouteImport } from './routes/_authenticated/dashboard.support'
 import { Route as AuthenticatedDashboardSubscriptionRouteImport } from './routes/_authenticated/dashboard.subscription'
@@ -102,6 +103,11 @@ const ApiPublicDemoRoute = ApiPublicDemoRouteImport.update({
   path: '/api/public/demo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAiClassifyQuestionRoute = ApiAiClassifyQuestionRouteImport.update({
+  id: '/api/ai/classify-question',
+  path: '/api/ai/classify-question',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedDashboardWritingRoute =
   AuthenticatedDashboardWritingRouteImport.update({
     id: '/writing',
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/subscription': typeof AuthenticatedDashboardSubscriptionRoute
   '/dashboard/support': typeof AuthenticatedDashboardSupportRoute
   '/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
+  '/api/ai/classify-question': typeof ApiAiClassifyQuestionRoute
   '/api/public/demo': typeof ApiPublicDemoRoute
   '/api/public/job-safety-check': typeof ApiPublicJobSafetyCheckRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/dashboard/subscription': typeof AuthenticatedDashboardSubscriptionRoute
   '/dashboard/support': typeof AuthenticatedDashboardSupportRoute
   '/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
+  '/api/ai/classify-question': typeof ApiAiClassifyQuestionRoute
   '/api/public/demo': typeof ApiPublicDemoRoute
   '/api/public/job-safety-check': typeof ApiPublicJobSafetyCheckRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
@@ -213,6 +221,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/subscription': typeof AuthenticatedDashboardSubscriptionRoute
   '/_authenticated/dashboard/support': typeof AuthenticatedDashboardSupportRoute
   '/_authenticated/dashboard/writing': typeof AuthenticatedDashboardWritingRoute
+  '/api/ai/classify-question': typeof ApiAiClassifyQuestionRoute
   '/api/public/demo': typeof ApiPublicDemoRoute
   '/api/public/job-safety-check': typeof ApiPublicJobSafetyCheckRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
@@ -238,6 +247,7 @@ export interface FileRouteTypes {
     | '/dashboard/subscription'
     | '/dashboard/support'
     | '/dashboard/writing'
+    | '/api/ai/classify-question'
     | '/api/public/demo'
     | '/api/public/job-safety-check'
     | '/api/public/subscribe'
@@ -260,6 +270,7 @@ export interface FileRouteTypes {
     | '/dashboard/subscription'
     | '/dashboard/support'
     | '/dashboard/writing'
+    | '/api/ai/classify-question'
     | '/api/public/demo'
     | '/api/public/job-safety-check'
     | '/api/public/subscribe'
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/subscription'
     | '/_authenticated/dashboard/support'
     | '/_authenticated/dashboard/writing'
+    | '/api/ai/classify-question'
     | '/api/public/demo'
     | '/api/public/job-safety-check'
     | '/api/public/subscribe'
@@ -301,6 +313,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiResumeAuditRoute: typeof ApiResumeAuditRoute
   ApiResumeMatchRoute: typeof ApiResumeMatchRoute
+  ApiAiClassifyQuestionRoute: typeof ApiAiClassifyQuestionRoute
   ApiPublicDemoRoute: typeof ApiPublicDemoRoute
   ApiPublicJobSafetyCheckRoute: typeof ApiPublicJobSafetyCheckRoute
   ApiPublicSubscribeRoute: typeof ApiPublicSubscribeRoute
@@ -407,6 +420,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/demo'
       fullPath: '/api/public/demo'
       preLoaderRoute: typeof ApiPublicDemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/classify-question': {
+      id: '/api/ai/classify-question'
+      path: '/api/ai/classify-question'
+      fullPath: '/api/ai/classify-question'
+      preLoaderRoute: typeof ApiAiClassifyQuestionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard/writing': {
@@ -524,6 +544,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ApiResumeAuditRoute: ApiResumeAuditRoute,
   ApiResumeMatchRoute: ApiResumeMatchRoute,
+  ApiAiClassifyQuestionRoute: ApiAiClassifyQuestionRoute,
   ApiPublicDemoRoute: ApiPublicDemoRoute,
   ApiPublicJobSafetyCheckRoute: ApiPublicJobSafetyCheckRoute,
   ApiPublicSubscribeRoute: ApiPublicSubscribeRoute,

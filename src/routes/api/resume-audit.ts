@@ -1,28 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CORS_HEADERS, jsonWithCors, preflight } from "@/lib/cors";
-import { aiJson } from "@/lib/ai.server";
-
-interface RedFlag {
-  issue: string;
-  why: string;
-  fix: string;
-}
-interface Audit {
-  verdict: string;
-  redFlags: RedFlag[];
-  strengths: string[];
-  closing: string;
-}
-
-const SYSTEM = `You are a senior technical recruiter doing a 7-second red-flag scan of a resume.
-Return STRICT JSON matching this TypeScript type, no prose, no markdown:
-{
-  "verdict": string,             // one-sentence overall verdict
-  "redFlags": Array<{ "issue": string, "why": string, "fix": string }>, // 3-6 items, specific and actionable
-  "strengths": string[],         // 3-5 short bullets
-  "closing": string              // one encouraging paragraph
-}
-Be specific. Reference concrete phrases or patterns from the resume. Never invent employers or dates.`;
+import {
+  PROMPT_C_RESUME_AUDIT,
+  buildResumeAuditUser,
+  validateResumeAudit,
+} from "@/lib/ai/prompts/prompt-c-resume-audit";
+import { runPromptJson } from "@/lib/ai/run-prompt.server";
 
 export const Route = createFileRoute("/api/resume-audit")({
   server: {
@@ -37,12 +20,21 @@ export const Route = createFileRoute("/api/resume-audit")({
           }
           const capped = resume.length > 20000 ? resume.slice(0, 20000) : resume;
 
-          const audit = await aiJson<Audit>({
-            system: SYSTEM,
-            user: `Resume:\n\n${capped}`,
-          });
+          const audit = validateResumeAudit(
+            await runPromptJson(PROMPT_C_RESUME_AUDIT, buildResumeAuditUser(capped), { timeoutMs: 90_000 }),
+          );
 
-          return new Response(JSON.stringify(audit), {
+          // Canonical Prompt C shape + legacy aliases so existing frontends
+          // (verdict / closing / redFlags[].issue) keep working.
+          const payload = {
+            ...audit,
+            redFlags: audit.redFlags.map((f) => ({ ...f, issue: f.flag })),
+            verdict: audit.overallTake,
+            closing: audit.topPriority,
+            promptVersion: PROMPT_C_RESUME_AUDIT.version,
+          };
+
+          return new Response(JSON.stringify(payload), {
             headers: { "Content-Type": "application/json", ...CORS_HEADERS },
           });
         } catch (err) {
