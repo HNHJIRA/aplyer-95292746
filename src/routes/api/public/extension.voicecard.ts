@@ -1,8 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { jsonWithCors, preflight } from "@/lib/cors";
+import {
+  PROMPT_B_VOICE_CARD,
+  VOICE_CARD_REVEAL,
+  buildVoiceCardUser,
+  validateVoiceCard,
+  type VoiceCardData,
+} from "@/lib/ai/prompts/prompt-b-voice-card";
 
-const PROMPT_VERSION = "v1";
-const MODEL = "claude-haiku-4-5";
+const PROMPT_VERSION = PROMPT_B_VOICE_CARD.version;
+const MODEL = PROMPT_B_VOICE_CARD.model;
 const STALE_LOCK_MS = 45 * 1000;
 const AI_TIMEOUT_MS = 12 * 1000;
 const RESUME_EXCERPT_CHARS = 3000;
@@ -15,18 +22,6 @@ const AB_DEMO_QUESTION =
 
 const AB_DEMO_GENERIC =
   "I am very interested in this role because it aligns with my skills and experience. I am a hard worker, a team player, and passionate about learning. I would bring dedication, strong communication, and a proven track record of delivering results to your team.";
-
-interface VoiceCardData {
-  headline: string;
-  tone: string;
-  cadence: string;
-  formality: string;
-  vocabulary_bias: string;
-  distinctive_traits: string[];
-  hooks_and_transitions: string[];
-  values_signals: string[];
-  do_and_avoid: { do: string[]; avoid: string[] };
-}
 
 interface SourceSnapshot {
   resumeId: string | null;
@@ -179,11 +174,11 @@ async function startVoiceCardGeneration(supabase: any, userId: string) {
     .map((s, i) => `# Sample ${i + 1} — ${s.type} — ${s.title}\n${s.content.slice(0, SAMPLE_EXCERPT_CHARS)}`)
     .join("\n\n---\n\n");
 
-  const userPrompt = `Resume:\n${resumeExcerpt}\n\nWriting samples:\n${samplesText}`;
+  const userPrompt = buildVoiceCardUser(resumeExcerpt, samplesText);
   let voiceCard: VoiceCardData;
   let usedFallback = false;
   try {
-    voiceCard = validateVoiceCard(await callClaudeJson(VC_SYSTEM, userPrompt));
+    voiceCard = validateVoiceCard(await callClaudeJson(PROMPT_B_VOICE_CARD.system, userPrompt));
   } catch (e) {
     console.warn("[extension.voicecard] Claude unavailable, using fast fallback", e);
     usedFallback = true;
@@ -322,7 +317,17 @@ function buildFastVoiceCard(snap: SourceSnapshot): VoiceCardData {
     ? `Leans on concrete terms like ${traits.slice(0, 5).join(", ")}.`
     : "Leans on concrete, role-focused language.";
 
+  const archetype =
+    avgSentenceWords <= 12 ? "One-Liner" : avgSentenceWords >= 24 ? "Overthinker" : formality === "Conversational-professional" ? "Natural" : "Straight Shooter";
+
   return {
+    archetype,
+    archetype_description:
+      "Your writing lands as " +
+      archetype +
+      ": " +
+      cadence.toLowerCase(),
+    reveal: VOICE_CARD_REVEAL,
     headline: "A clear, practical voice focused on evidence and contribution.",
     tone: "Direct, thoughtful, and professionally grounded.",
     cadence,
@@ -387,23 +392,6 @@ function findValueSignals(words: string[]): string[] {
   return base.slice(0, 4).map((v) => `${v[0].toUpperCase()}${v.slice(1)} shows up as a recurring writing signal.`);
 }
 
-const VC_SYSTEM = `You are a writing-voice profiler. Given a resume and 2+ short pieces of prose written by the candidate, distill their writing DNA.
-
-Return STRICT JSON only (no markdown, no prose) matching:
-{
-  "headline": string,
-  "tone": string,
-  "cadence": string,
-  "formality": string,
-  "vocabulary_bias": string,
-  "distinctive_traits": string[],
-  "hooks_and_transitions": string[],
-  "values_signals": string[],
-  "do_and_avoid": { "do": string[], "avoid": string[] }
-}
-
-Be specific and evidence-based. Reference concrete phrasing patterns. Never invent facts about the person.`;
-
 async function callClaudeJson(system: string, user: string): Promise<unknown> {
   const text = await callClaudeText(`${system}\n\nRespond with ONLY a valid JSON object. No prose, no markdown fences.`, user, MAX_VOICECARD_TOKENS);
   try {
@@ -433,14 +421,4 @@ async function callClaudeText(system: string, user: string, maxTokens: number): 
   } finally {
     clearTimeout(timeout);
   }
-}
-
-function validateVoiceCard(d: unknown): VoiceCardData {
-  const o = d as VoiceCardData;
-  const req = ["headline", "tone", "cadence", "formality", "vocabulary_bias"] as const;
-  for (const k of req) if (typeof o?.[k] !== "string" || !o[k]) throw new Error(`Missing field ${k}`);
-  const arr = ["distinctive_traits", "hooks_and_transitions", "values_signals"] as const;
-  for (const k of arr) if (!Array.isArray(o?.[k]) || o[k].length === 0) throw new Error(`Missing ${k}`);
-  if (!o.do_and_avoid || !Array.isArray(o.do_and_avoid.do) || !Array.isArray(o.do_and_avoid.avoid)) throw new Error("Missing do_and_avoid");
-  return o;
 }

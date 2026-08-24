@@ -23,6 +23,9 @@ type Status =
   | "unlocked";
 
 interface VoiceCardData {
+  archetype?: string;
+  archetype_description?: string;
+  reveal?: string;
   headline: string;
   tone: string;
   cadence: string;
@@ -167,9 +170,14 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
     return (
       <div className="flex h-full flex-col px-6 pt-3">
         <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-green/25 bg-brand-green/10 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-brand-green self-start">
-          <Sparkles className="h-2.5 w-2.5" /> Voice Card Ready
+          <Sparkles className="h-2.5 w-2.5" /> {card.archetype ?? "Voice Card Ready"}
         </div>
-        <h2 className="mt-2 text-[20px] font-black tracking-tight">{card.headline}</h2>
+        <h2 className="mt-2 text-[20px] font-black tracking-tight">
+          {card.reveal ?? "Okay, we read you loud and clear!"}
+        </h2>
+        <p className="mt-1 text-[14px] text-muted-foreground">
+          {card.archetype_description ?? card.headline}
+        </p>
         <div className="popup-scroll -mx-6 mt-3 flex-1 space-y-3 overflow-y-auto px-6 pb-3">
           <Row label="Tone" value={card.tone} />
           <Row label="Cadence" value={card.cadence} />

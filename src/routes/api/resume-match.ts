@@ -1,42 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CORS_HEADERS, jsonWithCors, preflight } from "@/lib/cors";
-import { aiJson } from "@/lib/ai.server";
-
-interface PriorityImprovement {
-  priority: number;
-  title: string;
-  recommendation: string;
-}
-interface MatchReport {
-  overallMatch: number;
-  atsScore: number;
-  keywordCoverage: number;
-  summary: string;
-  matchingSkills: string[];
-  missingKeywords: string[];
-  missingSkills: string[];
-  strengths: string[];
-  weaknesses: string[];
-  priorityImprovements: PriorityImprovement[];
-  interviewLikelihood: { rating: string; reason: string };
-}
-
-const SYSTEM = `You are an ATS and recruiter analyst. Compare a resume against a job description and score fit.
-Return STRICT JSON matching this TypeScript type, no prose, no markdown:
-{
-  "overallMatch": number,        // 0-100
-  "atsScore": number,            // 0-100
-  "keywordCoverage": number,     // 0-100
-  "summary": string,             // 2-3 sentences
-  "matchingSkills": string[],
-  "missingKeywords": string[],
-  "missingSkills": string[],
-  "strengths": string[],
-  "weaknesses": string[],
-  "priorityImprovements": Array<{ "priority": number, "title": string, "recommendation": string }>,
-  "interviewLikelihood": { "rating": string, "reason": string }
-}
-Be specific and grounded in the two texts. Never invent skills or employers.`;
+import {
+  PROMPT_D_RESUME_SCORE,
+  buildResumeScoreUser,
+  validateResumeScore,
+} from "@/lib/ai/prompts/prompt-d-resume-score";
+import { runPromptJson } from "@/lib/ai/run-prompt.server";
 
 export const Route = createFileRoute("/api/resume-match")({
   server: {
@@ -60,13 +29,30 @@ export const Route = createFileRoute("/api/resume-match")({
           const capResume = resume.length > 20000 ? resume.slice(0, 20000) : resume;
           const capJd = jd.length > 20000 ? jd.slice(0, 20000) : jd;
 
-          const report = await aiJson<MatchReport>({
-            system: SYSTEM,
-            user: `RESUME:\n${capResume}\n\n---\n\nJOB DESCRIPTION:\n${capJd}`,
-            maxTokens: 2500,
-          });
+          const report = validateResumeScore(
+            await runPromptJson(PROMPT_D_RESUME_SCORE, buildResumeScoreUser(capResume, capJd), {
+              timeoutMs: 90_000,
+            }),
+          );
 
-          return new Response(JSON.stringify(report), {
+          // Canonical Prompt D shape + legacy aliases for existing frontends.
+          const payload = {
+            ...report,
+            overallMatch: report.jobDescriptionMatch,
+            keywordCoverage: report.jobDescriptionMatch,
+            matchingSkills: report.keywordsPresent,
+            missingKeywords: report.keywordsMissing,
+            missingSkills: report.keywordsMissing,
+            weaknesses: report.gaps,
+            priorityImprovements: report.suggestions.map((s, i) => ({
+              priority: i + 1,
+              title: s.split(/[.:]/)[0].slice(0, 80),
+              recommendation: s,
+            })),
+            promptVersion: PROMPT_D_RESUME_SCORE.version,
+          };
+
+          return new Response(JSON.stringify(payload), {
             headers: { "Content-Type": "application/json", ...CORS_HEADERS },
           });
         } catch (err) {

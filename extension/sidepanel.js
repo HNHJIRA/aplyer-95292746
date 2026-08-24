@@ -60,7 +60,16 @@ function render(state) {
   if (question && question.questionText) {
     $("question-card").style.display = "";
     $("q-text").textContent = question.questionText;
-    $("q-meta").textContent = `id: ${question.questionId}  ·  type: ${question.questionType}`;
+    const parts = [`type: ${question.questionType}`];
+    if (question.framework) {
+      parts.push(`framework: ${question.framework}`);
+      if (typeof question.frameworkConfidence === "number") {
+        parts.push(`${Math.round(question.frameworkConfidence * 100)}% confidence`);
+      }
+    } else {
+      parts.push("framework: analyzing…");
+    }
+    $("q-meta").textContent = parts.join("  ·  ");
   } else {
     $("question-card").style.display = "none";
   }
