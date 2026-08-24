@@ -2,6 +2,7 @@
 // Prompt modules are pure (no server imports) so they can be unit-tested.
 
 export type PromptId =
+  | "P0_FACT_INVENTORY"
   | "A_ANSWER_GENERATION"
   | "B_VOICE_CARD"
   | "C_RESUME_AUDIT"

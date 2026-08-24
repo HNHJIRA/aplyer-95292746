@@ -174,7 +174,32 @@ async function onGenerateAnswer() {
     return;
   }
   currentFramework = res.classification;
-  setGenStatus("Question analyzed. Answer generation unlocks in Milestone 4.", false);
+  setGenStatus("Preparing your profile context…", false);
+
+  const inv = await new Promise((resolve) => {
+    let done = false;
+    const finish = (v) => { if (!done) { done = true; resolve(v); } };
+    setTimeout(() => finish(null), 30000);
+    try {
+      chrome.runtime.sendMessage({ type: "APLYER_ENSURE_FACT_INVENTORY", ensure: true }, (r) => {
+        void chrome.runtime.lastError;
+        finish(r ?? null);
+      });
+    } catch { finish(null); }
+  });
+
+  if (!inv?.ok) {
+    setGenStatus(inv?.error || "We couldn't prepare your profile context. Try again.", true);
+    return;
+  }
+  const status = inv.state?.status;
+  if (status === "ready") {
+    setGenStatus("Question ready. Your profile context is prepared.", false);
+  } else if (status === "extracting" || status === "pending") {
+    setGenStatus("Preparing your profile context…", false);
+  } else {
+    setGenStatus("We couldn't prepare your profile context. Try again.", true);
+  }
   $("q-generate")?.addEventListener("click", () => { onGenerateAnswer(); });
 
 load();

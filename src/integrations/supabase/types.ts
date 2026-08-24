@@ -173,6 +173,68 @@ export type Database = {
         }
         Relationships: []
       }
+      resume_fact_inventories: {
+        Row: {
+          created_at: string
+          error: string | null
+          generated_at: string | null
+          generation_id: string | null
+          generation_started_at: string | null
+          id: string
+          inventory_json: Json | null
+          model: string | null
+          prompt_version: string
+          resume_id: string
+          schema_version: string
+          source_hash: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          generated_at?: string | null
+          generation_id?: string | null
+          generation_started_at?: string | null
+          id?: string
+          inventory_json?: Json | null
+          model?: string | null
+          prompt_version: string
+          resume_id: string
+          schema_version: string
+          source_hash: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          generated_at?: string | null
+          generation_id?: string | null
+          generation_started_at?: string | null
+          id?: string
+          inventory_json?: Json | null
+          model?: string | null
+          prompt_version?: string
+          resume_id?: string
+          schema_version?: string
+          source_hash?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resume_fact_inventories_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resume_scores: {
         Row: {
           completeness: number

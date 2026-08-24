@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Aplyer.ai",
-  "version": "1.7.1",
+  "version": "1.8.0",
   "description": "Detect supported ATS application questions and prepare to generate tailored answers.",
   "permissions": [
     "storage",
