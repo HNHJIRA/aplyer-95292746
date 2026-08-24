@@ -422,20 +422,39 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  // Side panel -> background: generate a validated answer.
+  // Side panel -> background: run (or join) the validated answer flow.
   if (message.type === "APLYER_GENERATE_ANSWER") {
     (async () => {
-      const q = String(message.question || "").slice(0, 2000);
+      let tabId = sender?.tab?.id ?? message.tabId;
+      if (tabId == null) {
+        try {
+          const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+          tabId = tab?.id ?? null;
+        } catch (e) { console.warn("[Aplyer] tabs.query failed", String(e)); }
+      }
       const job = message.job || null;
-      sendResponse?.(
-        await requestValidatedAnswer({
-          question: q,
-          job: job
-            ? { title: job.title, company: job.company, description: job.description }
-            : null,
-          force: message.force === true,
-        }),
+      const state = await runAnswerFlow(
+        tabId,
+        { ...(message.question || {}), questionText: String(message.question?.questionText || message.question || "") },
+        job ? { title: job.title, company: job.company, description: job.description } : null,
+        message.force === true,
       );
+      sendResponse?.({ ok: true, state });
+    })();
+    return true;
+  }
+
+  // Side panel -> background: restore canonical state for the active tab.
+  if (message.type === "APLYER_GET_ANSWER_STATE") {
+    (async () => {
+      let tabId = message.tabId;
+      if (tabId == null) {
+        try {
+          const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+          tabId = tab?.id ?? null;
+        } catch (e) { console.warn("[Aplyer] tabs.query failed", String(e)); }
+      }
+      sendResponse?.({ ok: true, state: await readAnswerState(tabId, message.questionHash || null) });
     })();
     return true;
   }
@@ -443,14 +462,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Side panel -> background: store the resume-only phrasing choice.
   if (message.type === "APLYER_CHOOSE_ANSWER_OPTION") {
     (async () => {
-      sendResponse?.(
-        await requestValidatedAnswer({
-          select: { answerId: message.answerId, variantId: message.variantId },
-        }),
-      );
+      const res = await requestValidatedAnswer({
+        select: { answerId: message.answerId, variantId: message.variantId },
+      });
+      if (res?.ok) {
+        let tabId = message.tabId;
+        if (tabId == null) {
+          try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            tabId = tab?.id ?? null;
+          } catch (e) { console.warn("[Aplyer] tabs.query failed", String(e)); }
+        }
+        const prev = await readAnswerState(tabId, null);
+        if (prev) {
+          await writeAnswerState(tabId, {
+            ...prev,
+            phase: "ready",
+            answer: res.answer,
+            options: null,
+            at: Date.now(),
+          });
+        }
+      }
+      sendResponse?.(res);
     })();
     return true;
   }
+
 
   // Side panel -> background: read the framework for the active tab only.
   if (message.type === "APLYER_GET_FRAMEWORK") {
