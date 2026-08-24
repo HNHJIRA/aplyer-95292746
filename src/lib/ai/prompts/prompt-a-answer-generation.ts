@@ -35,7 +35,6 @@ export const PROMPT_A_ANSWER_GENERATION: PromptSpec = {
   maxTokens: 1200,
   temperature: 0.4,
   json: true,
-  json_placeholder_unused: undefined,
   system: `You write job application answers in the candidate's own voice.
 
 HARD GATE — P0 fact inventory:
@@ -54,7 +53,7 @@ Structure:
 
 Return ONLY this JSON object:
 { "answer": string, "factsUsed": string[] }`,
-} as unknown as PromptSpec;
+};
 
 export function buildAnswerUser(input: AnswerGenerationInput): string {
   const maxWords = input.maxWords ?? 180;
