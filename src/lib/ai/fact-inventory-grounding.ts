@@ -38,7 +38,9 @@ export class GroundingError extends Error {
 }
 
 /** Share of checkable facts that may be dropped before the run is untrustworthy. */
-const MAX_REJECTION_RATIO = 0.4;
+const MAX_REJECTION_RATIO = 0.5;
+/** The ratio guard needs a meaningful sample before it can fire. */
+const MIN_FACTS_FOR_RATIO_GUARD = 3;
 
 export function normalizeText(input: string): string {
   return input
@@ -236,7 +238,10 @@ export function applyGrounding(
   };
 
   const kept = considered - ctx.rejections.length;
-  if (considered > 0 && ctx.rejections.length / considered > MAX_REJECTION_RATIO) {
+  if (
+    considered >= MIN_FACTS_FOR_RATIO_GUARD &&
+    ctx.rejections.length / considered > MAX_REJECTION_RATIO
+  ) {
     throw new GroundingError(
       `Extraction rejected: ${ctx.rejections.length}/${considered} facts could not be grounded in the resume.`,
       ctx.rejections,
