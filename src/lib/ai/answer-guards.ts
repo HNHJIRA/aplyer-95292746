@@ -165,14 +165,18 @@ export function runAnswerGuards(answer: string, flat: FlattenedInventory): Guard
   }
 
 
-  // 7. Month/day granularity the inventory never states. A month only counts as
-  //    a date claim when a year or day number sits next to it — otherwise words
-  //    like the modal verb "may" or the noun "march" trigger false positives.
+  // 7. Month/day granularity the inventory never states. "may" is excluded
+  //    unless a day or year sits beside it — as a bare word it is the modal
+  //    verb far more often than the month, and flagging it failed the pipeline
+  //    closed on perfectly grounded answers.
   for (const m of MONTHS) {
-    const dateRe = new RegExp(`\\b(?:\\d{1,2}\\s+)?${m}\\b(?:\\s+\\d{1,4})?`, "i");
-    const claim = new RegExp(`\\b(?:\\d{1,2}\\s+${m}\\b|${m}\\s+\\d{1,4}\\b)`, "i");
-    if (claim.test(padded) && !dateRe.test(paddedCorpus)) add("unsupported_date", m);
+    const mentioned =
+      m === "may"
+        ? new RegExp(`\\b(?:\\d{1,2}\\s+may\\b|may\\s+\\d{1,4}\\b)`, "i").test(padded)
+        : padded.includes(` ${m} `);
+    if (mentioned && !paddedCorpus.includes(` ${m} `)) add("unsupported_date", m);
   }
+
 
 
   // 8. Tools claimed as experience.
