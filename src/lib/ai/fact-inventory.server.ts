@@ -93,7 +93,7 @@ interface CurrentResume {
 export async function resolveCurrentResume(supabase: Db, userId: string): Promise<CurrentResume> {
   const { data } = await supabase
     .from("resumes")
-    .select("id, resume_text")
+    .select("id, resume_text, storage_path, file_name")
     .eq("user_id", userId)
     .eq("is_current", true)
     .order("uploaded_at", { ascending: false })
@@ -101,12 +101,32 @@ export async function resolveCurrentResume(supabase: Db, userId: string): Promis
     .maybeSingle();
 
   if (!data?.id) throw new FactInventoryError("no_resume", "No current resume found for this user.");
-  const text = typeof data.resume_text === "string" ? data.resume_text.trim() : "";
+  let text = typeof data.resume_text === "string" ? data.resume_text.trim() : "";
+
+  // Legacy rows stored raw PDF/DOCX bytes in `resume_text`. Grounding can never
+  // succeed against those, so re-extract once from the original stored file
+  // using the canonical extractor before failing.
+  try {
+    const { needsTextRepair, repairResumeText } = await import("@/lib/resume/repair.server");
+    if (needsTextRepair(text) && data.storage_path) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const repaired = await repairResumeText(supabaseAdmin, {
+        id: data.id,
+        storage_path: data.storage_path,
+        file_name: data.file_name,
+      });
+      if (repaired) text = repaired.trim();
+    }
+  } catch {
+    /* repair is best-effort; fall through to the normal validation below */
+  }
+
   if (text.length < MIN_RESUME_CHARS) {
     throw new FactInventoryError("empty_resume", "The stored resume has no usable text.");
   }
   return { id: data.id, resumeText: text };
 }
+
 
 function rowToState(row: Record<string, any> | null, resumeId: string | null): InventoryState {
   if (!row) {
