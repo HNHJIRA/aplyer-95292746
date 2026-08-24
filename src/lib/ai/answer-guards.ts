@@ -70,6 +70,27 @@ const CURRENCY_TERMS = ["currently", "at present", "right now", "these days", "t
 
 const NON_CLAIM_NUMBER_WORDS = new Set(["one", "two", "first", "second"]);
 
+/** Spelled-out quantities that make a duration claim, e.g. "five years". */
+const SPELLED_NUMBERS: Record<string, string> = {
+  two: "2", three: "3", four: "4", five: "5", six: "6", seven: "7", eight: "8",
+  nine: "9", ten: "10", eleven: "11", twelve: "12", fifteen: "15", twenty: "20",
+};
+
+const SPELLED_DURATION_RE = new RegExp(
+  `\\b(${Object.keys(SPELLED_NUMBERS).join("|")})\\s+(years?|months?)\\b`,
+  "gi",
+);
+
+function spelledDurationClaims(text: string): Array<{ word: string; unit: string }> {
+  const out: Array<{ word: string; unit: string }> = [];
+  const normalized = normalizeText(text);
+  for (const m of normalized.matchAll(SPELLED_DURATION_RE)) {
+    out.push({ word: m[1]!.toLowerCase(), unit: m[2]!.toLowerCase() });
+  }
+  return out;
+}
+
+
 /**
  * Normalized text with sentence punctuation turned into separators so word
  * matching is not defeated by a trailing comma. Characters that are part of
