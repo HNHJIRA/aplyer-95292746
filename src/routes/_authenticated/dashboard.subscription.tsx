@@ -87,7 +87,7 @@ function SubscriptionPage() {
         })}
       </div>
 
-      <p className="text-center text-[11px] text-muted-foreground">Billing powered by Stripe · launching with Milestone 2.</p>
+      <p className="text-center text-[11px] text-muted-foreground">Billing powered by Stripe.</p>
     </div>
   );
 }

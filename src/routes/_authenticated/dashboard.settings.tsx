@@ -69,7 +69,7 @@ function SettingsPage() {
                 <option value="openai-gpt5" disabled>OpenAI GPT-5 (soon)</option>
                 <option value="gemini-2-5-pro" disabled>Gemini 2.5 Pro (soon)</option>
               </select>
-              <p className="mt-2 text-[11px] text-muted-foreground">AI generation activates in Milestone 2.</p>
+              <p className="mt-2 text-[11px] text-muted-foreground">AI answer generation is active on supported job applications.</p>
             </label>
           </Section>
 
