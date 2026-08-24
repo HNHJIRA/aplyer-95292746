@@ -50,6 +50,14 @@ async function runJobSafetyCheck(tabId, url) {
 
 chrome.tabs?.onRemoved?.addListener((tabId) => { writeSafetyEntry(tabId, null); });
 
+// Proactive path: tab URL access is granted by host_permissions for supported
+// ATS hosts, so the check runs even if the content script never messages us.
+chrome.tabs?.onUpdated?.addListener((tabId, changeInfo, tab) => {
+  const url = changeInfo.url || (changeInfo.status === "complete" ? tab?.url : null);
+  if (url && /^https?:/i.test(url)) runJobSafetyCheck(tabId, url);
+});
+
+
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") console.log("[Aplyer.ai] Extension installed.");
 });
@@ -103,12 +111,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  // Side panel / popup -> background: read tab-scoped safety state
+  // Side panel / popup -> background: read tab-scoped safety state.
+  // Self-healing: when the panel has no entry for the active tab we run the
+  // check here (the panel has no content-script context of its own).
   if (message.type === "APLYER_GET_JOB_SAFETY") {
-    const tabId = message.tabId;
-    readSafetyMap().then((map) => sendResponse?.({ entry: map[String(tabId)] ?? null }));
+    (async () => {
+      let tabId = message.tabId;
+      let url = message.url;
+      if (tabId == null || !url) {
+        try {
+          const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+          if (tab) { tabId = tabId ?? tab.id; url = url || tab.url; }
+        } catch (e) { console.warn("[Aplyer] tabs.query failed", String(e)); }
+      }
+      const map = await readSafetyMap();
+      let entry = tabId != null ? map[String(tabId)] ?? null : null;
+      if ((!entry || (url && entry.url !== url)) && url) {
+        entry = await runJobSafetyCheck(tabId, url);
+      }
+      sendResponse?.({ entry });
+    })();
     return true;
   }
+
 
   // Content-script -> background: ATS status update
   if (message.type === "APLYER_ATS_STATUS" && message.payload) {

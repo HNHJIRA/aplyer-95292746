@@ -20,8 +20,8 @@ function renderSafety(entry) {
   const host = $("safety-host");
   if (!entry) { card.style.display = "none"; return; }
   card.style.display = "";
-  host.textContent = entry.hostname || "";
   const r = entry.result;
+  host.textContent = [entry.hostname || "", r?.provider ? `Provider: ${r.provider}` : ""].filter(Boolean).join("  ·  ");
   badge.classList.remove("is-safe", "is-unknown");
   if (r && r.status === "safe") {
     badge.textContent = "Safe";
@@ -39,6 +39,7 @@ function renderSafety(entry) {
     copy.textContent = "Running the job safety check…";
   }
 }
+
 
 function render(state) {
   const { status, question, session } = state;
@@ -79,28 +80,47 @@ function render(state) {
   }
 }
 
+function askBackgroundSafety() {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (v) => { if (!done) { done = true; resolve(v); } };
+    setTimeout(() => finish(null), 8000);
+    try {
+      chrome.runtime.sendMessage({ type: "APLYER_GET_JOB_SAFETY" }, (res) => {
+        void chrome.runtime.lastError;
+        finish(res?.entry ?? null);
+      });
+    } catch { finish(null); }
+  });
+}
+
 async function load() {
   try {
     const data = await chrome.storage.local.get([KEY_STATUS, KEY_QUESTION, KEY_SESSION, KEY_SAFETY]);
-    // Fraud-scan state is strictly tab-scoped: only show the active tab's entry.
+    render({
+      status: data[KEY_STATUS] || null,
+      question: data[KEY_QUESTION] || null,
+      session: data[KEY_SESSION] || null,
+    });
+    // Fraud-scan state is strictly tab-scoped. The background resolves the
+    // active tab and runs the check on demand when no entry exists yet.
     let safety = null;
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       const map = data[KEY_SAFETY] || {};
       if (tab?.id != null) safety = map[String(tab.id)] || null;
     } catch { /* no tabs access */ }
-    renderSafety(safety);
-    render({
-      status: data[KEY_STATUS] || null,
-      question: data[KEY_QUESTION] || null,
-      session: data[KEY_SESSION] || null,
-    });
+    if (safety) renderSafety(safety);
+    const fresh = await askBackgroundSafety();
+    if (fresh) renderSafety(fresh);
+    else if (!safety) renderSafety(null);
   } catch (e) {
     // Fail safe — never throw user-visible errors in the panel.
     console.warn("[Aplyer] sidepanel load failed", e);
     render({ status: null, question: null, session: null });
   }
 }
+
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
