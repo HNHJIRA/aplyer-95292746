@@ -50,6 +50,44 @@ async function runJobSafetyCheck(tabId, url) {
 
 chrome.tabs?.onRemoved?.addListener((tabId) => { writeSafetyEntry(tabId, null); });
 
+// --- Question classification (Prompt I) --------------------------------
+// Classifies the selected application question into an answer framework
+// (STAR / STAR-F / CAR / MOTIVATION / CULTURAL / GENERAL). Results are cached
+// server-side; we keep a small local cache to avoid repeat round-trips.
+const CLASSIFY_KEY = "aplyer.question_frameworks.v1";
+
+async function classifyQuestion(question) {
+  const text = (question?.questionText || "").trim();
+  if (text.length < 5) return null;
+  const cacheKey = text.slice(0, 300);
+
+  const store = await chrome.storage.local.get([CLASSIFY_KEY, SESSION_KEY]);
+  const cache = store[CLASSIFY_KEY] || {};
+  if (cache[cacheKey]) return cache[cacheKey];
+
+  const token = store[SESSION_KEY]?.access_token;
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/public/ai/classify-question`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ question: text, platform: question?.platformKey, fieldType: question?.questionType }),
+    });
+    const json = await res.json().catch(() => null);
+    if (!json?.ok) return null;
+    const value = { framework: json.framework, confidence: json.confidence, reason: json.reason };
+    cache[cacheKey] = value;
+    const keys = Object.keys(cache);
+    if (keys.length > 200) delete cache[keys[0]];
+    await chrome.storage.local.set({ [CLASSIFY_KEY]: cache });
+    return value;
+  } catch (e) {
+    console.warn("[Aplyer] classify failed", String(e));
+    return null;
+  }
+}
+
 // Proactive path: tab URL access is granted by host_permissions for supported
 // ATS hosts, so the check runs even if the content script never messages us.
 chrome.tabs?.onUpdated?.addListener((tabId, changeInfo, tab) => {
@@ -135,6 +173,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
 
+  // Side panel / content-script -> background: classify a question on demand
+  if (message.type === "APLYER_CLASSIFY_QUESTION") {
+    classifyQuestion(message.question).then((c) => sendResponse?.({ ok: !!c, classification: c }));
+    return true;
+  }
+
   // Content-script -> background: ATS status update
   if (message.type === "APLYER_ATS_STATUS" && message.payload) {
     chrome.storage.local.set({ [STATUS_KEY]: message.payload }, () => sendResponse?.({ ok: true }));
@@ -156,6 +200,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
       } catch (e) {
         console.warn("[Aplyer] sidePanel.open failed", e);
+      }
+      // Classify asynchronously and enrich the selected question in place —
+      // the side panel re-renders from the storage change.
+      if (payload.question) {
+        classifyQuestion({ ...payload.question, platformKey: payload.platformKey }).then((c) => {
+          if (!c) return;
+          chrome.storage.local.get(SELECTED_KEY, (res) => {
+            const cur = res[SELECTED_KEY];
+            if (!cur || cur.questionId !== payload.question.questionId) return;
+            chrome.storage.local.set({ [SELECTED_KEY]: { ...cur, framework: c.framework, frameworkConfidence: c.confidence, frameworkReason: c.reason } });
+          });
+        });
       }
       sendResponse?.({ ok: true });
     });
