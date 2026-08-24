@@ -165,10 +165,15 @@ export function runAnswerGuards(answer: string, flat: FlattenedInventory): Guard
   }
 
 
-  // 7. Month/day granularity the inventory never states.
+  // 7. Month/day granularity the inventory never states. A month only counts as
+  //    a date claim when a year or day number sits next to it — otherwise words
+  //    like the modal verb "may" or the noun "march" trigger false positives.
   for (const m of MONTHS) {
-    if (padded.includes(` ${m} `) && !paddedCorpus.includes(` ${m} `)) add("unsupported_date", m);
+    const dateRe = new RegExp(`\\b(?:\\d{1,2}\\s+)?${m}\\b(?:\\s+\\d{1,4})?`, "i");
+    const claim = new RegExp(`\\b(?:\\d{1,2}\\s+${m}\\b|${m}\\s+\\d{1,4}\\b)`, "i");
+    if (claim.test(padded) && !dateRe.test(paddedCorpus)) add("unsupported_date", m);
   }
+
 
   // 8. Tools claimed as experience.
   for (const tool of TOOL_LEXICON) {
