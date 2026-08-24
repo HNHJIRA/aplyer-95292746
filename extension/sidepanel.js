@@ -144,10 +144,29 @@ async function load() {
   }
 }
 
-function setGenStatus(text, isError) {
+function setGenStatus(text, isError, signInRequired) {
   const el = $("q-generate-status");
-  el.textContent = text || "";
+  // Raw backend auth wording ("Unauthorized") must never reach the UI.
+  const safe = /^unauthorized$/i.test(String(text || "").trim())
+    ? "Your session expired. Please sign in again."
+    : text || "";
+  el.textContent = safe;
   el.classList.toggle("q-error", !!isError);
+  let btn = $("q-signin");
+  if (signInRequired) {
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.id = "q-signin";
+      btn.type = "button";
+      btn.className = "btn btn-primary";
+      btn.textContent = "Sign in";
+      btn.addEventListener("click", () => send("APLYER_OPEN_SIGN_IN", {}, 5000));
+      el.insertAdjacentElement("afterend", btn);
+    }
+    btn.style.display = "";
+  } else if (btn) {
+    btn.style.display = "none";
+  }
 }
 
 function send(type, payload, timeoutMs) {
@@ -219,7 +238,7 @@ function renderAnswerState(state) {
     return;
   }
   hideResults();
-  setGenStatus(state.error || "", state.phase === "error");
+  setGenStatus(state.error || "", state.phase === "error", state.signInRequired === true);
 }
 
 /** Restores canonical state after a panel close/reopen — no new generation. */

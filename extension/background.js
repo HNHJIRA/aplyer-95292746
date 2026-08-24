@@ -7,6 +7,138 @@ const SAFETY_KEY = "aplyer.job_safety_by_tab.v1";
 const API_BASE = "https://aplyer.devssh.xyz";
 const SAFETY_TTL_MS = 10 * 60 * 1000;
 
+/* --------------------------------------------------------------------
+ * CANONICAL EXTENSION AUTH
+ *
+ * Every authenticated backend call in this worker goes through
+ * `authedFetch`. It is the only place that reads the stored session,
+ * refreshes an expired access token, and retries a 401 exactly once.
+ * Do not add another bearer-token implementation.
+ * ------------------------------------------------------------------ */
+const SUPABASE_URL = "https://yiwsbasamuazvqxaigll.supabase.co";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpd3NiYXNhbXVhenZxeGFpZ2xsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NTUzMTAsImV4cCI6MjA5NjMzMTMxMH0.xFj4wSx_o0z1rfC7F3Zt1xGO3PJclCL9oEih6BxVOs0";
+/** Refresh this many seconds before the access token actually expires. */
+const TOKEN_SKEW_SEC = 120;
+
+const AUTH_REQUIRED = {
+  ok: false,
+  code: "auth_required",
+  error: "Your session expired. Please sign in again.",
+  signInRequired: true,
+};
+
+async function readStoredSession() {
+  const res = await chrome.storage.local.get(SESSION_KEY);
+  return res[SESSION_KEY] ?? null;
+}
+
+async function writeStoredSession(session) {
+  if (session) await chrome.storage.local.set({ [SESSION_KEY]: session });
+  else await chrome.storage.local.remove(SESSION_KEY);
+}
+
+function isTokenExpired(session, skewSec = TOKEN_SKEW_SEC) {
+  const exp = Number(session?.expires_at || 0);
+  if (!exp) return false; // unknown expiry -> let the backend decide
+  return exp * 1000 - Date.now() <= skewSec * 1000;
+}
+
+/** Safe diagnostics only — never the token itself. */
+function authDiagnostics(session) {
+  return {
+    token_present: !!session?.access_token,
+    token_length: session?.access_token ? String(session.access_token).length : 0,
+    token_expiry: session?.expires_at ?? null,
+    user_id_prefix: session?.user?.id ? String(session.user.id).slice(0, 8) : null,
+    backend_origin: API_BASE,
+  };
+}
+
+/** Single-flight refresh so parallel calls never race two refreshes. */
+let refreshInFlight = null;
+
+async function refreshStoredSession() {
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = (async () => {
+    const session = await readStoredSession();
+    const refreshToken = session?.refresh_token;
+    if (!refreshToken) {
+      await writeStoredSession(null);
+      return null;
+    }
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.access_token) {
+        // Refresh genuinely failed -> clear auth state, require sign-in.
+        await writeStoredSession(null);
+        return null;
+      }
+      const next = {
+        access_token: json.access_token,
+        refresh_token: json.refresh_token || refreshToken,
+        expires_at: json.expires_at ?? Math.floor(Date.now() / 1000) + (json.expires_in || 3600),
+        user: json.user ? { id: json.user.id, email: json.user.email } : session?.user,
+      };
+      await writeStoredSession(next);
+      return next;
+    } catch (e) {
+      console.warn("[Aplyer] session refresh failed", String(e));
+      return null; // network problem: keep the session, caller surfaces an error
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+  return refreshInFlight;
+}
+
+/** Resolves a usable access token, refreshing proactively when near expiry. */
+async function getAccessToken() {
+  let session = await readStoredSession();
+  if (!session?.access_token) return null;
+  if (isTokenExpired(session)) {
+    session = await refreshStoredSession();
+    if (!session?.access_token) return null;
+  }
+  return session.access_token;
+}
+
+/**
+ * The ONLY authenticated fetch in this worker. Returns
+ * { ok, status, json } or an auth-required envelope.
+ */
+async function authedFetch(path, body) {
+  let token = await getAccessToken();
+  if (!token) return { authFailed: true };
+
+  const call = async (bearer) =>
+    fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${bearer}` },
+      body: JSON.stringify(body ?? {}),
+    });
+
+  let res = await call(token);
+  if (res.status === 401 || res.status === 403) {
+    // Exactly one refresh + retry. Never loop.
+    const refreshed = await refreshStoredSession();
+    if (!refreshed?.access_token) return { authFailed: true };
+    res = await call(refreshed.access_token);
+    if (res.status === 401 || res.status === 403) {
+      await writeStoredSession(null);
+      return { authFailed: true };
+    }
+  }
+  const json = await res.json().catch(() => null);
+  return { ok: res.ok, status: res.status, json };
+}
+
+
 // Tab-scoped fraud-scan state: fraudScanByTab[tabId] = { url, hostname, result, scannedAt }
 async function readSafetyMap() {
   const res = await chrome.storage.local.get(SAFETY_KEY);
@@ -105,19 +237,18 @@ async function classifyQuestionForTab(tabId, question) {
     return { ok: true, classification: { ...hit, cached: true } };
   }
 
-  const token = store[SESSION_KEY]?.access_token;
-  if (!token) return { ok: false, error: "Please sign in to Aplyer first.", code: "unauthenticated" };
-
   try {
-    const res = await fetch(`${API_BASE}/api/public/ai/classify-question`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ question: text, platform: question?.platformKey, fieldType: question?.questionType }),
+    const r = await authedFetch("/api/public/ai/classify-question", {
+      question: text,
+      platform: question?.platformKey,
+      fieldType: question?.questionType,
     });
-    const json = await res.json().catch(() => null);
-    if (!res.ok || !json?.ok) {
-      return { ok: false, error: json?.error || "Classification unavailable.", code: json?.code || `http_${res.status}` };
+    if (r.authFailed) return { ...AUTH_REQUIRED };
+    const json = r.json;
+    if (!r.ok || !json?.ok) {
+      return { ok: false, error: json?.error || "Classification unavailable.", code: json?.code || `http_${r.status}` };
     }
+
     const value = {
       framework: json.framework,
       reason: json.reason,
@@ -142,18 +273,12 @@ async function classifyQuestionForTab(tabId, question) {
  * learns the STATE; inventory contents never leave the server.
  */
 async function ensureFactInventory({ ensure = true } = {}) {
-  const store = await chrome.storage.local.get([SESSION_KEY]);
-  const token = store[SESSION_KEY]?.access_token;
-  if (!token) return { ok: false, error: "Please sign in to Aplyer first.", code: "unauthenticated" };
   try {
-    const res = await fetch(`${API_BASE}/api/public/fact-inventory`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ ensure }),
-    });
-    const json = await res.json().catch(() => null);
-    if (!res.ok || !json?.ok) {
-      return { ok: false, error: json?.error || "We couldn't prepare your profile context.", code: json?.code || `http_${res.status}` };
+    const r = await authedFetch("/api/public/fact-inventory", { ensure });
+    if (r.authFailed) return { ...AUTH_REQUIRED };
+    const json = r.json;
+    if (!r.ok || !json?.ok) {
+      return { ok: false, error: json?.error || "We couldn't prepare your profile context.", code: json?.code || `http_${r.status}` };
     }
     return { ok: true, state: json };
   } catch (e) {
@@ -168,21 +293,18 @@ async function ensureFactInventory({ ensure = true } = {}) {
  * versions are all decided server-side and never sent from here.
  */
 async function requestValidatedAnswer(payload = {}) {
-  const store = await chrome.storage.local.get([SESSION_KEY]);
-  const token = store[SESSION_KEY]?.access_token;
-  if (!token) return { ok: false, error: "Please sign in to Aplyer first.", code: "unauthenticated" };
   try {
-    const res = await fetch(`${API_BASE}/api/public/generate-answer`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(payload),
-    });
-    const json = await res.json().catch(() => null);
-    if (!res.ok || !json?.ok) {
+    const r = await authedFetch("/api/public/generate-answer", payload);
+    if (r.authFailed) {
+      console.warn("[Aplyer] auth diagnostics", authDiagnostics(await readStoredSession()));
+      return { ...AUTH_REQUIRED };
+    }
+    const json = r.json;
+    if (!r.ok || !json?.ok) {
       return {
         ok: false,
         error: json?.error || "We couldn't produce an answer you can trust. Try again.",
-        code: json?.code || `http_${res.status}`,
+        code: json?.code || `http_${r.status}`,
       };
     }
     return json;
@@ -191,6 +313,7 @@ async function requestValidatedAnswer(payload = {}) {
     return { ok: false, error: "We couldn't reach Aplyer. Check your connection.", code: "network_error" };
   }
 }
+
 
 /* --------------------------------------------------------------------
  * Tab-scoped answer state + single-flight generation.
@@ -254,13 +377,13 @@ async function runAnswerFlow(tabId, question, job, force) {
     await setPhase("classify");
     const cls = await classifyQuestionForTab(tabId, question);
     if (!cls?.ok) {
-      return writeAnswerState(tabId, { questionHash, phase: "error", error: cls?.error || "We could not analyze this question. Please try again.", at: Date.now() });
+      return writeAnswerState(tabId, { questionHash, phase: "error", error: cls?.error || "We could not analyze this question. Please try again.", signInRequired: cls?.signInRequired === true, at: Date.now() });
     }
 
     await setPhase("context");
     const inv = await ensureFactInventory({ ensure: true });
     if (!inv?.ok) {
-      return writeAnswerState(tabId, { questionHash, phase: "error", error: inv?.error || "We couldn't prepare your profile context. Try again.", at: Date.now() });
+      return writeAnswerState(tabId, { questionHash, phase: "error", error: inv?.error || "We couldn't prepare your profile context. Try again.", signInRequired: inv?.signInRequired === true, at: Date.now() });
     }
     const invStatus = inv.state?.status;
     if (invStatus !== "ready") {
@@ -296,7 +419,7 @@ async function runAnswerFlow(tabId, question, job, force) {
     }
 
     if (!out || out.ok === false) {
-      return writeAnswerState(tabId, { questionHash, phase: "error", error: out?.error || "We couldn't produce an answer you can trust. Try again.", at: Date.now() });
+      return writeAnswerState(tabId, { questionHash, phase: "error", error: out?.error || "We couldn't produce an answer you can trust. Try again.", signInRequired: out?.signInRequired === true, at: Date.now() });
     }
 
     return writeAnswerState(tabId, {
@@ -358,6 +481,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === "APLYER_GET_SESSION") {
     chrome.storage.local.get(SESSION_KEY, (res) => sendResponse({ session: res[SESSION_KEY] ?? null }));
+    return true;
+  }
+  // Side panel -> background: open the web auth bridge in a new tab.
+  if (message.type === "APLYER_OPEN_SIGN_IN") {
+    try {
+      chrome.tabs.create({ url: `${API_BASE}/extension-auth?ext=${encodeURIComponent(chrome.runtime.id)}` });
+    } catch (e) { console.warn("[Aplyer] open sign-in failed", String(e)); }
+    sendResponse?.({ ok: true });
     return true;
   }
   if (message.type === "APLYER_SIGN_OUT") {
