@@ -94,7 +94,6 @@ function scanResult(opts: {
 function script(draft: string, scans: ReturnType<typeof scanResult>[]) {
   let scanIndex = 0;
   runPromptValidated.mockImplementation(async (spec: { id: string }) => {
-    if (!spec) console.log("NOARG", new Error().stack);
     if (spec.id === "A_ANSWER_GENERATION") {
       return {
         value: { answer: draft, factIdsUsed: ["f1"], wordCount: draft.split(/\s+/).length },
@@ -117,7 +116,9 @@ const input = () => ({
   budget: { logicalScans: 0, providerCalls: 0, repairs: 0 },
 });
 
-beforeEach(() => runPromptValidated.mockReset());
+beforeEach(() => {
+  runPromptValidated.mockReset();
+});
 
 describe("answer repair pipeline", () => {
   it("ships a clean draft that passes both the guards and the scan", async () => {
