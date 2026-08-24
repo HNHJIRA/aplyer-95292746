@@ -51,8 +51,8 @@ describe("prompt library", () => {
     for (const p of PROMPT_LIBRARY) expect(p.version).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
-  it("ships exactly 21 quality checks", () => {
-    expect(QUALITY_CHECKS).toHaveLength(21);
+  it("ships exactly 22 quality checks", () => {
+    expect(QUALITY_CHECKS).toHaveLength(22);
   });
 });
 
