@@ -35,7 +35,6 @@ export const Route = createFileRoute("/api/resume-match")({
             buildResumeScoreUser(capResume, capJd),
             validateResumeScore,
             RESUME_SCORE_RETRY_INSTRUCTION,
-            { timeoutMs: 90_000 },
           );
 
           // Canonical Prompt D schema first; legacy aliases are additive only
