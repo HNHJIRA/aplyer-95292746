@@ -140,7 +140,9 @@ export function runAnswerGuards(answer: string, flat: FlattenedInventory): Guard
   // 3. Hard-banned vocabulary.
   const padded = pad(text);
   for (const term of HARD_BANNED_TERMS) {
-    if (padded.includes(` ${normalizeText(term)} `)) add("banned_vocabulary", term);
+    // Both sides go through the same canonicalization so punctuation inside a
+    // banned phrase (apostrophes, hyphens) can never let it slip through.
+    if (padded.includes(pad(term))) add("banned_vocabulary", term);
   }
 
   // 4. Formatting rules — prose only.
