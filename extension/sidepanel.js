@@ -163,6 +163,10 @@ function send(type, payload, timeoutMs) {
 
 let lastAnswerId = null;
 
+function normalizeQuestionText(text) {
+  return String(text || "").toLowerCase().replace(/\s+/g, " ").replace(/[^a-z0-9 ?]/g, "").trim();
+}
+
 function hideResults() {
   $("answer-card").style.display = "none";
   $("choice-card").style.display = "none";
@@ -184,83 +188,106 @@ function showChoice(options) {
   $("opt-b-text").textContent = b?.answer || "";
 }
 
+/** Renders whatever canonical state the background reports for this tab. */
+function renderAnswerState(state) {
+  const btn = $("q-generate");
+  if (!state) {
+    hideResults();
+    setGenStatus("", false);
+    if (btn) btn.disabled = false;
+    return;
+  }
+  lastAnswerId = state.answerId || lastAnswerId;
+  if (state.phase === "running") {
+    hideResults();
+    if (btn) btn.disabled = true;
+    setGenStatus(state.status || "Writing your answer…", false);
+    return;
+  }
+  if (btn) btn.disabled = false;
+  if (state.phase === "choice" && Array.isArray(state.options)) {
+    setGenStatus("Two wordings ready — pick the one that sounds like you.", false);
+    showChoice(state.options);
+    return;
+  }
+  if (state.phase === "ready" && state.answer) {
+    setGenStatus("Ready.", false);
+    showAnswer(state.answer, state.wordCount);
+    return;
+  }
+  hideResults();
+  setGenStatus(state.error || "", state.phase === "error");
+}
+
+/** Restores canonical state after a panel close/reopen — no new generation. */
+async function restoreAnswerState() {
+  const data = await chrome.storage.local.get(KEY_QUESTION);
+  const questionHash = normalizeQuestionText(data[KEY_QUESTION]?.questionText || "");
+  const res = await send("APLYER_GET_ANSWER_STATE", { tabId: currentTabId, questionHash }, 8000);
+  renderAnswerState(res?.state ?? null);
+  // A run started before the panel closed keeps going in the background.
+  if (res?.state?.phase === "running") pollAnswerState(questionHash);
+}
+
+let polling = false;
+async function pollAnswerState(questionHash) {
+  if (polling) return;
+  polling = true;
+  try {
+    for (let i = 0; i < 120; i += 1) {
+      await new Promise((r) => setTimeout(r, 2000));
+      const res = await send("APLYER_GET_ANSWER_STATE", { tabId: currentTabId, questionHash }, 8000);
+      const state = res?.state ?? null;
+      renderAnswerState(state);
+      if (!state || state.phase !== "running") return;
+    }
+  } finally {
+    polling = false;
+  }
+}
+
 async function onGenerateAnswer(force) {
   const btn = $("q-generate");
   const data = await chrome.storage.local.get(KEY_QUESTION);
   const question = data[KEY_QUESTION];
   if (!question?.questionText) return;
+  if (btn?.disabled) return;
 
   hideResults();
-  btn.disabled = true;
-  setGenStatus("Analyzing this question…", false);
+  if (btn) btn.disabled = true;
+  setGenStatus("Checking this question…", false);
 
-  // 1. Server-side classification. No framework is sent from the client.
-  const res = await send("APLYER_CLASSIFY_QUESTION", { tabId: currentTabId, question }, 30000);
-  if (!res?.ok) {
-    currentFramework = null;
-    btn.disabled = false;
-    setGenStatus(res?.error || "We could not analyze this question. Please try again.", true);
-    return;
-  }
-  currentFramework = res.classification;
+  const questionHash = normalizeQuestionText(question.questionText);
+  pollAnswerState(questionHash);
 
-  // 2. Profile context (P0). Contents never leave the server.
-  setGenStatus("Preparing your profile context…", false);
-  const inv = await send("APLYER_ENSURE_FACT_INVENTORY", { ensure: true }, 60000);
-  if (!inv?.ok) {
-    btn.disabled = false;
-    setGenStatus(inv?.error || "We couldn't prepare your profile context. Try again.", true);
-    return;
-  }
-  const invStatus = inv.state?.status;
-  if (invStatus !== "ready") {
-    btn.disabled = false;
-    setGenStatus(
-      invStatus === "extracting" || invStatus === "pending"
-        ? "Still preparing your profile context. Try again in a moment."
-        : "We couldn't prepare your profile context. Try again.",
-      invStatus !== "extracting" && invStatus !== "pending",
-    );
-    return;
-  }
-
-  // 3. Validated answer. Only the question and page job context are sent.
-  setGenStatus("Writing your answer…", false);
-  const job = {
-    title: question.jobTitle || undefined,
-    company: question.company || undefined,
-    description: question.jobDescription || undefined,
-  };
-  const out = await send(
+  // The background owns the whole flow (classification -> profile context ->
+  // validated answer) so panel closure never aborts or duplicates a run.
+  const res = await send(
     "APLYER_GENERATE_ANSWER",
-    { question: question.questionText, job, force: force === true },
-    180000,
+    {
+      tabId: currentTabId,
+      question,
+      job: {
+        title: question.jobTitle || undefined,
+        company: question.company || undefined,
+        description: question.jobDescription || undefined,
+      },
+      force: force === true,
+    },
+    600000,
   );
-  btn.disabled = false;
 
-  if (!out) {
-    setGenStatus("That took too long. Please try again.", true);
+  if (!res?.state) {
+    await restoreAnswerState();
     return;
   }
-  if (!out.ok) {
-    setGenStatus(out.error || "We couldn't produce an answer you can trust. Try again.", true);
-    return;
-  }
-
-  lastAnswerId = out.answerId || null;
-  if (out.needsChoice && Array.isArray(out.options)) {
-    setGenStatus("Two wordings ready — pick the one that sounds like you.", false);
-    showChoice(out.options);
-    return;
-  }
-  setGenStatus(out.cached ? "Ready." : "Answer ready.", false);
-  showAnswer(out.answer, out.wordCount);
+  renderAnswerState(res.state);
 }
 
 async function pickOption(variantId) {
   if (!lastAnswerId) return;
   setGenStatus("Saving your preference…", false);
-  const r = await send("APLYER_CHOOSE_ANSWER_OPTION", { answerId: lastAnswerId, variantId }, 30000);
+  const r = await send("APLYER_CHOOSE_ANSWER_OPTION", { tabId: currentTabId, answerId: lastAnswerId, variantId }, 30000);
   if (!r?.ok) {
     setGenStatus(r?.error || "We couldn't save that choice. Try again.", true);
     return;
@@ -283,6 +310,7 @@ function bind() {
     }
   });
 }
+
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
