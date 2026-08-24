@@ -65,7 +65,7 @@ export async function handleGenerateAnswer(request: Request): Promise<Response> 
           String(select.variantId ?? "") as "A" | "B",
           { writeDb: supabaseAdmin },
         );
-        return jsonWithCors({ ok: true, ...result }, 200, request);
+        return jsonWithCors({ ok: true, answer: result.answer }, 200, request);
       }
 
       const jobRaw = (body.job ?? null) as Record<string, unknown> | null;
