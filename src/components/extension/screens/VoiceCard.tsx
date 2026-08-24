@@ -137,7 +137,7 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
       <Center>
         <Loader2 className="h-10 w-10 animate-spin text-brand-green" />
         <h2 className="mt-4 text-[20px] font-black tracking-tight">Generating your Voice Card…</h2>
-        <p className="mt-1 text-[14px] text-muted-foreground">Analyzing your writing DNA with Claude Haiku 4.5.</p>
+        <p className="mt-1 text-[14px] text-muted-foreground">Analyzing your writing DNA.</p>
       </Center>
     );
   }
