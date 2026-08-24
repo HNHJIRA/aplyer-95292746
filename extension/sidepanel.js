@@ -175,26 +175,20 @@ async function onGenerateAnswer() {
   }
   currentFramework = res.classification;
   setGenStatus("Question analyzed. Answer generation unlocks in Milestone 4.", false);
-  document.addEventListener("DOMContentLoaded", () => {
-  $("q-generate").addEventListener("click", () => { onGenerateAnswer(); });
-});
+  $("q-generate")?.addEventListener("click", () => { onGenerateAnswer(); });
 
 load();
 }
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
-  if (changes[KEY_STATUS] || changes[KEY_QUESTION] || changes[KEY_SESSION] || changes[KEY_SAFETY] || changes[KEY_FRAMEWORKS]) document.addEventListener("DOMContentLoaded", () => {
-  $("q-generate").addEventListener("click", () => { onGenerateAnswer(); });
-});
+  if (changes[KEY_STATUS] || changes[KEY_QUESTION] || changes[KEY_SESSION] || changes[KEY_SAFETY] || changes[KEY_FRAMEWORKS]) $("q-generate")?.addEventListener("click", () => { onGenerateAnswer(); });
 
 load();
 });
 
 document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
 
-document.addEventListener("DOMContentLoaded", () => {
-  $("q-generate").addEventListener("click", () => { onGenerateAnswer(); });
-});
+$("q-generate")?.addEventListener("click", () => { onGenerateAnswer(); });
 
 load();
