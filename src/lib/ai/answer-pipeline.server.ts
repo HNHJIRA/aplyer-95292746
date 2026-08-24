@@ -405,9 +405,9 @@ async function generateValidatedVariant(input: GenerateOneInput): Promise<{
     answer: candidate,
     // The repair may drop facts; keep only ids whose value survives verbatim-ish.
     factIdsUsed: draft.factIdsUsed,
-    wordCount: countWords(repaired),
-    blockingCodes: scanResult.blockingCodes,
-    revisionCount: 1,
+    wordCount: countWords(candidate),
+    blockingCodes: finalScan.blockingCodes,
+    revisionCount: corrections + 1,
   };
 }
 
