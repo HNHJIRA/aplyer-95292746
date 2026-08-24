@@ -279,7 +279,7 @@ function qualityFailed(codes: string[]): AnswerPipelineError {
   );
 }
 
-async function generateValidatedVariant(input: GenerateOneInput): Promise<{
+export async function generateValidatedVariant(input: GenerateOneInput): Promise<{
   answer: string;
   factIdsUsed: string[];
   wordCount: number;
