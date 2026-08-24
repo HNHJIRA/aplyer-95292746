@@ -10,6 +10,7 @@ import {
   PROMPT_D_RESUME_SCORE,
   PROMPT_I_CLASSIFICATION,
   PROMPT_J_QUALITY_SCAN,
+  PROMPT_P0_FACT_INVENTORY,
   QUALITY_CHECKS,
   QUESTION_FRAMEWORKS,
   REQUIRED_QUALIFYING_SAMPLES,
@@ -33,6 +34,9 @@ describe("prompt library", () => {
     expect(PROMPT_J_QUALITY_SCAN.model).toBe(MODEL_OPUS);
     expect(PROMPT_A_ANSWER_GENERATION.model).toBe(MODEL_OPUS);
     expect(PROMPT_B_VOICE_CARD.model).toBe(MODEL_HAIKU);
+    expect(PROMPT_P0_FACT_INVENTORY.model).toBe(MODEL_HAIKU);
+    expect(PROMPT_P0_FACT_INVENTORY.temperature).toBe(0);
+    expect(PROMPT_P0_FACT_INVENTORY.json).toBe(true);
   });
 
   it("only allows the two approved models", () => {

@@ -1,4 +1,14 @@
 // Extension-facing endpoint for P0 canonical fact inventory state.
+//
+// ROUTE CONVENTION: in this project `/api/public/*` means "callable by an
+// external client (the browser extension) without the site-level auth gate".
+// It does NOT mean unauthenticated: this handler enforces its own bearer-token
+// check and resolves the user server-side, so the endpoint stays here (it is
+// the namespace the extension is allowed to reach). No duplicate route exists.
+//
+// The request body may contain ONLY { ensure?: boolean }. Any inventory body,
+// facts, evidence, source hash, resume id/text, model, prompt version or user
+// id supplied by the client is ignored — the server derives all of them.
 // Bearer-token authenticated; the user is resolved server-side. The client can
 // never supply a user id, resume id, or any candidate fact.
 import { createFileRoute } from "@tanstack/react-router";

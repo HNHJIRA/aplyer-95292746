@@ -9,7 +9,7 @@
 // - Strict JSON, one corrective retry, then fail closed.
 // - Resume text ONLY. No writing samples, no Voice Card, no job description,
 //   no question text, no client-supplied facts.
-import { MODEL_OPUS } from "./models";
+import { MODEL_HAIKU } from "./models";
 import type { PromptSpec } from "./types";
 
 export const FACT_INVENTORY_SCHEMA_VERSION = "1.0.0";
@@ -85,8 +85,8 @@ export interface ResumeFactInventory {
 
 export const PROMPT_P0_FACT_INVENTORY: PromptSpec = {
   id: "P0_FACT_INVENTORY",
-  version: "1.0.0",
-  model: MODEL_OPUS,
+  version: "1.1.0",
+  model: MODEL_HAIKU,
   maxTokens: 8000,
   temperature: 0,
   json: true,
