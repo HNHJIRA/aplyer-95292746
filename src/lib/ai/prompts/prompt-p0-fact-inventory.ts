@@ -84,7 +84,7 @@ export interface ResumeFactInventory {
 }
 
 export const PROMPT_P0_FACT_INVENTORY: PromptSpec = {
-  id: "P0_FACT_INVENTORY" as PromptSpec["id"],
+  id: "P0_FACT_INVENTORY",
   version: "1.0.0",
   model: MODEL_OPUS,
   maxTokens: 8000,
