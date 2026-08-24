@@ -179,7 +179,7 @@ export function runAnswerGuards(answer: string, flat: FlattenedInventory): Guard
     if (padded.includes(` ${t} `) && !paddedCorpus.includes(` ${t} `)) add("unsupported_tool", tool);
   }
 
-  // 10. Cross-role attribution: a number in a sentence naming one employer must
+  // 9. Cross-role attribution: a number in a sentence naming one employer must
   //     be supported by that employer's own facts.
   const roleNames = flat.roles
     .map((r) => ({ role: r, name: normalizeText(r.company ?? "") }))
