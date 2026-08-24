@@ -130,20 +130,30 @@
   // --- Deterministic job-safety check (tab-scoped, top frame only) ---------
   let lastSafetyUrl = "";
   let safetyTimer = null;
-  function checkSafety() {
+  let safetyPoll = null;
+  function checkSafety(force = false) {
     if (window.top !== window) return;
     const url = location.href;
-    if (url === lastSafetyUrl) return; // dedupe; URL change invalidates
+    if (!force && url === lastSafetyUrl) return; // dedupe; URL change invalidates
     lastSafetyUrl = url;
+    log.info("safety", "Requesting job-safety check", { url });
     try {
-      chrome.runtime.sendMessage({ type: "APLYER_JOB_SAFETY_CHECK", url })
-        .catch(() => {});
-    } catch { /* runtime gone */ }
+      const p = chrome.runtime.sendMessage({ type: "APLYER_JOB_SAFETY_CHECK", url });
+      if (p?.then) {
+        p.then((res) => log.info("safety", "Job-safety result", res?.entry?.result ?? null))
+         .catch((e) => { lastSafetyUrl = ""; log.warn("safety", "check failed", String(e)); });
+      }
+    } catch (e) { lastSafetyUrl = ""; log.warn("safety", "sendMessage threw", String(e)); }
   }
   function scheduleSafety(delay = 400) {
     clearTimeout(safetyTimer);
-    safetyTimer = setTimeout(checkSafety, delay);
+    safetyTimer = setTimeout(() => checkSafety(false), delay);
   }
+  // Fire immediately on boot — independent of question detection — and keep a
+  // low-frequency watchdog so SPA URL changes always re-run the check.
+  scheduleSafety(150);
+  safetyPoll = setInterval(() => { if (location.href !== lastSafetyUrl) checkSafety(false); }, 3000);
+
 
   function renderPill() {
     // Only render the floating status pill in the top frame — otherwise
