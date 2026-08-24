@@ -186,6 +186,130 @@ async function requestValidatedAnswer(payload = {}) {
   }
 }
 
+/* --------------------------------------------------------------------
+ * Tab-scoped answer state + single-flight generation.
+ *
+ * The side panel is stateless: it renders whatever the background says the
+ * state for the ACTIVE tab is. Closing and reopening the panel, a second
+ * panel, or a rapid double-click all converge on the same in-flight run.
+ * State is keyed by tabId + normalized question so Tab A's answer can never
+ * surface in Tab B.
+ * ------------------------------------------------------------------ */
+const ANSWER_STATE_KEY = "aplyer.answer_state_by_tab.v1";
+/** tabId:questionHash -> Promise (service-worker lifetime, single flight). */
+const inflightAnswers = new Map();
+
+async function readAnswerStateMap() {
+  const res = await chrome.storage.local.get(ANSWER_STATE_KEY);
+  return res[ANSWER_STATE_KEY] || {};
+}
+
+async function writeAnswerState(tabId, entry) {
+  if (tabId == null) return entry;
+  const map = await readAnswerStateMap();
+  if (entry) map[String(tabId)] = entry;
+  else delete map[String(tabId)];
+  await chrome.storage.local.set({ [ANSWER_STATE_KEY]: map });
+  return entry;
+}
+
+async function readAnswerState(tabId, questionHash) {
+  if (tabId == null) return null;
+  const map = await readAnswerStateMap();
+  const entry = map[String(tabId)] || null;
+  if (!entry) return null;
+  if (questionHash && entry.questionHash !== questionHash) return null;
+  return entry;
+}
+
+function phaseFor(step) {
+  switch (step) {
+    case "classify": return "Checking this question…";
+    case "context": return "Preparing your profile context…";
+    case "variants": return "Writing two options…";
+    default: return "Writing your answer…";
+  }
+}
+
+/**
+ * Runs the full user-visible flow for one tab+question exactly once.
+ * Returns the terminal state object (also persisted for panel recovery).
+ */
+async function runAnswerFlow(tabId, question, job, force) {
+  const questionHash = normalizeQuestion(question?.questionText || question?.question || "");
+  const flightKey = `${tabId}:${questionHash}:${force ? "force" : "cache"}`;
+  const existing = inflightAnswers.get(flightKey);
+  if (existing) return existing;
+
+  const run = (async () => {
+    const setPhase = (step) =>
+      writeAnswerState(tabId, { questionHash, phase: "running", status: phaseFor(step), at: Date.now() });
+
+    await setPhase("classify");
+    const cls = await classifyQuestionForTab(tabId, question);
+    if (!cls?.ok) {
+      return writeAnswerState(tabId, { questionHash, phase: "error", error: cls?.error || "We could not analyze this question. Please try again.", at: Date.now() });
+    }
+
+    await setPhase("context");
+    const inv = await ensureFactInventory({ ensure: true });
+    if (!inv?.ok) {
+      return writeAnswerState(tabId, { questionHash, phase: "error", error: inv?.error || "We couldn't prepare your profile context. Try again.", at: Date.now() });
+    }
+    const invStatus = inv.state?.status;
+    if (invStatus !== "ready") {
+      const pending = invStatus === "extracting" || invStatus === "pending";
+      return writeAnswerState(tabId, {
+        questionHash,
+        phase: pending ? "pending" : "error",
+        error: pending
+          ? "Still preparing your profile context. Try again in a moment."
+          : "We couldn't prepare your profile context. Try again.",
+        at: Date.now(),
+      });
+    }
+
+    await setPhase("answer");
+    let out = await requestValidatedAnswer({
+      question: String(question?.questionText || "").slice(0, 2000),
+      job: job || null,
+      force: force === true,
+    });
+
+    // The server holds one generation lock per snapshot. A concurrent caller
+    // waits for that run instead of starting a second pipeline.
+    let waits = 0;
+    while (out && out.ok === false && out.code === "in_progress" && waits < 30) {
+      waits += 1;
+      await new Promise((r) => setTimeout(r, 3000));
+      out = await requestValidatedAnswer({
+        question: String(question?.questionText || "").slice(0, 2000),
+        job: job || null,
+        force: false,
+      });
+    }
+
+    if (!out || out.ok === false) {
+      return writeAnswerState(tabId, { questionHash, phase: "error", error: out?.error || "We couldn't produce an answer you can trust. Try again.", at: Date.now() });
+    }
+
+    return writeAnswerState(tabId, {
+      questionHash,
+      phase: out.needsChoice ? "choice" : "ready",
+      answerId: out.answerId || null,
+      answer: out.answer || null,
+      wordCount: out.wordCount || null,
+      options: Array.isArray(out.options) ? out.options : null,
+      cached: out.cached === true,
+      at: Date.now(),
+    });
+  })().finally(() => inflightAnswers.delete(flightKey));
+
+  inflightAnswers.set(flightKey, run);
+  return run;
+}
+
+
 // Proactive path: tab URL access is granted by host_permissions for supported
 // ATS hosts, so the check runs even if the content script never messages us.
 chrome.tabs?.onUpdated?.addListener((tabId, changeInfo, tab) => {
