@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  APPROVED_MODELS,
   MODEL_HAIKU,
   MODEL_OPUS,
   PROMPT_LIBRARY,
@@ -10,9 +11,14 @@ import {
   PROMPT_I_CLASSIFICATION,
   PROMPT_J_QUALITY_SCAN,
   QUALITY_CHECKS,
+  QUESTION_FRAMEWORKS,
+  REQUIRED_QUALIFYING_SAMPLES,
+  VOICE_ARCHETYPES,
   VOICE_CARD_REVEAL,
   assertFactInventory,
-  heuristicClassification,
+  heuristicClassificationForDiagnostics,
+  isApprovedModel,
+  parseArchetype,
   validateClassification,
   validateResumeAudit,
   validateResumeScore,
@@ -29,6 +35,12 @@ describe("prompt library", () => {
     expect(PROMPT_B_VOICE_CARD.model).toBe(MODEL_HAIKU);
   });
 
+  it("only allows the two approved models", () => {
+    expect([...APPROVED_MODELS].sort()).toEqual([MODEL_HAIKU, MODEL_OPUS].sort());
+    expect(isApprovedModel("claude-3-5-sonnet-latest")).toBe(false);
+    for (const p of PROMPT_LIBRARY) expect(isApprovedModel(p.model)).toBe(true);
+  });
+
   it("gives every prompt a unique id and a version", () => {
     const ids = PROMPT_LIBRARY.map((p) => p.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -41,40 +53,97 @@ describe("prompt library", () => {
 });
 
 describe("prompt I — classification", () => {
-  it("accepts the six frameworks only", () => {
-    expect(validateClassification({ framework: "star-f", confidence: 0.9, reason: "x" }).framework).toBe("STAR-F");
-    expect(() => validateClassification({ framework: "BEHAVIOURAL" })).toThrow();
+  it("accepts all six canonical frameworks", () => {
+    expect(QUESTION_FRAMEWORKS).toHaveLength(6);
+    for (const f of QUESTION_FRAMEWORKS) {
+      expect(validateClassification({ framework: f.toLowerCase(), reason: "x" }).framework).toBe(f);
+    }
   });
 
-  it("falls back heuristically", () => {
-    expect(heuristicClassification("Tell me about a time you failed.").framework).toBe("STAR-F");
-    expect(heuristicClassification("Why do you want to work here?").framework).toBe("MOTIVATION");
-    expect(heuristicClassification("Tell me about a time you led a project.").framework).toBe("STAR");
-    expect(heuristicClassification("What is your notice period?").framework).toBe("GENERAL");
+  it("rejects anything outside the six frameworks", () => {
+    expect(() => validateClassification({ framework: "BEHAVIOURAL" })).toThrow();
+    expect(() => validateClassification({})).toThrow();
+    expect(() => validateClassification({ framework: "STAR, CAR" })).toThrow();
+  });
+
+  it("never returns a confidence field", () => {
+    const c = validateClassification({ framework: "STAR", reason: "x", confidence: 0.9 });
+    expect(Object.keys(c).sort()).toEqual(["framework", "reason"]);
+  });
+
+  it("keeps the heuristic classifier out of production exports used by the server", () => {
+    // The heuristic is diagnostics-only; its name makes that explicit and the
+    // server module must not import it.
+    expect(heuristicClassificationForDiagnostics("Tell me about a time you failed.").framework).toBe("STAR-F");
   });
 });
 
 describe("prompt B — voice card", () => {
   const base = {
-    headline: "h",
-    tone: "t",
-    cadence: "c",
-    formality: "f",
-    vocabulary_bias: "v",
-    distinctive_traits: ["a"],
+    headline: "You write in clean, direct lines.",
+    tone: "warm",
+    cadence: "short",
+    formality: "casual",
+    vocabulary_bias: "plain",
+    distinctive_traits: ["a", "b", "c"],
     hooks_and_transitions: ["b"],
     values_signals: ["c"],
     do_and_avoid: { do: ["d"], avoid: ["e"] },
+    archetype_description: "You keep sentences short and load them with signal. Every line does one piece of work.",
   };
 
-  it("always attaches the canonical reveal line and a known archetype", () => {
-    const card = validateVoiceCard({ ...base, archetype: "storyteller" });
-    expect(card.archetype).toBe("Storyteller");
-    expect(card.reveal).toBe(VOICE_CARD_REVEAL);
+  it("requires one resume plus two qualifying prose samples", () => {
+    expect(REQUIRED_QUALIFYING_SAMPLES).toBe(2);
   });
 
-  it("defaults an unknown archetype instead of failing", () => {
-    expect(validateVoiceCard({ ...base, archetype: "Poet" }).archetype).toBe("Natural");
+  it("exposes exactly the five approved archetypes", () => {
+    expect([...VOICE_ARCHETYPES]).toEqual([
+      "The One-Liner",
+      "The Natural",
+      "The Storyteller",
+      "The Straight Shooter",
+      "The Overthinker",
+    ]);
+  });
+
+  it("attaches the exact reveal line", () => {
+    expect(validateVoiceCard({ ...base, archetype: "storyteller" }).reveal).toBe("Okay, we read you loud and clear!");
+    expect(VOICE_CARD_REVEAL).toBe("Okay, we read you loud and clear!");
+  });
+
+  it("rejects an archetype outside the five instead of defaulting", () => {
+    expect(() => parseArchetype("Poet")).toThrow();
+    expect(() => validateVoiceCard({ ...base, archetype: "Poet" })).toThrow();
+  });
+
+  it("rejects em dashes, prohibited job-search terms, and statistics", () => {
+    expect(() =>
+      validateVoiceCard({ ...base, archetype: "The Natural", archetype_description: "You write plainly — always." }),
+    ).toThrow(/em dash/i);
+    expect(() =>
+      validateVoiceCard({
+        ...base,
+        archetype: "The Natural",
+        archetype_description: "Your resume reads clearly. You explain well.",
+      }),
+    ).toThrow(/prohibited/i);
+    expect(() =>
+      validateVoiceCard({
+        ...base,
+        archetype: "The Natural",
+        archetype_description: "You are 40% more direct than most. You keep it tight.",
+      }),
+    ).toThrow(/statistic/i);
+  });
+
+  it("caps the archetype description at three sentences", () => {
+    expect(() =>
+      validateVoiceCard({
+        ...base,
+        archetype: "The Natural",
+        archetype_description: "One. Two. Three. Four.",
+      }),
+    ).toThrow(/sentences/i);
   });
 });
 
@@ -91,9 +160,23 @@ describe("prompts C and D", () => {
     expect(audit.topPriority).toContain("Quantify");
   });
 
-  it("clamps the job description match score", () => {
-    expect(validateResumeScore({ jobDescriptionMatch: 140, summary: "s" }).jobDescriptionMatch).toBe(100);
-    expect(validateResumeScore({ overallMatch: 62, summary: "s" }).jobDescriptionMatch).toBe(62);
+  it("returns the canonical Job Description Match schema", () => {
+    const report = validateResumeScore({
+      matchScore: 62,
+      keywordsPresent: ["react"],
+      keywordsMissing: ["kubernetes"],
+      sectionSuggestions: ["Tighten the summary."],
+      summary: "s",
+    });
+    expect(report.matchScore).toBe(62);
+    expect(report.keywordsPresent).toEqual(["react"]);
+    expect(report.sectionSuggestions).toHaveLength(1);
+    expect(report).not.toHaveProperty("jobDescriptionMatch");
+  });
+
+  it("clamps the match score", () => {
+    expect(validateResumeScore({ matchScore: 140, summary: "s" }).matchScore).toBe(100);
+    expect(validateResumeScore({ overallMatch: 62, summary: "s" }).matchScore).toBe(62);
   });
 });
 
