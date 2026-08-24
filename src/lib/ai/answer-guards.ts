@@ -14,6 +14,7 @@ import {
   HARD_BANNED_TERMS,
   countWords,
 } from "./prompts/prompt-a-answer-generation";
+import { evaluateTemporal, type TemporalCode } from "./temporal";
 import type { FlattenedInventory } from "./answer-facts";
 
 export type GuardCode =
@@ -63,13 +64,6 @@ export const TOOL_LEXICON = [
   "git", "github", "gitlab", "bitbucket", "linux", "bash", "supabase", "firebase", "stripe",
 ] as const;
 
-const MONTHS = [
-  "january", "february", "march", "april", "may", "june",
-  "july", "august", "september", "october", "november", "december",
-];
-
-const CURRENCY_TERMS = ["currently", "at present", "right now", "these days", "today i", "i am now"];
-
 const NON_CLAIM_NUMBER_WORDS = new Set(["one", "two", "first", "second"]);
 
 /** Spelled-out quantities that make a duration claim, e.g. "five years". */
@@ -110,14 +104,20 @@ function sentences(text: string): string[] {
   return text.split(/(?<=[.!?])\s+/).filter((s) => s.trim().length > 0);
 }
 
-/** Numbers that are part of a claim rather than incidental prose. */
+/**
+ * Numbers that are part of a claim rather than incidental prose. Four-digit
+ * years are excluded here — they are dates, and temporal.ts validates them
+ * role-aware instead of as bare metrics.
+ */
 function claimNumbers(text: string): string[] {
-  return numericTokens(text).filter((n) => !NON_CLAIM_NUMBER_WORDS.has(n));
+  return numericTokens(text).filter(
+    (n) => !NON_CLAIM_NUMBER_WORDS.has(n) && !/^(19|20)\d{2}$/.test(n),
+  );
 }
 
 export function runAnswerGuards(answer: string, flat: FlattenedInventory): GuardReport {
   const violations: GuardViolation[] = [];
-  const add = (code: GuardCode, detail: string) => violations.push({ code, detail });
+  const add = (code: GuardCode, detail: string) => violations.push({ code, detail, blocking: true });
 
   const text = (answer ?? "").replace(/\s+/g, " ").trim();
   if (!text) return { passed: false, violations: [{ code: "empty_answer", detail: "empty" }] };
@@ -167,32 +167,16 @@ export function runAnswerGuards(answer: string, flat: FlattenedInventory): Guard
   }
 
 
-  // 7. Month/day granularity the inventory never states. "may" is excluded
-  //    unless a day or year sits beside it — as a bare word it is the modal
-  //    verb far more often than the month, and flagging it failed the pipeline
-  //    closed on perfectly grounded answers.
-  for (const m of MONTHS) {
-    const mentioned =
-      m === "may"
-        ? new RegExp(`\\b(?:\\d{1,2}\\s+may\\b|may\\s+\\d{1,4}\\b)`, "i").test(padded)
-        : padded.includes(` ${m} `);
-    if (mentioned && !paddedCorpus.includes(` ${m} `)) add("unsupported_date", m);
+  // 7. Dates, precision, cross-role windows and tense — all role-aware.
+  for (const t of evaluateTemporal(text, flat)) {
+    violations.push({ code: t.code, detail: t.detail, blocking: t.blocking });
   }
-
-
 
   // 8. Tools claimed as experience.
   for (const tool of TOOL_LEXICON) {
     const t = normalizeText(tool);
     if (!t) continue;
     if (padded.includes(` ${t} `) && !paddedCorpus.includes(` ${t} `)) add("unsupported_tool", tool);
-  }
-
-  // 9. Present-tense currency claims require an actually current role.
-  if (!flat.hasCurrentRole) {
-    for (const term of CURRENCY_TERMS) {
-      if (padded.includes(` ${normalizeText(term)} `)) add("unsupported_currency_claim", term);
-    }
   }
 
   // 10. Cross-role attribution: a number in a sentence naming one employer must
@@ -226,5 +210,5 @@ export function runAnswerGuards(answer: string, flat: FlattenedInventory): Guard
     }
   }
 
-  return { passed: violations.length === 0, violations };
+  return { passed: !violations.some((v) => v.blocking !== false), violations };
 }
