@@ -20,8 +20,8 @@ function renderSafety(entry) {
   const host = $("safety-host");
   if (!entry) { card.style.display = "none"; return; }
   card.style.display = "";
-  host.textContent = entry.hostname || "";
   const r = entry.result;
+  host.textContent = [entry.hostname || "", r?.provider ? `Provider: ${r.provider}` : ""].filter(Boolean).join("  ·  ");
   badge.classList.remove("is-safe", "is-unknown");
   if (r && r.status === "safe") {
     badge.textContent = "Safe";
@@ -39,6 +39,7 @@ function renderSafety(entry) {
     copy.textContent = "Running the job safety check…";
   }
 }
+
 
 function render(state) {
   const { status, question, session } = state;
