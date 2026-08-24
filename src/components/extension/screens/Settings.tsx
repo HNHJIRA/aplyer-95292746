@@ -145,7 +145,7 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
 
             {section === "ai" && (
               <div className="space-y-2.5">
-                <p className="text-[13px] text-muted-foreground">Choose the AI model that powers your answers. Activated in a future milestone.</p>
+                <p className="text-[13px] text-muted-foreground">Aplyer selects the best model for each step automatically.</p>
                 {PROVIDERS.map((p) => {
                   const active = state.settings.aiProvider === p.id;
                   return (
