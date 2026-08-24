@@ -131,6 +131,31 @@ async function classifyQuestionForTab(tabId, question) {
   }
 }
 
+/**
+ * P0 profile context (canonical resume fact inventory). The extension only
+ * learns the STATE; inventory contents never leave the server.
+ */
+async function ensureFactInventory({ ensure = true } = {}) {
+  const store = await chrome.storage.local.get([SESSION_KEY]);
+  const token = store[SESSION_KEY]?.access_token;
+  if (!token) return { ok: false, error: "Please sign in to Aplyer first.", code: "unauthenticated" };
+  try {
+    const res = await fetch(`${API_BASE}/api/public/fact-inventory`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ensure }),
+    });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.ok) {
+      return { ok: false, error: json?.error || "We couldn't prepare your profile context.", code: json?.code || `http_${res.status}` };
+    }
+    return { ok: true, state: json };
+  } catch (e) {
+    console.warn("[Aplyer] fact inventory failed", String(e));
+    return { ok: false, error: "We couldn't prepare your profile context.", code: "network_error" };
+  }
+}
+
 // Proactive path: tab URL access is granted by host_permissions for supported
 // ATS hosts, so the check runs even if the content script never messages us.
 chrome.tabs?.onUpdated?.addListener((tabId, changeInfo, tab) => {
@@ -231,6 +256,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const question = { ...(message.question || {}) };
       delete question.framework;
       sendResponse?.(await classifyQuestionForTab(tabId, question));
+    })();
+    return true;
+  }
+
+  // Side panel -> background: prepare/read the user's profile context (P0).
+  if (message.type === "APLYER_ENSURE_FACT_INVENTORY") {
+    (async () => {
+      sendResponse?.(await ensureFactInventory({ ensure: message.ensure !== false }));
     })();
     return true;
   }
