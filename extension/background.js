@@ -273,18 +273,12 @@ async function classifyQuestionForTab(tabId, question) {
  * learns the STATE; inventory contents never leave the server.
  */
 async function ensureFactInventory({ ensure = true } = {}) {
-  const store = await chrome.storage.local.get([SESSION_KEY]);
-  const token = store[SESSION_KEY]?.access_token;
-  if (!token) return { ok: false, error: "Please sign in to Aplyer first.", code: "unauthenticated" };
   try {
-    const res = await fetch(`${API_BASE}/api/public/fact-inventory`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ ensure }),
-    });
-    const json = await res.json().catch(() => null);
-    if (!res.ok || !json?.ok) {
-      return { ok: false, error: json?.error || "We couldn't prepare your profile context.", code: json?.code || `http_${res.status}` };
+    const r = await authedFetch("/api/public/fact-inventory", { ensure });
+    if (r.authFailed) return { ...AUTH_REQUIRED };
+    const json = r.json;
+    if (!r.ok || !json?.ok) {
+      return { ok: false, error: json?.error || "We couldn't prepare your profile context.", code: json?.code || `http_${r.status}` };
     }
     return { ok: true, state: json };
   } catch (e) {
@@ -299,21 +293,18 @@ async function ensureFactInventory({ ensure = true } = {}) {
  * versions are all decided server-side and never sent from here.
  */
 async function requestValidatedAnswer(payload = {}) {
-  const store = await chrome.storage.local.get([SESSION_KEY]);
-  const token = store[SESSION_KEY]?.access_token;
-  if (!token) return { ok: false, error: "Please sign in to Aplyer first.", code: "unauthenticated" };
   try {
-    const res = await fetch(`${API_BASE}/api/public/generate-answer`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(payload),
-    });
-    const json = await res.json().catch(() => null);
-    if (!res.ok || !json?.ok) {
+    const r = await authedFetch("/api/public/generate-answer", payload);
+    if (r.authFailed) {
+      console.warn("[Aplyer] auth diagnostics", authDiagnostics(await readStoredSession()));
+      return { ...AUTH_REQUIRED };
+    }
+    const json = r.json;
+    if (!r.ok || !json?.ok) {
       return {
         ok: false,
         error: json?.error || "We couldn't produce an answer you can trust. Try again.",
-        code: json?.code || `http_${res.status}`,
+        code: json?.code || `http_${r.status}`,
       };
     }
     return json;
@@ -322,6 +313,7 @@ async function requestValidatedAnswer(payload = {}) {
     return { ok: false, error: "We couldn't reach Aplyer. Check your connection.", code: "network_error" };
   }
 }
+
 
 /* --------------------------------------------------------------------
  * Tab-scoped answer state + single-flight generation.
