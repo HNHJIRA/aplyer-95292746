@@ -24,20 +24,22 @@ export type GuardCode =
   | "markdown_or_list"
   | "unsupported_number"
   | "unsupported_duration"
-  | "unsupported_date"
   | "unsupported_tool"
-  | "unsupported_currency_claim"
-  | "cross_role_attribution";
+  | "cross_role_attribution"
+  | TemporalCode;
 
 export interface GuardViolation {
   code: GuardCode;
   detail: string;
+  /** Non-blocking violations are diagnostics only and never fail the answer. */
+  blocking?: boolean;
 }
 
 export interface GuardReport {
   passed: boolean;
   violations: GuardViolation[];
 }
+
 
 /**
  * Bounded lexicon of tools/technologies. A term from this list appearing in the
