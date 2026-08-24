@@ -377,13 +377,13 @@ async function runAnswerFlow(tabId, question, job, force) {
     await setPhase("classify");
     const cls = await classifyQuestionForTab(tabId, question);
     if (!cls?.ok) {
-      return writeAnswerState(tabId, { questionHash, phase: "error", error: cls?.error || "We could not analyze this question. Please try again.", at: Date.now() });
+      return writeAnswerState(tabId, { questionHash, phase: "error", error: cls?.error || "We could not analyze this question. Please try again.", signInRequired: cls?.signInRequired === true, at: Date.now() });
     }
 
     await setPhase("context");
     const inv = await ensureFactInventory({ ensure: true });
     if (!inv?.ok) {
-      return writeAnswerState(tabId, { questionHash, phase: "error", error: inv?.error || "We couldn't prepare your profile context. Try again.", at: Date.now() });
+      return writeAnswerState(tabId, { questionHash, phase: "error", error: inv?.error || "We couldn't prepare your profile context. Try again.", signInRequired: inv?.signInRequired === true, at: Date.now() });
     }
     const invStatus = inv.state?.status;
     if (invStatus !== "ready") {
@@ -419,7 +419,7 @@ async function runAnswerFlow(tabId, question, job, force) {
     }
 
     if (!out || out.ok === false) {
-      return writeAnswerState(tabId, { questionHash, phase: "error", error: out?.error || "We couldn't produce an answer you can trust. Try again.", at: Date.now() });
+      return writeAnswerState(tabId, { questionHash, phase: "error", error: out?.error || "We couldn't produce an answer you can trust. Try again.", signInRequired: out?.signInRequired === true, at: Date.now() });
     }
 
     return writeAnswerState(tabId, {
