@@ -295,7 +295,12 @@ async function generateValidatedVariant(input: GenerateOneInput): Promise<{
 
   if (!draftGuards.passed) {
     console.warn(
-      JSON.stringify({ evt: "answer_guard_failed", stage: "draft", codes: guardCodes(draftGuards.violations) }),
+      JSON.stringify({
+        evt: "answer_guard_failed",
+        stage: "draft",
+        codes: guardCodes(draftGuards.violations),
+        details: draftGuards.violations.filter((v) => v.blocking !== false).map((v) => v.detail),
+      }),
     );
   }
 
@@ -321,7 +326,12 @@ async function generateValidatedVariant(input: GenerateOneInput): Promise<{
   const repairedGuards = runAnswerGuards(repaired, input.flat);
   if (!repairedGuards.passed) {
     console.warn(
-      JSON.stringify({ evt: "answer_guard_failed", stage: "repair", codes: guardCodes(repairedGuards.violations) }),
+      JSON.stringify({
+        evt: "answer_guard_failed",
+        stage: "repair",
+        codes: guardCodes(repairedGuards.violations),
+        details: repairedGuards.violations.filter((v) => v.blocking !== false).map((v) => v.detail),
+      }),
     );
     throw new AnswerPipelineError(
       "quality_failed",
