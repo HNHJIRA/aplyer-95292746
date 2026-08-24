@@ -182,7 +182,7 @@ describe("P0 extraction", () => {
   it("extracts a normal resume and stores a ready inventory", async () => {
     const db = makeDb();
     queued.push(ok(GOOD_OUTPUT));
-    const state = await ensureFactInventory(db, "user-a");
+    const state = await ensureFactInventory(db, "user-a", { writeDb: db });
     expect(state.status).toBe("ready");
     expect(state.model).toBe(PROMPT_P0_FACT_INVENTORY.model);
     expect(state.schemaVersion).toBe(FACT_INVENTORY_SCHEMA_VERSION);
@@ -193,9 +193,9 @@ describe("P0 extraction", () => {
   it("is idempotent: identical resume + version makes zero extra AI calls", async () => {
     const db = makeDb();
     queued.push(ok(GOOD_OUTPUT));
-    await ensureFactInventory(db, "user-a");
+    await ensureFactInventory(db, "user-a", { writeDb: db });
     const before = aiCalls;
-    const again = await ensureFactInventory(db, "user-a");
+    const again = await ensureFactInventory(db, "user-a", { writeDb: db });
     expect(again.status).toBe("ready");
     expect(aiCalls).toBe(before);
   });
@@ -203,7 +203,7 @@ describe("P0 extraction", () => {
   it("marks the inventory stale when the resume text changes", async () => {
     const db = makeDb();
     queued.push(ok(GOOD_OUTPUT));
-    await ensureFactInventory(db, "user-a");
+    await ensureFactInventory(db, "user-a", { writeDb: db });
     db.resumes[0].resume_text = `${RESUME_TEXT}\nCompany C — Staff Engineer\n2025 - Present`;
     const state = await getFactInventoryState(db, "user-a");
     expect(state.status).toBe("stale");
@@ -213,7 +213,7 @@ describe("P0 extraction", () => {
     const db = makeDb();
     queued.push(new Response(JSON.stringify({ content: [{ type: "text", text: "not json" }] }), { status: 200 }));
     queued.push(ok(GOOD_OUTPUT));
-    const state = await ensureFactInventory(db, "user-a");
+    const state = await ensureFactInventory(db, "user-a", { writeDb: db });
     expect(state.status).toBe("ready");
     expect(aiCalls).toBe(2);
   });
@@ -222,7 +222,7 @@ describe("P0 extraction", () => {
     const db = makeDb();
     queued.push(ok({ identity: {}, contact: {}, experience: [{ company: "X", startDate: "whenever" }] }));
     queued.push(ok({ identity: {}, contact: {}, experience: [{ company: "X", startDate: "whenever" }] }));
-    await expect(ensureFactInventory(db, "user-a")).rejects.toBeInstanceOf(FactInventoryError);
+    await expect(ensureFactInventory(db, "user-a", { writeDb: db })).rejects.toBeInstanceOf(FactInventoryError);
     expect(aiCalls).toBe(2);
     expect(db.inventories[0].status).toBe("failed");
     expect(db.inventories[0].inventory_json).toBeNull();
@@ -231,7 +231,7 @@ describe("P0 extraction", () => {
   it("returns not_configured when the provider key is missing", async () => {
     delete process.env.ANTHROPIC_API_KEY;
     const db = makeDb();
-    const err = await ensureFactInventory(db, "user-a").catch((e) => e);
+    const err = await ensureFactInventory(db, "user-a", { writeDb: db }).catch((e) => e);
     expect((err as FactInventoryError).code).toBe("not_configured");
     expect(aiCalls).toBe(0);
   });
@@ -239,14 +239,14 @@ describe("P0 extraction", () => {
   it("returns model_unavailable without falling back to another model", async () => {
     const db = makeDb();
     queued.push(new Response(JSON.stringify({ error: { type: "not_found_error" } }), { status: 404 }));
-    const err = await ensureFactInventory(db, "user-a").catch((e) => e);
+    const err = await ensureFactInventory(db, "user-a", { writeDb: db }).catch((e) => e);
     expect((err as FactInventoryError).code).toBe("model_unavailable");
     expect(aiCalls).toBe(1);
   });
 
   it("fails when the user has no current resume", async () => {
     const db = new FakeDb();
-    const err = await ensureFactInventory(db, "user-a").catch((e) => e);
+    const err = await ensureFactInventory(db, "user-a", { writeDb: db }).catch((e) => e);
     expect((err as FactInventoryError).code).toBe("no_resume");
     expect(aiCalls).toBe(0);
   });
@@ -254,7 +254,7 @@ describe("P0 extraction", () => {
   it("fails when the stored resume text is empty", async () => {
     const db = makeDb();
     db.resumes[0].resume_text = "";
-    const err = await ensureFactInventory(db, "user-a").catch((e) => e);
+    const err = await ensureFactInventory(db, "user-a", { writeDb: db }).catch((e) => e);
     expect((err as FactInventoryError).code).toBe("empty_resume");
   });
 
@@ -270,7 +270,7 @@ describe("P0 extraction", () => {
       generation_started_at: new Date().toISOString(),
       inventory_json: null,
     });
-    const state = await ensureFactInventory(db, "user-a");
+    const state = await ensureFactInventory(db, "user-a", { writeDb: db });
     expect(state.status).toBe("extracting");
     expect(aiCalls).toBe(0);
   });
@@ -288,14 +288,14 @@ describe("P0 extraction", () => {
       inventory_json: null,
     });
     queued.push(ok(GOOD_OUTPUT));
-    const state = await ensureFactInventory(db, "user-a");
+    const state = await ensureFactInventory(db, "user-a", { writeDb: db });
     expect(state.status).toBe("ready");
   });
 
   it("never returns another user's inventory", async () => {
     const db = makeDb();
     queued.push(ok(GOOD_OUTPUT));
-    await ensureFactInventory(db, "user-a");
+    await ensureFactInventory(db, "user-a", { writeDb: db });
     db.resumes.push({
       id: "resume-b",
       user_id: "user-b",
@@ -316,7 +316,7 @@ describe("P0 extraction", () => {
       sentUser = parsed.messages[0].content;
       return ok(GOOD_OUTPUT);
     });
-    await ensureFactInventory(db, "user-a");
+    await ensureFactInventory(db, "user-a", { writeDb: db });
     expect(sentUser).toContain("Resume text:");
     expect(sentUser).toContain("Company A");
     expect(sentUser).not.toMatch(/job description|voice card|writing sample|question/i);
