@@ -96,7 +96,7 @@ describe("cache identity", () => {
     expect(a.cacheKey).toBe(b.cacheKey);
   });
 
-  const mutations: Array<[string, Partial<typeof BASE>]> = [
+  const mutations: Array<[string, Record<string, unknown>]> = [
     ["question", { question: "Describe a conflict you resolved." }],
     ["framework", { framework: "CAR" as never }],
     ["mode", { mode: "resume_only_learned" as never }],
@@ -111,7 +111,7 @@ describe("cache identity", () => {
   for (const [name, patch] of mutations) {
     it(`misses the cache when the ${name} changes`, async () => {
       const a = await computeAnswerCacheKey(BASE);
-      const b = await computeAnswerCacheKey({ ...BASE, ...patch });
+      const b = await computeAnswerCacheKey({ ...BASE, ...patch } as typeof BASE);
       expect(b.cacheKey).not.toBe(a.cacheKey);
     });
   }
