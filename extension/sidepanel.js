@@ -4,6 +4,14 @@ const KEY_STATUS = "aplyer.ats_status.v1";
 const KEY_QUESTION = "aplyer.selected_question.v1";
 const KEY_SESSION = "aplyer.session.v1";
 const KEY_SAFETY = "aplyer.job_safety_by_tab.v1";
+const KEY_FRAMEWORKS = "aplyer.question_frameworks.v1";
+const KEY_DEBUG = "aplyer.debug_mode.v1";
+
+// Normal users never see the framework tag or any confidence figure. The
+// framework stays internal and is only surfaced in diagnostics mode.
+let debugMode = false;
+let currentTabId = null;
+let currentFramework = null;
 
 const $ = (id) => document.getElementById(id);
 
@@ -61,13 +69,9 @@ function render(state) {
     $("question-card").style.display = "";
     $("q-text").textContent = question.questionText;
     const parts = [`type: ${question.questionType}`];
-    if (question.framework) {
-      parts.push(`framework: ${question.framework}`);
-      if (typeof question.frameworkConfidence === "number") {
-        parts.push(`${Math.round(question.frameworkConfidence * 100)}% confidence`);
-      }
-    } else {
-      parts.push("framework: analyzing…");
+    if (debugMode && currentFramework?.framework) {
+      parts.push(`framework: ${currentFramework.framework}`);
+      parts.push(`prompt ${currentFramework.promptVersion} · ${currentFramework.model}`);
     }
     $("q-meta").textContent = parts.join("  ·  ");
   } else {
@@ -105,7 +109,14 @@ function askBackgroundSafety() {
 
 async function load() {
   try {
-    const data = await chrome.storage.local.get([KEY_STATUS, KEY_QUESTION, KEY_SESSION, KEY_SAFETY]);
+    const data = await chrome.storage.local.get([KEY_STATUS, KEY_QUESTION, KEY_SESSION, KEY_SAFETY, KEY_FRAMEWORKS, KEY_DEBUG]);
+    debugMode = data[KEY_DEBUG] === true || new URLSearchParams(location.search).get("debug") === "1";
+    try {
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      currentTabId = activeTab?.id ?? null;
+    } catch { currentTabId = null; }
+    // Frameworks are tab scoped — never read another tab's entry.
+    currentFramework = currentTabId != null ? (data[KEY_FRAMEWORKS] || {})[String(currentTabId)] || null : null;
     render({
       status: data[KEY_STATUS] || null,
       question: data[KEY_QUESTION] || null,
@@ -131,11 +142,53 @@ async function load() {
 }
 
 
+function setGenStatus(text, isError) {
+  const el = $("q-generate-status");
+  el.textContent = text || "";
+  el.classList.toggle("q-error", !!isError);
+}
+
+async function onGenerateAnswer() {
+  const btn = $("q-generate");
+  const data = await chrome.storage.local.get(KEY_QUESTION);
+  const question = data[KEY_QUESTION];
+  if (!question?.questionText) return;
+  btn.disabled = true;
+  setGenStatus("Analyzing this question…", false);
+  const res = await new Promise((resolve) => {
+    let done = false;
+    const finish = (v) => { if (!done) { done = true; resolve(v); } };
+    setTimeout(() => finish(null), 20000);
+    try {
+      chrome.runtime.sendMessage(
+        // No framework is sent: the client is not a trusted classifier.
+        { type: "APLYER_CLASSIFY_QUESTION", tabId: currentTabId, question },
+        (r) => { void chrome.runtime.lastError; finish(r ?? null); },
+      );
+    } catch { finish(null); }
+  });
+  btn.disabled = false;
+  if (!res?.ok) {
+    currentFramework = null;
+    setGenStatus(res?.error || "We could not analyze this question. Please try again.", true);
+    return;
+  }
+  currentFramework = res.classification;
+  setGenStatus("Question analyzed. Answer generation unlocks in Milestone 4.", false);
+  $("q-generate")?.addEventListener("click", () => { onGenerateAnswer(); });
+
+load();
+}
+
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
-  if (changes[KEY_STATUS] || changes[KEY_QUESTION] || changes[KEY_SESSION] || changes[KEY_SAFETY]) load();
+  if (changes[KEY_STATUS] || changes[KEY_QUESTION] || changes[KEY_SESSION] || changes[KEY_SAFETY] || changes[KEY_FRAMEWORKS]) $("q-generate")?.addEventListener("click", () => { onGenerateAnswer(); });
+
+load();
 });
 
 document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+
+$("q-generate")?.addEventListener("click", () => { onGenerateAnswer(); });
 
 load();

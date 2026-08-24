@@ -64,3 +64,6 @@ export function validateResumeAudit(value: unknown): ResumeAudit {
     topPriority: String(o?.topPriority ?? o?.closing ?? "").trim(),
   };
 }
+
+export const RESUME_AUDIT_RETRY_INSTRUCTION = `Your previous response was invalid.
+Return ONLY a JSON object with exactly these keys: overallTake (2-3 sentences), redFlags (array of { flag, why, fix }, 3-6 items), strengths (string[]), topPriority (one sentence).`;

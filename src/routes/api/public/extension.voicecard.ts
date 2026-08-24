@@ -2,11 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { jsonWithCors, preflight } from "@/lib/cors";
 import {
   PROMPT_B_VOICE_CARD,
-  VOICE_CARD_REVEAL,
+  REQUIRED_QUALIFYING_SAMPLES,
+  VOICE_CARD_RETRY_INSTRUCTION,
   buildVoiceCardUser,
   validateVoiceCard,
   type VoiceCardData,
 } from "@/lib/ai/prompts/prompt-b-voice-card";
+import { PromptError, runPromptValidated } from "@/lib/ai/run-prompt.server";
 
 const PROMPT_VERSION = PROMPT_B_VOICE_CARD.version;
 const MODEL = PROMPT_B_VOICE_CARD.model;
@@ -144,7 +146,8 @@ async function startVoiceCardGeneration(supabase: any, userId: string) {
   }
 
   if (!snap.resumeId) throw new Error("Resume required");
-  if (snap.qualifyingSamples.length < 2) throw new Error("At least 2 qualifying writing samples required");
+  if (snap.qualifyingSamples.length < REQUIRED_QUALIFYING_SAMPLES)
+    throw new Error(`At least ${REQUIRED_QUALIFYING_SAMPLES} qualifying writing samples required`);
 
   const genId = crypto.randomUUID();
   const now = new Date().toISOString();
@@ -175,14 +178,36 @@ async function startVoiceCardGeneration(supabase: any, userId: string) {
     .join("\n\n---\n\n");
 
   const userPrompt = buildVoiceCardUser(resumeExcerpt, samplesText);
+  // Prompt B runs on its pinned model only. Invalid output gets one strict
+  // correction retry; anything else fails closed (no heuristic Voice Card,
+  // no substitute model).
   let voiceCard: VoiceCardData;
-  let usedFallback = false;
   try {
-    voiceCard = validateVoiceCard(await callClaudeJson(PROMPT_B_VOICE_CARD.system, userPrompt));
+    const run = await runPromptValidated(
+      PROMPT_B_VOICE_CARD,
+      userPrompt,
+      validateVoiceCard,
+      VOICE_CARD_RETRY_INSTRUCTION,
+      { timeoutMs: AI_TIMEOUT_MS, maxTokens: MAX_VOICECARD_TOKENS },
+    );
+    voiceCard = run.value;
   } catch (e) {
-    console.warn("[extension.voicecard] Claude unavailable, using fast fallback", e);
-    usedFallback = true;
-    voiceCard = buildFastVoiceCard(snap);
+    const code = e instanceof PromptError ? e.code : "generation_failed";
+    const message =
+      code === "model_unavailable" || code === "not_configured"
+        ? "Voice Card generation is temporarily unavailable."
+        : "We could not generate your Voice Card. Please try again.";
+    await supabase
+      .from("profiles")
+      .update({
+        voice_card_status: "failed",
+        voice_card_error: message,
+        voice_card_generation_id: null,
+        voice_card_generation_started_at: null,
+      })
+      .eq("id", userId)
+      .eq("voice_card_generation_id", genId);
+    return { status: "failed" as const, error: message, code };
   }
 
   const { data: committed } = await supabase
@@ -191,7 +216,7 @@ async function startVoiceCardGeneration(supabase: any, userId: string) {
       voice_card_status: "generated",
       voice_card_data: voiceCard,
       voice_card_generated_at: new Date().toISOString(),
-      voice_card_model: usedFallback ? `${MODEL}:fast-fallback` : MODEL,
+      voice_card_model: MODEL,
       voice_card_source_hash: snap.sourceHash,
       voice_card_source_resume_id: snap.resumeId,
       voice_card_source_sample_ids: snap.qualifyingSamples.map((s) => s.id),
@@ -295,113 +320,10 @@ async function sha256Hex(input: string): Promise<string> {
   return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-function buildFastVoiceCard(snap: SourceSnapshot): VoiceCardData {
-  const text = snap.qualifyingSamples.map((s) => s.content).join("\n\n");
-  const sentences = text.split(/[.!?]+/).map((s) => s.trim()).filter(Boolean);
-  const words = text.toLowerCase().match(/[a-z][a-z'-]{2,}/g) ?? [];
-  const avgSentenceWords = sentences.length
-    ? Math.round(words.length / sentences.length)
-    : 14;
-  const traits = topTerms(words, 8);
-  const transitions = findTransitions(text);
-  const valueSignals = findValueSignals(words);
-  const cadence = avgSentenceWords <= 12
-    ? "Short, direct sentences with a practical rhythm."
-    : avgSentenceWords >= 22
-      ? "Longer explanatory sentences with reflective pacing."
-      : "Balanced sentence length with clear setup and follow-through.";
-  const formality = /\b(i'm|can't|don't|that's|you're)\b/i.test(text)
-    ? "Conversational-professional"
-    : "Polished-professional";
-  const vocabulary = traits.length
-    ? `Leans on concrete terms like ${traits.slice(0, 5).join(", ")}.`
-    : "Leans on concrete, role-focused language.";
 
-  const archetype =
-    avgSentenceWords <= 12 ? "One-Liner" : avgSentenceWords >= 24 ? "Overthinker" : formality === "Conversational-professional" ? "Natural" : "Straight Shooter";
 
-  return {
-    archetype,
-    archetype_description:
-      "Your writing lands as " +
-      archetype +
-      ": " +
-      cadence.toLowerCase(),
-    reveal: VOICE_CARD_REVEAL,
-    headline: "A clear, practical voice focused on evidence and contribution.",
-    tone: "Direct, thoughtful, and professionally grounded.",
-    cadence,
-    formality,
-    vocabulary_bias: vocabulary,
-    distinctive_traits: [
-      "Uses specific context before making a point.",
-      "Connects experience to practical outcomes.",
-      "Keeps the voice professional without sounding overly formal.",
-    ],
-    hooks_and_transitions: transitions.length
-      ? transitions.slice(0, 4)
-      : ["Start with the situation, then name the contribution.", "Use concise transitions between experience and impact.", "Close with a grounded next-step or value statement."],
-    values_signals: valueSignals,
-    do_and_avoid: {
-      do: [
-        "Keep answers specific and evidence-led.",
-        "Use the candidate's practical, outcome-focused phrasing.",
-        "Preserve a confident but measured tone.",
-      ],
-      avoid: [
-        "Do not add unsupported achievements or metrics.",
-        "Avoid generic enthusiasm without evidence.",
-        "Avoid overly polished corporate phrasing that removes personality.",
-      ],
-    },
-  };
-}
 
-function topTerms(words: string[], limit: number): string[] {
-  const stop = new Set([
-    "the", "and", "for", "with", "that", "this", "from", "have", "has", "was", "were", "are", "you", "your", "our", "their", "but", "not", "can", "will", "about", "into", "through", "they", "them", "then", "than", "also", "when", "where", "what", "how", "why", "who", "been", "being", "work", "role", "team",
-  ]);
-  const counts = new Map<string, number>();
-  for (const word of words) {
-    if (stop.has(word) || word.length < 4) continue;
-    counts.set(word, (counts.get(word) ?? 0) + 1);
-  }
-  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([word]) => word);
-}
 
-function findTransitions(text: string): string[] {
-  const candidates = [
-    "I learned", "I believe", "In my experience", "For example", "As a result", "This helped", "My approach", "I focus", "I bring",
-  ];
-  return candidates
-    .filter((phrase) => text.toLowerCase().includes(phrase.toLowerCase()))
-    .map((phrase) => `Uses “${phrase}…” to move from context to impact.`);
-}
-
-function findValueSignals(words: string[]): string[] {
-  const values = [
-    { label: "ownership", keys: ["own", "owned", "ownership", "responsible", "accountable"] },
-    { label: "collaboration", keys: ["collaborate", "collaboration", "partner", "team", "together"] },
-    { label: "learning", keys: ["learn", "learning", "improve", "growth", "curious"] },
-    { label: "clarity", keys: ["clear", "clarity", "explain", "communicate", "align"] },
-    { label: "impact", keys: ["impact", "result", "outcome", "deliver", "improve"] },
-  ];
-  const set = new Set(words);
-  const matched = values.filter((v) => v.keys.some((k) => set.has(k))).map((v) => v.label);
-  const base = matched.length ? matched : ["clarity", "ownership", "impact"];
-  return base.slice(0, 4).map((v) => `${v[0].toUpperCase()}${v.slice(1)} shows up as a recurring writing signal.`);
-}
-
-async function callClaudeJson(system: string, user: string): Promise<unknown> {
-  const text = await callClaudeText(`${system}\n\nRespond with ONLY a valid JSON object. No prose, no markdown fences.`, user, MAX_VOICECARD_TOKENS);
-  try {
-    return JSON.parse(text);
-  } catch {
-    const m = text.match(/\{[\s\S]*\}/);
-    if (m) return JSON.parse(m[0]);
-    throw new Error("Non-JSON Claude response");
-  }
-}
 
 async function callClaudeText(system: string, user: string, maxTokens: number): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;

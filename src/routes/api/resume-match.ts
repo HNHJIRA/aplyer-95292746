@@ -2,10 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CORS_HEADERS, jsonWithCors, preflight } from "@/lib/cors";
 import {
   PROMPT_D_RESUME_SCORE,
+  RESUME_SCORE_RETRY_INSTRUCTION,
   buildResumeScoreUser,
   validateResumeScore,
 } from "@/lib/ai/prompts/prompt-d-resume-score";
-import { runPromptJson } from "@/lib/ai/run-prompt.server";
+import { PromptError, runPromptValidated } from "@/lib/ai/run-prompt.server";
 
 export const Route = createFileRoute("/api/resume-match")({
   server: {
@@ -29,27 +30,32 @@ export const Route = createFileRoute("/api/resume-match")({
           const capResume = resume.length > 20000 ? resume.slice(0, 20000) : resume;
           const capJd = jd.length > 20000 ? jd.slice(0, 20000) : jd;
 
-          const report = validateResumeScore(
-            await runPromptJson(PROMPT_D_RESUME_SCORE, buildResumeScoreUser(capResume, capJd), {
-              timeoutMs: 90_000,
-            }),
+          const { value: report } = await runPromptValidated(
+            PROMPT_D_RESUME_SCORE,
+            buildResumeScoreUser(capResume, capJd),
+            validateResumeScore,
+            RESUME_SCORE_RETRY_INSTRUCTION,
+            { timeoutMs: 90_000 },
           );
 
-          // Canonical Prompt D shape + legacy aliases for existing frontends.
+          // Canonical Prompt D schema first; legacy aliases are additive only
+          // and must never replace the canonical fields.
           const payload = {
             ...report,
-            overallMatch: report.jobDescriptionMatch,
-            keywordCoverage: report.jobDescriptionMatch,
+            promptVersion: PROMPT_D_RESUME_SCORE.version,
+            // --- legacy aliases (deprecated) ---
+            jobDescriptionMatch: report.matchScore,
+            overallMatch: report.matchScore,
+            keywordCoverage: report.matchScore,
             matchingSkills: report.keywordsPresent,
             missingKeywords: report.keywordsMissing,
             missingSkills: report.keywordsMissing,
-            weaknesses: report.gaps,
-            priorityImprovements: report.suggestions.map((s, i) => ({
+            suggestions: report.sectionSuggestions,
+            priorityImprovements: report.sectionSuggestions.map((s, i) => ({
               priority: i + 1,
               title: s.split(/[.:]/)[0].slice(0, 80),
               recommendation: s,
             })),
-            promptVersion: PROMPT_D_RESUME_SCORE.version,
           };
 
           return new Response(JSON.stringify(payload), {
@@ -57,9 +63,21 @@ export const Route = createFileRoute("/api/resume-match")({
           });
         } catch (err) {
           console.error("[resume-match]", err);
-          const msg = err instanceof Error ? err.message : "Unknown error";
-          const status = /429|rate/i.test(msg) ? 429 : /402|payment/i.test(msg) ? 402 : 500;
-          return jsonWithCors({ error: "Something went wrong. Please try again." }, status);
+          if (err instanceof PromptError) {
+            const status =
+              err.code === "model_unavailable" || err.code === "not_configured" ? 503 : 502;
+            return jsonWithCors(
+              {
+                error:
+                  status === 503
+                    ? "Job Description Match is temporarily unavailable."
+                    : "We could not score this resume. Please try again.",
+                code: err.code,
+              },
+              status,
+            );
+          }
+          return jsonWithCors({ error: "Something went wrong. Please try again." }, 500);
         }
       },
     },

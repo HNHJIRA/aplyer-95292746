@@ -14,13 +14,13 @@ export type QuestionFramework = (typeof QUESTION_FRAMEWORKS)[number];
 
 export interface QuestionClassification {
   framework: QuestionFramework;
-  confidence: number;
+  /** One short internal rationale. Never surfaced in normal extension UI. */
   reason: string;
 }
 
 export const PROMPT_I_CLASSIFICATION: PromptSpec = {
   id: "I_QUESTION_CLASSIFICATION",
-  version: "1.0.0",
+  version: "2.0.0",
   model: MODEL_OPUS,
   maxTokens: 300,
   temperature: 0,
@@ -41,12 +41,17 @@ Rules:
 - Failure/conflict/mistake wording always outranks plain STAR → return STAR-F.
 - "Why us / why this role / why now" always outranks CULTURAL → return MOTIVATION.
 - Short logistical or factual prompts are GENERAL even if they mention experience.
-- confidence is 0-1 with two decimals, reflecting genuine certainty.
+- Never invent a certainty score. Do not return a confidence field.
 - reason is one short sentence quoting the deciding words in the question.
 
 Return ONLY this JSON object:
-{ "framework": "STAR" | "STAR-F" | "CAR" | "MOTIVATION" | "CULTURAL" | "GENERAL", "confidence": number, "reason": string }`,
+{ "framework": "STAR" | "STAR-F" | "CAR" | "MOTIVATION" | "CULTURAL" | "GENERAL", "reason": string }`,
 };
+
+/** Appended to the user message on the single strict correction retry. */
+export const CLASSIFICATION_RETRY_INSTRUCTION = `Your previous response was invalid.
+Return ONLY a JSON object of the form {"framework": "<one of STAR, STAR-F, CAR, MOTIVATION, CULTURAL, GENERAL>", "reason": "<one sentence>"}.
+No prose, no markdown, no extra keys, no other framework values.`;
 
 export function buildClassificationUser(question: string, context?: { platform?: string; fieldType?: string }): string {
   const meta = [
@@ -58,36 +63,48 @@ export function buildClassificationUser(question: string, context?: { platform?:
   return `${meta ? `${meta}\n\n` : ""}Question:\n${question}`;
 }
 
+export function isQuestionFramework(value: unknown): value is QuestionFramework {
+  return typeof value === "string" && (QUESTION_FRAMEWORKS as readonly string[]).includes(value.toUpperCase());
+}
+
+/**
+ * Strict validator. Anything outside the six canonical frameworks throws so the
+ * caller can run its single correction retry and then fail closed.
+ */
 export function validateClassification(value: unknown): QuestionClassification {
-  const v = value as Partial<QuestionClassification>;
-  const framework = String(v?.framework ?? "").toUpperCase() as QuestionFramework;
-  if (!QUESTION_FRAMEWORKS.includes(framework)) throw new Error(`Unknown framework: ${v?.framework}`);
-  const confidence = typeof v?.confidence === "number" && v.confidence >= 0 && v.confidence <= 1 ? v.confidence : 0.5;
+  const v = (value ?? {}) as { framework?: unknown; reason?: unknown };
+  const raw = String(v.framework ?? "").trim().toUpperCase();
+  if (!(QUESTION_FRAMEWORKS as readonly string[]).includes(raw)) {
+    throw new Error(`Invalid framework: ${JSON.stringify(v.framework)}`);
+  }
   return {
-    framework,
-    confidence: Math.round(confidence * 100) / 100,
-    reason: typeof v?.reason === "string" && v.reason.trim() ? v.reason.trim() : "Classified from question wording.",
+    framework: raw as QuestionFramework,
+    reason: typeof v.reason === "string" && v.reason.trim() ? v.reason.trim() : "Classified from question wording.",
   };
 }
 
 /**
- * Deterministic fallback used when the model is unreachable. Keeps the
- * extension usable (a framework is always available) without inventing
- * confidence it does not have.
+ * TEST / DIAGNOSTICS ONLY.
+ *
+ * Deterministic keyword classifier used by unit tests and manual diagnostics.
+ * It is deliberately NOT wired into any production code path: production
+ * classification must come from Prompt I on claude-opus-4-6, and an invalid or
+ * unavailable model result must surface as a controlled error instead of a
+ * silent heuristic substitute.
  */
-export function heuristicClassification(question: string): QuestionClassification {
+export function heuristicClassificationForDiagnostics(question: string): QuestionClassification {
   const q = question.toLowerCase();
   const has = (...words: string[]) => words.some((w) => q.includes(w));
 
   if (has("failure", "failed", "mistake", "went wrong", "conflict", "disagree", "setback", "criticism"))
-    return { framework: "STAR-F", confidence: 0.6, reason: "Mentions a failure, mistake, or conflict.", };
+    return { framework: "STAR-F", reason: "Mentions a failure, mistake, or conflict." };
   if (has("why do you want", "why are you interested", "why this role", "why us", "why our", "why join", "motivat"))
-    return { framework: "MOTIVATION", confidence: 0.6, reason: "Asks why the candidate wants the role or company." };
+    return { framework: "MOTIVATION", reason: "Asks why the candidate wants the role or company." };
   if (has("tell me about a time", "describe a time", "give an example of a time", "share an experience"))
-    return { framework: "STAR", confidence: 0.6, reason: "Requests a specific past experience." };
+    return { framework: "STAR", reason: "Requests a specific past experience." };
   if (has("problem", "challenge", "obstacle", "how did you solve", "how would you solve"))
-    return { framework: "CAR", confidence: 0.55, reason: "Focuses on solving a concrete problem." };
+    return { framework: "CAR", reason: "Focuses on solving a concrete problem." };
   if (has("values", "culture", "team environment", "work style", "working style", "collaborat", "diversity", "inclusion"))
-    return { framework: "CULTURAL", confidence: 0.55, reason: "Asks about values, culture, or working style." };
-  return { framework: "GENERAL", confidence: 0.4, reason: "No framework-specific signals detected." };
+    return { framework: "CULTURAL", reason: "Asks about values, culture, or working style." };
+  return { framework: "GENERAL", reason: "No framework-specific signals detected." };
 }
