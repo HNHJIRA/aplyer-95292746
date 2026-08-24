@@ -165,10 +165,19 @@ export function runAnswerGuards(answer: string, flat: FlattenedInventory): Guard
   }
 
 
-  // 7. Month/day granularity the inventory never states.
+  // 7. Month/day granularity the inventory never states. "may" is excluded
+  //    unless a day or year sits beside it — as a bare word it is the modal
+  //    verb far more often than the month, and flagging it failed the pipeline
+  //    closed on perfectly grounded answers.
   for (const m of MONTHS) {
-    if (padded.includes(` ${m} `) && !paddedCorpus.includes(` ${m} `)) add("unsupported_date", m);
+    const mentioned =
+      m === "may"
+        ? new RegExp(`\\b(?:\\d{1,2}\\s+may\\b|may\\s+\\d{1,4}\\b)`, "i").test(padded)
+        : padded.includes(` ${m} `);
+    if (mentioned && !paddedCorpus.includes(` ${m} `)) add("unsupported_date", m);
   }
+
+
 
   // 8. Tools claimed as experience.
   for (const tool of TOOL_LEXICON) {
