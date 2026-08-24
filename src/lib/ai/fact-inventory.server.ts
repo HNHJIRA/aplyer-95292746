@@ -54,7 +54,11 @@ export async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
-/** Source identity = resume identity + resume content + prompt version + schema version. */
+/**
+ * Source identity = resume id + resume content + prompt version + schema
+ * version + MODEL ID. Changing the pinned P0 model therefore invalidates every
+ * previously generated inventory automatically.
+ */
 export async function computeSourceHash(resumeId: string, resumeText: string): Promise<string> {
   return sha256Hex(
     [
@@ -62,12 +66,24 @@ export async function computeSourceHash(resumeId: string, resumeText: string): P
       await sha256Hex(resumeText.replace(/\s+/g, " ").trim().toLowerCase()),
       PROMPT_P0_FACT_INVENTORY.version,
       FACT_INVENTORY_SCHEMA_VERSION,
+      PROMPT_P0_FACT_INVENTORY.model,
     ].join("|"),
   );
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Db = any;
+
+/**
+ * Canonical inventory rows are SERVER-WRITE-ONLY. `authenticated` holds SELECT
+ * on its own rows and nothing else, so every mutation must go through the
+ * privileged service-role client resolved here. Tests may inject a fake.
+ */
+async function resolveWriteDb(injected?: Db): Promise<Db> {
+  if (injected) return injected;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
 
 interface CurrentResume {
   id: string;
@@ -172,8 +188,9 @@ export async function getFactInventoryState(
 export async function ensureFactInventory(
   supabase: Db,
   userId: string,
-  opts: { force?: boolean; includeInventory?: boolean } = {},
+  opts: { force?: boolean; includeInventory?: boolean; writeDb?: Db } = {},
 ): Promise<InventoryState> {
+  const write = await resolveWriteDb(opts.writeDb);
   const resume = await resolveCurrentResume(supabase, userId);
   const sourceHash = await computeSourceHash(resume.id, resume.resumeText);
   const existing = await loadRow(supabase, userId, resume.id);
@@ -212,7 +229,7 @@ export async function ensureFactInventory(
     error: null,
   };
 
-  const { data: locked, error: lockErr } = await supabase
+  const { data: locked, error: lockErr } = await write
     .from(FACT_INVENTORY_TABLE)
     .upsert(lockPayload, { onConflict: "user_id,resume_id,schema_version,prompt_version" })
     .select("id, generation_id")
@@ -252,7 +269,7 @@ export async function ensureFactInventory(
     }
 
     // 6. Commit only while we still own the lock.
-    const { data: committed } = await supabase
+    const { data: committed } = await write
       .from(FACT_INVENTORY_TABLE)
       .update({
         status: "ready",
@@ -292,7 +309,7 @@ export async function ensureFactInventory(
       }),
     );
     // Persist safe error metadata only — never fabricated fallback facts.
-    await supabase
+    await write
       .from(FACT_INVENTORY_TABLE)
       .update({
         status: "failed",
@@ -312,4 +329,41 @@ export async function ensureFactInventory(
         : "We couldn't prepare your profile context.",
     );
   }
+}
+
+
+/**
+ * CANONICAL GROUNDING GATE.
+ *
+ * The ONLY supported way for future Prompt A / Prompt J code to obtain resume
+ * facts. Returns the inventory only when it is ready AND matches the current
+ * resume, the current schema version, the current prompt version and the
+ * approved P0 model. Anything else fails closed — no raw inventory_json query,
+ * no raw resume text, no browser-supplied facts.
+ */
+export async function requireReadyFactInventory(
+  supabase: Db,
+  userId: string,
+): Promise<{ inventory: ResumeFactInventory; resumeId: string; model: string }> {
+  const resume = await resolveCurrentResume(supabase, userId);
+  const row = await loadRow(supabase, userId, resume.id);
+  if (!row) throw new FactInventoryError("inventory_missing", "Profile context is not prepared yet.");
+  if (row.status !== "ready" || !row.inventory_json) {
+    throw new FactInventoryError("inventory_not_ready", "Profile context is not prepared yet.");
+  }
+  if (row.schema_version !== FACT_INVENTORY_SCHEMA_VERSION || row.prompt_version !== PROMPT_P0_FACT_INVENTORY.version) {
+    throw new FactInventoryError("inventory_stale", "Profile context needs to be refreshed.");
+  }
+  if (row.model !== PROMPT_P0_FACT_INVENTORY.model) {
+    throw new FactInventoryError("inventory_stale", "Profile context needs to be refreshed.");
+  }
+  const expected = await computeSourceHash(resume.id, resume.resumeText);
+  if (row.source_hash !== expected) {
+    throw new FactInventoryError("inventory_stale", "Profile context needs to be refreshed.");
+  }
+  return {
+    inventory: row.inventory_json as ResumeFactInventory,
+    resumeId: resume.id,
+    model: row.model as string,
+  };
 }
