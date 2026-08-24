@@ -1,13 +1,16 @@
 // Canonical Anthropic model ids used by the Aplyer prompt library.
+//
+// COMPLIANCE: the locked SOP pins each prompt to one model. There is NO
+// fallback chain. If the required model is unavailable to the configured API
+// key, the feature fails closed with a controlled provider error rather than
+// generating with an unapproved model. Adding a fallback here requires an
+// explicit written approval to change the SOP.
 export const MODEL_OPUS = "claude-opus-4-6";
 export const MODEL_HAIKU = "claude-haiku-4-5";
 
-/**
- * Fallback chain used when a canonical model id is not available to the
- * configured API key (Anthropic answers 404 `model_not_found`). Keeps the
- * product working while the account is enabled for the newer model.
- */
-export const MODEL_FALLBACKS: Record<string, string[]> = {
-  [MODEL_OPUS]: ["claude-sonnet-4-5"],
-  [MODEL_HAIKU]: ["claude-3-5-haiku-latest", "claude-sonnet-4-5"],
-};
+/** Models the SOP approves. Anything else must never reach the provider. */
+export const APPROVED_MODELS: readonly string[] = [MODEL_OPUS, MODEL_HAIKU];
+
+export function isApprovedModel(model: string): boolean {
+  return APPROVED_MODELS.includes(model);
+}

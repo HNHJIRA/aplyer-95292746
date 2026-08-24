@@ -53,3 +53,19 @@ main, .cards { flex: 1 1 auto; }
 .safety-badge.is-unknown { color: #B07908; border-color: rgba(229,183,58,.4); background: rgba(229,183,58,.12); }
 .safety-score { font-weight: 700; font-size: 16px; font-family: var(--mono); color: var(--green); }
 .safety-copy { margin: 10px 0 0; color: var(--sub); font-size: 14px; }
+
+.q-generate {
+  margin-top: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--green, #1DB954);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .02em;
+  cursor: pointer;
+}
+.q-generate:disabled { opacity: .6; cursor: default; }
+.q-error { color: var(--red, #E5373A); }

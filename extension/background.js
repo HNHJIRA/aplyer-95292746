@@ -48,25 +48,59 @@ async function runJobSafetyCheck(tabId, url) {
   return entry;
 }
 
-chrome.tabs?.onRemoved?.addListener((tabId) => { writeSafetyEntry(tabId, null); });
+chrome.tabs?.onRemoved?.addListener((tabId) => { writeSafetyEntry(tabId, null); writeFrameworkEntry(tabId, null); });
 
 // --- Question classification (Prompt I) --------------------------------
-// Classifies the selected application question into an answer framework
-// (STAR / STAR-F / CAR / MOTIVATION / CULTURAL / GENERAL). Results are cached
-// server-side; we keep a small local cache to avoid repeat round-trips.
+// The server is the only source of a trusted framework. This worker never
+// derives, guesses, or accepts a client-supplied classification, and it only
+// runs when the user explicitly asks to generate an answer.
+//
+// State is TAB SCOPED: frameworksByTab[tabId] = { questionId, questionHash,
+// framework, promptVersion, model, at }. Entries are dropped when the tab
+// closes so a classification can never leak into another tab.
 const CLASSIFY_KEY = "aplyer.question_frameworks.v1";
+const CLASSIFY_CACHE_KEY = "aplyer.question_framework_cache.v1";
+const CLASSIFY_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-async function classifyQuestion(question) {
-  const text = (question?.questionText || "").trim();
-  if (text.length < 5) return null;
-  const cacheKey = text.slice(0, 300);
+function normalizeQuestion(text) {
+  return String(text || "").toLowerCase().replace(/\s+/g, " ").replace(/[^a-z0-9 ?]/g, "").trim();
+}
 
-  const store = await chrome.storage.local.get([CLASSIFY_KEY, SESSION_KEY]);
-  const cache = store[CLASSIFY_KEY] || {};
-  if (cache[cacheKey]) return cache[cacheKey];
+async function readFrameworkMap() {
+  const res = await chrome.storage.local.get(CLASSIFY_KEY);
+  return res[CLASSIFY_KEY] || {};
+}
+
+async function writeFrameworkEntry(tabId, entry) {
+  if (tabId == null) return;
+  const map = await readFrameworkMap();
+  if (entry) map[String(tabId)] = entry;
+  else delete map[String(tabId)];
+  await chrome.storage.local.set({ [CLASSIFY_KEY]: map });
+}
+
+/**
+ * Classifies one question for one tab. Returns { ok, classification } or
+ * { ok:false, error, code } — never a locally invented framework.
+ */
+async function classifyQuestionForTab(tabId, question) {
+  const text = String(question?.questionText || "").trim();
+  if (text.length < 5) return { ok: false, error: "No question text", code: "invalid_question" };
+
+  const normalized = normalizeQuestion(text);
+  const store = await chrome.storage.local.get([CLASSIFY_CACHE_KEY, SESSION_KEY]);
+  const cache = store[CLASSIFY_CACHE_KEY] || {};
+
+  // Identical normalized questions may reuse the cached server answer, but the
+  // cached value must carry the prompt version + model it was produced with.
+  const hit = cache[normalized];
+  if (hit && hit.framework && hit.promptVersion && hit.model && Date.now() - (hit.at || 0) < CLASSIFY_TTL_MS) {
+    await writeFrameworkEntry(tabId, { ...hit, questionId: question?.questionId ?? null, questionHash: normalized, cached: true });
+    return { ok: true, classification: { ...hit, cached: true } };
+  }
 
   const token = store[SESSION_KEY]?.access_token;
-  if (!token) return null;
+  if (!token) return { ok: false, error: "Please sign in to Aplyer first.", code: "unauthenticated" };
 
   try {
     const res = await fetch(`${API_BASE}/api/public/ai/classify-question`, {
@@ -75,16 +109,25 @@ async function classifyQuestion(question) {
       body: JSON.stringify({ question: text, platform: question?.platformKey, fieldType: question?.questionType }),
     });
     const json = await res.json().catch(() => null);
-    if (!json?.ok) return null;
-    const value = { framework: json.framework, confidence: json.confidence, reason: json.reason };
-    cache[cacheKey] = value;
+    if (!res.ok || !json?.ok) {
+      return { ok: false, error: json?.error || "Classification unavailable.", code: json?.code || `http_${res.status}` };
+    }
+    const value = {
+      framework: json.framework,
+      reason: json.reason,
+      promptVersion: json.promptVersion,
+      model: json.model,
+      at: Date.now(),
+    };
+    cache[normalized] = value;
     const keys = Object.keys(cache);
     if (keys.length > 200) delete cache[keys[0]];
-    await chrome.storage.local.set({ [CLASSIFY_KEY]: cache });
-    return value;
+    await chrome.storage.local.set({ [CLASSIFY_CACHE_KEY]: cache });
+    await writeFrameworkEntry(tabId, { ...value, questionId: question?.questionId ?? null, questionHash: normalized, cached: false });
+    return { ok: true, classification: { ...value, cached: false } };
   } catch (e) {
     console.warn("[Aplyer] classify failed", String(e));
-    return null;
+    return { ok: false, error: "Classification unavailable.", code: "network_error" };
   }
 }
 
@@ -173,9 +216,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
 
-  // Side panel / content-script -> background: classify a question on demand
+  // Side panel / content-script -> background: classify on explicit user
+  // action ("Generate Answer"). Any framework supplied by the caller is
+  // ignored — only the server's classification is trusted.
   if (message.type === "APLYER_CLASSIFY_QUESTION") {
-    classifyQuestion(message.question).then((c) => sendResponse?.({ ok: !!c, classification: c }));
+    (async () => {
+      let tabId = sender?.tab?.id ?? message.tabId;
+      if (tabId == null) {
+        try {
+          const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+          tabId = tab?.id ?? null;
+        } catch (e) { console.warn("[Aplyer] tabs.query failed", String(e)); }
+      }
+      const question = { ...(message.question || {}) };
+      delete question.framework;
+      sendResponse?.(await classifyQuestionForTab(tabId, question));
+    })();
+    return true;
+  }
+
+  // Side panel -> background: read the framework for the active tab only.
+  if (message.type === "APLYER_GET_FRAMEWORK") {
+    (async () => {
+      let tabId = message.tabId;
+      if (tabId == null) {
+        try {
+          const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+          tabId = tab?.id ?? null;
+        } catch (e) { console.warn("[Aplyer] tabs.query failed", String(e)); }
+      }
+      const map = await readFrameworkMap();
+      sendResponse?.({ entry: tabId != null ? map[String(tabId)] ?? null : null });
+    })();
     return true;
   }
 
@@ -201,18 +273,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       } catch (e) {
         console.warn("[Aplyer] sidePanel.open failed", e);
       }
-      // Classify asynchronously and enrich the selected question in place —
-      // the side panel re-renders from the storage change.
-      if (payload.question) {
-        classifyQuestion({ ...payload.question, platformKey: payload.platformKey }).then((c) => {
-          if (!c) return;
-          chrome.storage.local.get(SELECTED_KEY, (res) => {
-            const cur = res[SELECTED_KEY];
-            if (!cur || cur.questionId !== payload.question.questionId) return;
-            chrome.storage.local.set({ [SELECTED_KEY]: { ...cur, framework: c.framework, frameworkConfidence: c.confidence, frameworkReason: c.reason } });
-          });
-        });
-      }
+      // Classification is NOT run here. It happens only when the user
+      // explicitly chooses "Generate Answer" in the side panel.
+      if (tabId != null) writeFrameworkEntry(tabId, null);
       sendResponse?.({ ok: true });
     });
     return true;
