@@ -298,6 +298,36 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  // Side panel -> background: generate a validated answer.
+  if (message.type === "APLYER_GENERATE_ANSWER") {
+    (async () => {
+      const q = String(message.question || "").slice(0, 2000);
+      const job = message.job || null;
+      sendResponse?.(
+        await requestValidatedAnswer({
+          question: q,
+          job: job
+            ? { title: job.title, company: job.company, description: job.description }
+            : null,
+          force: message.force === true,
+        }),
+      );
+    })();
+    return true;
+  }
+
+  // Side panel -> background: store the resume-only phrasing choice.
+  if (message.type === "APLYER_CHOOSE_ANSWER_OPTION") {
+    (async () => {
+      sendResponse?.(
+        await requestValidatedAnswer({
+          select: { answerId: message.answerId, variantId: message.variantId },
+        }),
+      );
+    })();
+    return true;
+  }
+
   // Side panel -> background: read the framework for the active tab only.
   if (message.type === "APLYER_GET_FRAMEWORK") {
     (async () => {
