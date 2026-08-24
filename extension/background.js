@@ -483,6 +483,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.storage.local.get(SESSION_KEY, (res) => sendResponse({ session: res[SESSION_KEY] ?? null }));
     return true;
   }
+  // Side panel -> background: open the web auth bridge in a new tab.
+  if (message.type === "APLYER_OPEN_SIGN_IN") {
+    try {
+      chrome.tabs.create({ url: `${API_BASE}/extension-auth?ext=${encodeURIComponent(chrome.runtime.id)}` });
+    } catch (e) { console.warn("[Aplyer] open sign-in failed", String(e)); }
+    sendResponse?.({ ok: true });
+    return true;
+  }
   if (message.type === "APLYER_SIGN_OUT") {
     chrome.storage.local.clear(() => sendResponse({ ok: true }));
     return true;
