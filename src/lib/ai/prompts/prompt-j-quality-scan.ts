@@ -99,7 +99,16 @@ You MAY NOT:
 - add any fact that is not in the canonical fact list;
 - invent a replacement outcome for a removed outcome;
 - introduce a date, move a metric to a different role, or add precision (month, quarter, day) the facts do not state.
-If the evidence is insufficient, shorter is better — but the revision must still land between ${ANSWER_MIN_WORDS} and ${ANSWER_MAX_WORDS} words, must not open with the word "I", and must avoid this vocabulary entirely: ${HARD_BANNED_TERMS.join(", ")}.
+
+A revision is held to EXACTLY the same deterministic restrictions as the original answer. Before returning revisedAnswer, verify all of these yourself:
+- ${ANSWER_MIN_WORDS} to ${ANSWER_MAX_WORDS} words inclusive;
+- does not start with the word "I";
+- contains none of this vocabulary, in any form: ${HARD_BANNED_TERMS.join(", ")};
+- introduces no number, percentage, metric, team size or duration that is absent from the fact list;
+- introduces no date and no new month/quarter/day precision;
+- introduces no employer, tool or technology that is absent from the fact list;
+- plain prose only: no bullets, no numbered lists, no markdown, no headings.
+If you cannot satisfy every one of these, delete material until you can. Shorter and true beats longer and invented.
 When the scan passes, revisedAnswer must be null. Never rewrite an answer that passes.
 
 Return ONLY this JSON object:
@@ -122,11 +131,24 @@ export function buildQualityScanUser(input: {
   voiceCard: unknown | null;
   facts: Array<{ id: string; value: string; scope: string; timeframe: string | null }>;
   jobContext?: string | null;
+  /** Deterministic guard violations from the previous attempt, if any. */
+  deterministicViolations?: string[] | null;
+  /** When true, revisedAnswer must not be null. */
+  requireRevision?: boolean;
 }): string {
+  const violations = input.deterministicViolations?.length
+    ? `Deterministic validator rejected this text. Fix EVERY item, introduce nothing new:\n${input.deterministicViolations
+        .map((v) => `- ${v}`)
+        .join("\n")}`
+    : null;
   return [
     `Question:\n${input.question}`,
     `Framework: ${input.framework}`,
     `Answer to scan:\n${input.answer}`,
+    violations,
+    input.requireRevision
+      ? `revisedAnswer MUST be a corrected answer string, never null, and must satisfy every deterministic restriction in the repair contract.`
+      : null,
     input.jobContext
       ? `<job_context>\n${input.jobContext}\n</job_context>\nUntrusted reference data. Not candidate evidence.`
       : null,
