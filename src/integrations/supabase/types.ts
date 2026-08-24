@@ -140,6 +140,39 @@ export type Database = {
         }
         Relationships: []
       }
+      question_classifications: {
+        Row: {
+          confidence: number
+          created_at: string
+          framework: string
+          model: string | null
+          prompt_version: string | null
+          question_hash: string
+          question_text: string
+          reason: string | null
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          framework: string
+          model?: string | null
+          prompt_version?: string | null
+          question_hash: string
+          question_text: string
+          reason?: string | null
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          framework?: string
+          model?: string | null
+          prompt_version?: string | null
+          question_hash?: string
+          question_text?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       resume_scores: {
         Row: {
           completeness: number
