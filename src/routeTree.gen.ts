@@ -30,6 +30,7 @@ import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_au
 import { Route as AuthenticatedDashboardResumeRouteImport } from './routes/_authenticated/dashboard.resume'
 import { Route as AuthenticatedDashboardProfileRouteImport } from './routes/_authenticated/dashboard.profile'
 import { Route as ApiPublicExtensionVoicecardRouteImport } from './routes/api/public/extension.voicecard'
+import { Route as ApiPublicAiClassifyQuestionRouteImport } from './routes/api/public/ai.classify-question'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -143,6 +144,12 @@ const ApiPublicExtensionVoicecardRoute =
     path: '/api/public/extension/voicecard',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAiClassifyQuestionRoute =
+  ApiPublicAiClassifyQuestionRouteImport.update({
+    id: '/api/public/ai/classify-question',
+    path: '/api/public/ai/classify-question',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
   '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/api/public/ai/classify-question': typeof ApiPublicAiClassifyQuestionRoute
   '/api/public/extension/voicecard': typeof ApiPublicExtensionVoicecardRoute
 }
 export interface FileRoutesByTo {
@@ -185,6 +193,7 @@ export interface FileRoutesByTo {
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
   '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
+  '/api/public/ai/classify-question': typeof ApiPublicAiClassifyQuestionRoute
   '/api/public/extension/voicecard': typeof ApiPublicExtensionVoicecardRoute
 }
 export interface FileRoutesById {
@@ -209,6 +218,7 @@ export interface FileRoutesById {
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
   '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/api/public/ai/classify-question': typeof ApiPublicAiClassifyQuestionRoute
   '/api/public/extension/voicecard': typeof ApiPublicExtensionVoicecardRoute
 }
 export interface FileRouteTypes {
@@ -233,6 +243,7 @@ export interface FileRouteTypes {
     | '/api/public/subscribe'
     | '/api/public/waitlist-upload'
     | '/dashboard/'
+    | '/api/public/ai/classify-question'
     | '/api/public/extension/voicecard'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -254,6 +265,7 @@ export interface FileRouteTypes {
     | '/api/public/subscribe'
     | '/api/public/waitlist-upload'
     | '/dashboard'
+    | '/api/public/ai/classify-question'
     | '/api/public/extension/voicecard'
   id:
     | '__root__'
@@ -277,6 +289,7 @@ export interface FileRouteTypes {
     | '/api/public/subscribe'
     | '/api/public/waitlist-upload'
     | '/_authenticated/dashboard/'
+    | '/api/public/ai/classify-question'
     | '/api/public/extension/voicecard'
   fileRoutesById: FileRoutesById
 }
@@ -292,6 +305,7 @@ export interface RootRouteChildren {
   ApiPublicJobSafetyCheckRoute: typeof ApiPublicJobSafetyCheckRoute
   ApiPublicSubscribeRoute: typeof ApiPublicSubscribeRoute
   ApiPublicWaitlistUploadRoute: typeof ApiPublicWaitlistUploadRoute
+  ApiPublicAiClassifyQuestionRoute: typeof ApiPublicAiClassifyQuestionRoute
   ApiPublicExtensionVoicecardRoute: typeof ApiPublicExtensionVoicecardRoute
 }
 
@@ -444,6 +458,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicExtensionVoicecardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ai/classify-question': {
+      id: '/api/public/ai/classify-question'
+      path: '/api/public/ai/classify-question'
+      fullPath: '/api/public/ai/classify-question'
+      preLoaderRoute: typeof ApiPublicAiClassifyQuestionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -507,6 +528,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicJobSafetyCheckRoute: ApiPublicJobSafetyCheckRoute,
   ApiPublicSubscribeRoute: ApiPublicSubscribeRoute,
   ApiPublicWaitlistUploadRoute: ApiPublicWaitlistUploadRoute,
+  ApiPublicAiClassifyQuestionRoute: ApiPublicAiClassifyQuestionRoute,
   ApiPublicExtensionVoicecardRoute: ApiPublicExtensionVoicecardRoute,
 }
 export const routeTree = rootRouteImport
