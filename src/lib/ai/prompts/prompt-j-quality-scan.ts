@@ -59,7 +59,7 @@ export const QUALITY_CHECK_CODES: Record<number, string> = Object.fromEntries(
 
 export const PROMPT_J_QUALITY_SCAN: PromptSpec = {
   id: "J_QUALITY_SCAN",
-  version: "2.1.0",
+  version: "2.2.0",
   model: MODEL_OPUS,
   maxTokens: 3000,
   temperature: 0,
