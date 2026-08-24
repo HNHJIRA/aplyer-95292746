@@ -14,7 +14,7 @@
 // Raw resume text never enters this module. No fact, framework, model, prompt
 // version, voice card or user id is ever accepted from the browser.
 import { classifyQuestion, ClassificationError } from "./classify-question.server";
-import { requireReadyFactInventory, FactInventoryError, sha256Hex } from "./fact-inventory.server";
+import { requireReadyFactInventory, ensureReadyFactInventory, FactInventoryError, sha256Hex } from "./fact-inventory.server";
 import { flattenInventory, toPromptFacts, type FlattenedInventory } from "./answer-facts";
 import { runAnswerGuards, type GuardViolation } from "./answer-guards";
 import { PromptError, runPromptValidated } from "./run-prompt.server";
@@ -365,7 +365,7 @@ export async function generateValidatedAnswer(
   // 2. The ONLY grounding gate.
   let gate: Awaited<ReturnType<typeof requireReadyFactInventory>>;
   try {
-    gate = await requireReadyFactInventory(supabase, userId);
+    gate = await ensureReadyFactInventory(supabase, userId, { writeDb: write });
   } catch (e) {
     if (e instanceof FactInventoryError) throw new AnswerPipelineError(e.code, e.message);
     throw e;
