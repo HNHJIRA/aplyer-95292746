@@ -69,3 +69,8 @@ main, .cards { flex: 1 1 auto; }
 }
 .q-generate:disabled { opacity: .6; cursor: default; }
 .q-error { color: var(--red, #E5373A); }
+
+.answer-actions { display: flex; gap: 8px; margin-top: 10px; }
+.q-secondary { background: transparent; color: #1DB954; border: 1px solid #1DB954; }
+.choice-option { border: 1px solid #E6E8EB; border-radius: 10px; padding: 10px; margin-top: 10px; }
+.choice-option .q-generate { margin-top: 8px; }
