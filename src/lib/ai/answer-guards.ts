@@ -93,7 +93,13 @@ function spelledDurationClaims(text: string): Array<{ word: string; unit: string
  * tool names (. + # &) are preserved.
  */
 function words(s: string): string {
-  return normalizeText(s).replace(/[,;:!?'"()]/g, " ").replace(/\s+/g, " ").trim();
+  return normalizeText(s)
+    .replace(/[,;:!?'"()]/g, " ")
+    // Sentence-final periods become separators; periods inside tool names
+    // (node.js, next.js, .net) are followed by a letter and stay intact.
+    .replace(/\.(?![a-z0-9])/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function pad(s: string): string {
@@ -134,7 +140,9 @@ export function runAnswerGuards(answer: string, flat: FlattenedInventory): Guard
   // 3. Hard-banned vocabulary.
   const padded = pad(text);
   for (const term of HARD_BANNED_TERMS) {
-    if (padded.includes(` ${normalizeText(term)} `)) add("banned_vocabulary", term);
+    // Both sides go through the same canonicalization so punctuation inside a
+    // banned phrase (apostrophes, hyphens) can never let it slip through.
+    if (padded.includes(pad(term))) add("banned_vocabulary", term);
   }
 
   // 4. Formatting rules — prose only.

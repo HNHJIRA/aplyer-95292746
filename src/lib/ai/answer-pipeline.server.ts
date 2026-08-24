@@ -223,7 +223,11 @@ function guardCodes(v: GuardViolation[]): string[] {
   return [...new Set(v.filter((x) => x.blocking !== false).map((x) => x.code))];
 }
 
-async function scan(input: GenerateOneInput, answer: string) {
+async function scan(
+  input: GenerateOneInput,
+  answer: string,
+  opts: { deterministicViolations?: string[]; requireRevision?: boolean } = {},
+) {
   input.budget.logicalScans += 1;
   const run = await runPromptValidated(
     PROMPT_J_QUALITY_SCAN,
@@ -239,6 +243,8 @@ async function scan(input: GenerateOneInput, answer: string) {
             .map((v) => sanitizeJobContextText(String(v)))
             .join("\n")
         : null,
+      deterministicViolations: opts.deterministicViolations ?? null,
+      requireRevision: opts.requireRevision === true,
     }),
     validateQualityScan,
     QUALITY_SCAN_RETRY_INSTRUCTION,
@@ -247,7 +253,33 @@ async function scan(input: GenerateOneInput, answer: string) {
   return run.value;
 }
 
-async function generateValidatedVariant(input: GenerateOneInput): Promise<{
+function logGuardFailure(stage: string, guards: ReturnType<typeof runAnswerGuards>) {
+  console.warn(
+    JSON.stringify({
+      evt: "answer_guard_failed",
+      stage,
+      codes: guardCodes(guards.violations),
+      details: guards.violations.filter((v) => v.blocking !== false).map((v) => v.detail),
+    }),
+  );
+}
+
+/** Human-readable constraint feedback for Prompt J. Never contains user data. */
+function guardFeedback(guards: ReturnType<typeof runAnswerGuards>): string[] {
+  return guards.violations
+    .filter((v) => v.blocking !== false)
+    .map((v) => `${v.code}: ${v.detail}`);
+}
+
+function qualityFailed(codes: string[]): AnswerPipelineError {
+  return new AnswerPipelineError(
+    "quality_failed",
+    "We couldn't produce an answer you can trust. Try again.",
+    [...new Set(codes)],
+  );
+}
+
+export async function generateValidatedVariant(input: GenerateOneInput): Promise<{
   answer: string;
   factIdsUsed: string[];
   wordCount: number;
@@ -280,10 +312,10 @@ async function generateValidatedVariant(input: GenerateOneInput): Promise<{
   const draftGuards = runAnswerGuards(draft.answer, input.flat);
 
   // 3. Prompt J initial scan.
-  let scanResult = await scan(input, draft.answer);
+  const firstScan = await scan(input, draft.answer);
 
   // 4. Clean answers are shipped untouched — never paraphrase a passing answer.
-  if (scanResult.passed && draftGuards.passed) {
+  if (firstScan.passed && draftGuards.passed) {
     return {
       answer: draft.answer,
       factIdsUsed: draft.factIdsUsed,
@@ -293,69 +325,89 @@ async function generateValidatedVariant(input: GenerateOneInput): Promise<{
     };
   }
 
-  if (!draftGuards.passed) {
-    console.warn(
-      JSON.stringify({
-        evt: "answer_guard_failed",
-        stage: "draft",
-        codes: guardCodes(draftGuards.violations),
-        details: draftGuards.violations.filter((v) => v.blocking !== false).map((v) => v.detail),
-      }),
-    );
+  if (!draftGuards.passed) logGuardFailure("draft", draftGuards);
+
+  // 5. A draft that only fails soft advisory checks (and passes every
+  //    deterministic guard and every hard blocker) ships as-is. Soft checks are
+  //    stylistic opinions; failing closed on them is a false-positive rejection.
+  if (draftGuards.passed && !hasHardBlocker(firstScan) && !firstScan.revisedAnswer) {
+    return {
+      answer: draft.answer,
+      factIdsUsed: draft.factIdsUsed,
+      wordCount: draft.wordCount,
+      blockingCodes: firstScan.blockingCodes,
+      revisionCount: 0,
+    };
   }
 
-  if (hasHardBlocker(scanResult) && !scanResult.revisedAnswer) {
-    throw new AnswerPipelineError(
-      "quality_failed",
-      "We couldn't produce an answer you can trust. Try again.",
-      [...guardCodes(draftGuards.violations), ...scanResult.blockingCodes],
-    );
-  }
+  // 6. Repair path. At most two revision attempts, no unbounded loop.
+  let candidate = firstScan.revisedAnswer;
+  let corrections = 0;
 
-  // 5. One controlled repair, then a final re-scan.
-  const repaired = scanResult.revisedAnswer;
-  if (!repaired) {
-    throw new AnswerPipelineError(
-      "quality_failed",
-      "We couldn't produce an answer you can trust. Try again.",
-      [...guardCodes(draftGuards.violations), ...scanResult.blockingCodes],
-    );
+  // The scan produced no revision but the deterministic guards rejected the
+  // draft: spend the single correction opportunity telling J exactly which
+  // deterministic constraints were violated.
+  if (!candidate) {
+    if (draftGuards.passed) {
+      throw qualityFailed([...firstScan.blockingCodes]);
+    }
+    corrections += 1;
+    const forced = await scan(input, draft.answer, {
+      deterministicViolations: guardFeedback(draftGuards),
+      requireRevision: true,
+    });
+    candidate = forced.revisedAnswer;
+    if (!candidate) {
+      throw qualityFailed([...guardCodes(draftGuards.violations), ...forced.blockingCodes]);
+    }
   }
   input.budget.repairs += 1;
 
-  const repairedGuards = runAnswerGuards(repaired, input.flat);
-  if (!repairedGuards.passed) {
-    console.warn(
-      JSON.stringify({
-        evt: "answer_guard_failed",
-        stage: "repair",
-        codes: guardCodes(repairedGuards.violations),
-        details: repairedGuards.violations.filter((v) => v.blocking !== false).map((v) => v.detail),
-      }),
-    );
-    throw new AnswerPipelineError(
-      "quality_failed",
-      "We couldn't produce an answer you can trust. Try again.",
-      guardCodes(repairedGuards.violations),
-    );
+  // 7. Deterministic validation of the revision, before any re-scan.
+  let candidateGuards = runAnswerGuards(candidate, input.flat);
+  if (!candidateGuards.passed) {
+    logGuardFailure("repair", candidateGuards);
+    if (corrections >= 1) {
+      throw qualityFailed(guardCodes(candidateGuards.violations));
+    }
+    corrections += 1;
+    const corrected = await scan(input, candidate, {
+      deterministicViolations: guardFeedback(candidateGuards),
+      requireRevision: true,
+    });
+    input.budget.repairs += 1;
+    if (!corrected.revisedAnswer) {
+      throw qualityFailed(guardCodes(candidateGuards.violations));
+    }
+    candidate = corrected.revisedAnswer;
+    candidateGuards = runAnswerGuards(candidate, input.flat);
+    if (!candidateGuards.passed) {
+      logGuardFailure("repair_2", candidateGuards);
+      throw qualityFailed(guardCodes(candidateGuards.violations));
+    }
   }
 
-  scanResult = await scan(input, repaired);
-  if (!scanResult.passed) {
-    throw new AnswerPipelineError(
-      "quality_failed",
-      "We couldn't produce an answer you can trust. Try again.",
-      scanResult.blockingCodes,
-    );
+  // 8. Final re-scan. Only hard blockers can stop a deterministically clean
+  //    answer; soft checks are recorded as diagnostics.
+  const finalScan = await scan(input, candidate);
+  if (hasHardBlocker(finalScan)) {
+    throw qualityFailed(finalScan.blockingCodes);
+  }
+
+  // 9. Final deterministic post-guard on exactly what ships.
+  const shipGuards = runAnswerGuards(candidate, input.flat);
+  if (!shipGuards.passed) {
+    logGuardFailure("final", shipGuards);
+    throw qualityFailed(guardCodes(shipGuards.violations));
   }
 
   return {
-    answer: repaired,
+    answer: candidate,
     // The repair may drop facts; keep only ids whose value survives verbatim-ish.
     factIdsUsed: draft.factIdsUsed,
-    wordCount: countWords(repaired),
-    blockingCodes: scanResult.blockingCodes,
-    revisionCount: 1,
+    wordCount: countWords(candidate),
+    blockingCodes: finalScan.blockingCodes,
+    revisionCount: corrections + 1,
   };
 }
 
