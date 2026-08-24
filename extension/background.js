@@ -156,6 +156,36 @@ async function ensureFactInventory({ ensure = true } = {}) {
   }
 }
 
+/**
+ * Validated answer request. The extension sends ONLY the question text and the
+ * page's job context. Framework, facts, profile mode, models and prompt
+ * versions are all decided server-side and never sent from here.
+ */
+async function requestValidatedAnswer(payload = {}) {
+  const store = await chrome.storage.local.get([SESSION_KEY]);
+  const token = store[SESSION_KEY]?.access_token;
+  if (!token) return { ok: false, error: "Please sign in to Aplyer first.", code: "unauthenticated" };
+  try {
+    const res = await fetch(`${API_BASE}/api/public/generate-answer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.ok) {
+      return {
+        ok: false,
+        error: json?.error || "We couldn't produce an answer you can trust. Try again.",
+        code: json?.code || `http_${res.status}`,
+      };
+    }
+    return json;
+  } catch (e) {
+    console.warn("[Aplyer] answer request failed", String(e));
+    return { ok: false, error: "We couldn't reach Aplyer. Check your connection.", code: "network_error" };
+  }
+}
+
 // Proactive path: tab URL access is granted by host_permissions for supported
 // ATS hosts, so the check runs even if the content script never messages us.
 chrome.tabs?.onUpdated?.addListener((tabId, changeInfo, tab) => {
@@ -264,6 +294,36 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "APLYER_ENSURE_FACT_INVENTORY") {
     (async () => {
       sendResponse?.(await ensureFactInventory({ ensure: message.ensure !== false }));
+    })();
+    return true;
+  }
+
+  // Side panel -> background: generate a validated answer.
+  if (message.type === "APLYER_GENERATE_ANSWER") {
+    (async () => {
+      const q = String(message.question || "").slice(0, 2000);
+      const job = message.job || null;
+      sendResponse?.(
+        await requestValidatedAnswer({
+          question: q,
+          job: job
+            ? { title: job.title, company: job.company, description: job.description }
+            : null,
+          force: message.force === true,
+        }),
+      );
+    })();
+    return true;
+  }
+
+  // Side panel -> background: store the resume-only phrasing choice.
+  if (message.type === "APLYER_CHOOSE_ANSWER_OPTION") {
+    (async () => {
+      sendResponse?.(
+        await requestValidatedAnswer({
+          select: { answerId: message.answerId, variantId: message.variantId },
+        }),
+      );
     })();
     return true;
   }

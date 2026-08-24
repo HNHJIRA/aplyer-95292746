@@ -344,7 +344,7 @@ export async function ensureFactInventory(
 export async function requireReadyFactInventory(
   supabase: Db,
   userId: string,
-): Promise<{ inventory: ResumeFactInventory; resumeId: string; model: string }> {
+): Promise<{ inventory: ResumeFactInventory; resumeId: string; model: string; sourceHash: string }> {
   const resume = await resolveCurrentResume(supabase, userId);
   const row = await loadRow(supabase, userId, resume.id);
   if (!row) throw new FactInventoryError("inventory_missing", "Profile context is not prepared yet.");
@@ -365,5 +365,6 @@ export async function requireReadyFactInventory(
     inventory: row.inventory_json as ResumeFactInventory,
     resumeId: resume.id,
     model: row.model as string,
+    sourceHash: expected,
   };
 }

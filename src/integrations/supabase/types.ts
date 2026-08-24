@@ -14,6 +14,122 @@ export type Database = {
   }
   public: {
     Tables: {
+      generated_answers: {
+        Row: {
+          answer_text: string | null
+          cache_key: string
+          created_at: string
+          error: string | null
+          fact_ids_used: string[]
+          framework: string
+          generated_at: string | null
+          generation_id: string | null
+          generation_started_at: string | null
+          id: string
+          inventory_source_hash: string | null
+          job_context_hash: string | null
+          logical_scan_count: number
+          mode: string
+          model_a: string | null
+          model_j: string | null
+          prompt_a_version: string | null
+          prompt_i_version: string | null
+          prompt_j_version: string | null
+          provider_call_count: number
+          quality_blocking: string[]
+          quality_passed: boolean
+          question_hash: string
+          question_text: string
+          resume_id: string | null
+          revision_count: number
+          status: string
+          updated_at: string
+          user_id: string
+          variants: Json | null
+          voice_card_source_hash: string | null
+          word_count: number | null
+          writedna_version: string | null
+        }
+        Insert: {
+          answer_text?: string | null
+          cache_key: string
+          created_at?: string
+          error?: string | null
+          fact_ids_used?: string[]
+          framework: string
+          generated_at?: string | null
+          generation_id?: string | null
+          generation_started_at?: string | null
+          id?: string
+          inventory_source_hash?: string | null
+          job_context_hash?: string | null
+          logical_scan_count?: number
+          mode?: string
+          model_a?: string | null
+          model_j?: string | null
+          prompt_a_version?: string | null
+          prompt_i_version?: string | null
+          prompt_j_version?: string | null
+          provider_call_count?: number
+          quality_blocking?: string[]
+          quality_passed?: boolean
+          question_hash: string
+          question_text: string
+          resume_id?: string | null
+          revision_count?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+          variants?: Json | null
+          voice_card_source_hash?: string | null
+          word_count?: number | null
+          writedna_version?: string | null
+        }
+        Update: {
+          answer_text?: string | null
+          cache_key?: string
+          created_at?: string
+          error?: string | null
+          fact_ids_used?: string[]
+          framework?: string
+          generated_at?: string | null
+          generation_id?: string | null
+          generation_started_at?: string | null
+          id?: string
+          inventory_source_hash?: string | null
+          job_context_hash?: string | null
+          logical_scan_count?: number
+          mode?: string
+          model_a?: string | null
+          model_j?: string | null
+          prompt_a_version?: string | null
+          prompt_i_version?: string | null
+          prompt_j_version?: string | null
+          provider_call_count?: number
+          quality_blocking?: string[]
+          quality_passed?: boolean
+          question_hash?: string
+          question_text?: string
+          resume_id?: string | null
+          revision_count?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+          variants?: Json | null
+          voice_card_source_hash?: string | null
+          word_count?: number | null
+          writedna_version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_answers_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           ab_demo_answer: string | null
@@ -35,7 +151,9 @@ export type Database = {
           location: string | null
           phone: string | null
           portfolio: string | null
+          preferred_variant_answer_id: string | null
           preferred_variant_id: string | null
+          preferred_variant_selected_at: string | null
           qualifying_prose_count: number
           resume_only: boolean
           resume_uploaded: boolean
@@ -76,7 +194,9 @@ export type Database = {
           location?: string | null
           phone?: string | null
           portfolio?: string | null
+          preferred_variant_answer_id?: string | null
           preferred_variant_id?: string | null
+          preferred_variant_selected_at?: string | null
           qualifying_prose_count?: number
           resume_only?: boolean
           resume_uploaded?: boolean
@@ -117,7 +237,9 @@ export type Database = {
           location?: string | null
           phone?: string | null
           portfolio?: string | null
+          preferred_variant_answer_id?: string | null
           preferred_variant_id?: string | null
+          preferred_variant_selected_at?: string | null
           qualifying_prose_count?: number
           resume_only?: boolean
           resume_uploaded?: boolean
