@@ -128,10 +128,21 @@ export function runAnswerGuards(answer: string, flat: FlattenedInventory): Guard
     if (!supportedNumbers.has(n)) add("unsupported_number", n);
   }
 
-  // 6. Durations and years-of-experience claims.
+  // 6. Durations and years-of-experience claims (digits and spelled out).
   for (const d of durationClaims(text)) {
     if (!corpus.includes(d)) add("unsupported_duration", d);
   }
+  for (const d of spelledDurationClaims(text)) {
+    // A spelled duration is supported only when the same duration, in either
+    // spelling, is present in the inventory corpus.
+    const digits = SPELLED_NUMBERS[d.word];
+    const digitForm = digits ? `${digits} ${d.unit}` : null;
+    const supported =
+      paddedCorpus.includes(` ${d.word} ${d.unit} `) ||
+      (digitForm ? corpus.includes(digitForm) : false);
+    if (!supported) add("unsupported_duration", `${d.word} ${d.unit}`);
+  }
+
 
   // 7. Month/day granularity the inventory never states.
   for (const m of MONTHS) {
