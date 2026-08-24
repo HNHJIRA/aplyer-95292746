@@ -96,14 +96,16 @@ describe("multi-role resume", () => {
 
   it("does not transfer role-specific claims when the same technology appears twice", () => {
     const d = draft();
+    // A React claim invented for Company A by paraphrasing Company B's line.
     d.experience[0].facts.push(
       fact(
-        "Used React to build the reporting pipeline",
-        "Worked with React on the customer portal.",
+        "Used React to build the reporting pipeline at Company A",
+        "Used React to build the reporting pipeline at Company A",
         "Experience — Company A",
       ),
     );
-    const { inventory } = ground(d);
+    const { inventory, rejections } = ground(d);
+    expect(rejections.map((r) => r.reason)).toContain("evidence_not_in_resume");
     expect(inventory.experience[0].facts.map((f) => f.value)).toEqual([
       "Worked with React on the customer portal",
     ]);
