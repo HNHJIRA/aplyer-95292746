@@ -131,9 +131,12 @@ async function load() {
       if (tab?.id != null) safety = map[String(tab.id)] || null;
     } catch { /* no tabs access */ }
     if (safety) renderSafety(safety);
+    // Canonical answer state comes from the background, never from this panel.
+    try { await restoreAnswerState(); } catch (e) { console.warn("[Aplyer] restore failed", e); }
     const fresh = await askBackgroundSafety();
     if (fresh) renderSafety(fresh);
     else if (!safety) renderSafety(null);
+
   } catch (e) {
     // Fail safe — never throw user-visible errors in the panel.
     console.warn("[Aplyer] sidepanel load failed", e);
