@@ -144,7 +144,7 @@ describe("deterministic guards", () => {
 
   it("rejects month-level precision the inventory never states", () => {
     const r = runAnswerGuards(pad("Starting in March, the checkout rework shipped at Northwind."), flat);
-    expect(r.violations.some((v) => v.code === "unsupported_date")).toBe(true);
+    expect(r.violations.some((v) => v.code === "unsupported_date_precision")).toBe(true);
   });
 
   it("rejects a tool the resume never mentions", () => {
@@ -167,7 +167,7 @@ describe("deterministic guards", () => {
 
   it("blocks present-tense currency claims when no role is current", () => {
     const r = runAnswerGuards(pad("Currently the checkout platform work continues at Northwind."), flat);
-    expect(r.violations.some((v) => v.code === "unsupported_currency_claim")).toBe(true);
+    expect(r.violations.some((v) => v.code === "invalid_current_tense")).toBe(true);
   });
 
   it("enforces the No-I opening rule", () => {

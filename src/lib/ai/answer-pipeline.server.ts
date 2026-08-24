@@ -46,10 +46,13 @@ export type GenerationMode = "writedna" | "resume_only_first_choice" | "resume_o
 
 export class AnswerPipelineError extends Error {
   readonly code: string;
-  constructor(code: string, message: string) {
+  /** Internal reason codes for diagnostics. Never shown to users. */
+  readonly reasonCodes: string[];
+  constructor(code: string, message: string, reasonCodes: string[] = []) {
     super(message);
     this.name = "AnswerPipelineError";
     this.code = code;
+    this.reasonCodes = reasonCodes;
   }
 }
 
@@ -215,8 +218,9 @@ interface GenerateOneInput {
   budget: Budget;
 }
 
+/** Blocking guard reason codes, de-duplicated. Diagnostics only. */
 function guardCodes(v: GuardViolation[]): string[] {
-  return [...new Set(v.map((x) => x.code))];
+  return [...new Set(v.filter((x) => x.blocking !== false).map((x) => x.code))];
 }
 
 async function scan(input: GenerateOneInput, answer: string) {
@@ -289,10 +293,22 @@ async function generateValidatedVariant(input: GenerateOneInput): Promise<{
     };
   }
 
+  if (!draftGuards.passed) {
+    console.warn(
+      JSON.stringify({
+        evt: "answer_guard_failed",
+        stage: "draft",
+        codes: guardCodes(draftGuards.violations),
+        details: draftGuards.violations.filter((v) => v.blocking !== false).map((v) => v.detail),
+      }),
+    );
+  }
+
   if (hasHardBlocker(scanResult) && !scanResult.revisedAnswer) {
     throw new AnswerPipelineError(
       "quality_failed",
       "We couldn't produce an answer you can trust. Try again.",
+      [...guardCodes(draftGuards.violations), ...scanResult.blockingCodes],
     );
   }
 
@@ -302,6 +318,7 @@ async function generateValidatedVariant(input: GenerateOneInput): Promise<{
     throw new AnswerPipelineError(
       "quality_failed",
       "We couldn't produce an answer you can trust. Try again.",
+      [...guardCodes(draftGuards.violations), ...scanResult.blockingCodes],
     );
   }
   input.budget.repairs += 1;
@@ -309,11 +326,17 @@ async function generateValidatedVariant(input: GenerateOneInput): Promise<{
   const repairedGuards = runAnswerGuards(repaired, input.flat);
   if (!repairedGuards.passed) {
     console.warn(
-      JSON.stringify({ evt: "answer_guard_failed", stage: "repair", codes: guardCodes(repairedGuards.violations) }),
+      JSON.stringify({
+        evt: "answer_guard_failed",
+        stage: "repair",
+        codes: guardCodes(repairedGuards.violations),
+        details: repairedGuards.violations.filter((v) => v.blocking !== false).map((v) => v.detail),
+      }),
     );
     throw new AnswerPipelineError(
       "quality_failed",
       "We couldn't produce an answer you can trust. Try again.",
+      guardCodes(repairedGuards.violations),
     );
   }
 
@@ -322,6 +345,7 @@ async function generateValidatedVariant(input: GenerateOneInput): Promise<{
     throw new AnswerPipelineError(
       "quality_failed",
       "We couldn't produce an answer you can trust. Try again.",
+      scanResult.blockingCodes,
     );
   }
 
@@ -525,7 +549,10 @@ export async function generateValidatedAnswer(
         : e instanceof PromptError
           ? e.code
           : "pipeline_failed";
-    console.error(JSON.stringify({ evt: "answer_pipeline_failed", code, mode, framework }));
+    const reasonCodes = e instanceof AnswerPipelineError ? e.reasonCodes : [];
+    console.error(
+      JSON.stringify({ evt: "answer_pipeline_failed", code, reasonCodes, mode, framework }),
+    );
 
     await write
       .from(ANSWERS_TABLE)
@@ -534,6 +561,7 @@ export async function generateValidatedAnswer(
         answer_text: null,
         variants: null,
         quality_passed: false,
+        quality_blocking: reasonCodes,
         error: code,
         revision_count: budget.repairs,
         logical_scan_count: budget.logicalScans,
