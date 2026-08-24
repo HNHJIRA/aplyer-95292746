@@ -48,7 +48,13 @@ async function runJobSafetyCheck(tabId, url) {
   return entry;
 }
 
-chrome.tabs?.onRemoved?.addListener((tabId) => { writeSafetyEntry(tabId, null); writeFrameworkEntry(tabId, null); });
+chrome.tabs?.onRemoved?.addListener((tabId) => {
+  writeSafetyEntry(tabId, null);
+  writeFrameworkEntry(tabId, null);
+  // Answer state is tab scoped — it must not survive the tab.
+  try { writeAnswerState(tabId, null); } catch (e) { void e; }
+});
+
 
 // --- Question classification (Prompt I) --------------------------------
 // The server is the only source of a trusted framework. This worker never
