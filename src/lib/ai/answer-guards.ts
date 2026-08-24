@@ -93,7 +93,13 @@ function spelledDurationClaims(text: string): Array<{ word: string; unit: string
  * tool names (. + # &) are preserved.
  */
 function words(s: string): string {
-  return normalizeText(s).replace(/[,;:!?'"()]/g, " ").replace(/\s+/g, " ").trim();
+  return normalizeText(s)
+    .replace(/[,;:!?'"()]/g, " ")
+    // Sentence-final periods become separators; periods inside tool names
+    // (node.js, next.js, .net) are followed by a letter and stay intact.
+    .replace(/\.(?![a-z0-9])/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function pad(s: string): string {
