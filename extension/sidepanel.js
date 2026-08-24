@@ -141,79 +141,157 @@ async function load() {
   }
 }
 
-
 function setGenStatus(text, isError) {
   const el = $("q-generate-status");
   el.textContent = text || "";
   el.classList.toggle("q-error", !!isError);
 }
 
-async function onGenerateAnswer() {
-  const btn = $("q-generate");
-  const data = await chrome.storage.local.get(KEY_QUESTION);
-  const question = data[KEY_QUESTION];
-  if (!question?.questionText) return;
-  btn.disabled = true;
-  setGenStatus("Analyzing this question…", false);
-  const res = await new Promise((resolve) => {
+function send(type, payload, timeoutMs) {
+  return new Promise((resolve) => {
     let done = false;
     const finish = (v) => { if (!done) { done = true; resolve(v); } };
-    setTimeout(() => finish(null), 20000);
+    setTimeout(() => finish(null), timeoutMs);
     try {
-      chrome.runtime.sendMessage(
-        // No framework is sent: the client is not a trusted classifier.
-        { type: "APLYER_CLASSIFY_QUESTION", tabId: currentTabId, question },
-        (r) => { void chrome.runtime.lastError; finish(r ?? null); },
-      );
-    } catch { finish(null); }
-  });
-  btn.disabled = false;
-  if (!res?.ok) {
-    currentFramework = null;
-    setGenStatus(res?.error || "We could not analyze this question. Please try again.", true);
-    return;
-  }
-  currentFramework = res.classification;
-  setGenStatus("Preparing your profile context…", false);
-
-  const inv = await new Promise((resolve) => {
-    let done = false;
-    const finish = (v) => { if (!done) { done = true; resolve(v); } };
-    setTimeout(() => finish(null), 30000);
-    try {
-      chrome.runtime.sendMessage({ type: "APLYER_ENSURE_FACT_INVENTORY", ensure: true }, (r) => {
+      chrome.runtime.sendMessage({ type, ...payload }, (r) => {
         void chrome.runtime.lastError;
         finish(r ?? null);
       });
     } catch { finish(null); }
   });
+}
 
+let lastAnswerId = null;
+
+function hideResults() {
+  $("answer-card").style.display = "none";
+  $("choice-card").style.display = "none";
+}
+
+function showAnswer(answer, wordCount) {
+  $("choice-card").style.display = "none";
+  $("answer-card").style.display = "";
+  $("answer-text").textContent = answer;
+  $("answer-meta").textContent = wordCount ? `${wordCount} words · quality checked` : "Quality checked";
+}
+
+function showChoice(options) {
+  $("answer-card").style.display = "none";
+  $("choice-card").style.display = "";
+  const a = options.find((o) => o.id === "A") || options[0];
+  const b = options.find((o) => o.id === "B") || options[1];
+  $("opt-a-text").textContent = a?.answer || "";
+  $("opt-b-text").textContent = b?.answer || "";
+}
+
+async function onGenerateAnswer(force) {
+  const btn = $("q-generate");
+  const data = await chrome.storage.local.get(KEY_QUESTION);
+  const question = data[KEY_QUESTION];
+  if (!question?.questionText) return;
+
+  hideResults();
+  btn.disabled = true;
+  setGenStatus("Analyzing this question…", false);
+
+  // 1. Server-side classification. No framework is sent from the client.
+  const res = await send("APLYER_CLASSIFY_QUESTION", { tabId: currentTabId, question }, 30000);
+  if (!res?.ok) {
+    currentFramework = null;
+    btn.disabled = false;
+    setGenStatus(res?.error || "We could not analyze this question. Please try again.", true);
+    return;
+  }
+  currentFramework = res.classification;
+
+  // 2. Profile context (P0). Contents never leave the server.
+  setGenStatus("Preparing your profile context…", false);
+  const inv = await send("APLYER_ENSURE_FACT_INVENTORY", { ensure: true }, 60000);
   if (!inv?.ok) {
+    btn.disabled = false;
     setGenStatus(inv?.error || "We couldn't prepare your profile context. Try again.", true);
     return;
   }
-  const status = inv.state?.status;
-  if (status === "ready") {
-    setGenStatus("Question ready. Your profile context is prepared.", false);
-  } else if (status === "extracting" || status === "pending") {
-    setGenStatus("Preparing your profile context…", false);
-  } else {
-    setGenStatus("We couldn't prepare your profile context. Try again.", true);
+  const invStatus = inv.state?.status;
+  if (invStatus !== "ready") {
+    btn.disabled = false;
+    setGenStatus(
+      invStatus === "extracting" || invStatus === "pending"
+        ? "Still preparing your profile context. Try again in a moment."
+        : "We couldn't prepare your profile context. Try again.",
+      invStatus !== "extracting" && invStatus !== "pending",
+    );
+    return;
   }
-  $("q-generate")?.addEventListener("click", () => { onGenerateAnswer(); });
 
-load();
+  // 3. Validated answer. Only the question and page job context are sent.
+  setGenStatus("Writing your answer…", false);
+  const job = {
+    title: question.jobTitle || undefined,
+    company: question.company || undefined,
+    description: question.jobDescription || undefined,
+  };
+  const out = await send(
+    "APLYER_GENERATE_ANSWER",
+    { question: question.questionText, job, force: force === true },
+    180000,
+  );
+  btn.disabled = false;
+
+  if (!out) {
+    setGenStatus("That took too long. Please try again.", true);
+    return;
+  }
+  if (!out.ok) {
+    setGenStatus(out.error || "We couldn't produce an answer you can trust. Try again.", true);
+    return;
+  }
+
+  lastAnswerId = out.answerId || null;
+  if (out.needsChoice && Array.isArray(out.options)) {
+    setGenStatus("Two wordings ready — pick the one that sounds like you.", false);
+    showChoice(out.options);
+    return;
+  }
+  setGenStatus(out.cached ? "Ready." : "Answer ready.", false);
+  showAnswer(out.answer, out.wordCount);
+}
+
+async function pickOption(variantId) {
+  if (!lastAnswerId) return;
+  setGenStatus("Saving your preference…", false);
+  const r = await send("APLYER_CHOOSE_ANSWER_OPTION", { answerId: lastAnswerId, variantId }, 30000);
+  if (!r?.ok) {
+    setGenStatus(r?.error || "We couldn't save that choice. Try again.", true);
+    return;
+  }
+  setGenStatus("Saved. Aplyer will keep this style from now on.", false);
+  showAnswer(r.answer, null);
+}
+
+function bind() {
+  $("q-generate")?.addEventListener("click", () => onGenerateAnswer(false));
+  $("answer-regen")?.addEventListener("click", () => onGenerateAnswer(true));
+  $("opt-a-pick")?.addEventListener("click", () => pickOption("A"));
+  $("opt-b-pick")?.addEventListener("click", () => pickOption("B"));
+  $("answer-copy")?.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText($("answer-text").textContent || "");
+      setGenStatus("Copied to your clipboard.", false);
+    } catch {
+      setGenStatus("Copy failed — select the text and copy manually.", true);
+    }
+  });
 }
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
-  if (changes[KEY_STATUS] || changes[KEY_QUESTION] || changes[KEY_SESSION] || changes[KEY_SAFETY] || changes[KEY_FRAMEWORKS]) $("q-generate")?.addEventListener("click", () => { onGenerateAnswer(); });
-
-load();
+  if (changes[KEY_STATUS] || changes[KEY_QUESTION] || changes[KEY_SESSION] || changes[KEY_SAFETY] || changes[KEY_FRAMEWORKS]) {
+    load();
+  }
 });
 
 document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
 
-$("q-generate")?.addEventListener("click", () => { onGenerateAnswer(); });
-
+bind();
 load();
