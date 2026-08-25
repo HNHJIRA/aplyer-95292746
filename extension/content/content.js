@@ -1,7 +1,7 @@
 // Aplyer content-script orchestrator — hardened for production.
 (function () {
   const log = window.AplyerLog;
-  const ORCH_VERSION = "1.2.0";
+  const ORCH_VERSION = "1.3.0";
 
   // Single-init guard: MV3 can inject the same content script more than once
   // (all_frames + SPA re-navigation + scripting.executeScript). A second copy
@@ -31,6 +31,10 @@
   });
 
   const knownIds = new Set();
+  /** questionId -> latest extracted question (live DOM node). */
+  const registry = new Map();
+  /** questionId -> { previous, applied, at } for one-step undo. */
+  const fillHistory = new Map();
   const questions = []; // canonical list
   let pill = null;
   let pendingScan = null;
@@ -65,9 +69,15 @@
 
     if (found.length === 0) return;
 
+    // Refresh the live registry so a re-render never leaves a stale node.
+    for (const q of found) registry.set(q.questionId, q);
+
     const fresh = found.filter((q) => {
       if (knownIds.has(q.questionId)) return false;
       if (q.fieldReference?.dataset?.aplyerSeen === "1") return false;
+      // Generate Answer is only ever offered on free-text/essay fields —
+      // never dropdowns, checkboxes, consent, contact or upload controls.
+      if (!adapter.isAnswerField(q.fieldReference, q.questionType)) return false;
       return true;
     });
 
@@ -215,6 +225,10 @@
             questionId: question.questionId,
             questionText: question.questionText,
             questionType: question.questionType,
+            questionHash: normalizeQuestion(question.questionText),
+            fieldKey: safeFieldKey(question.fieldReference),
+            adapter: adapter.name,
+            answerable: adapter.isAnswerField(question.fieldReference, question.questionType),
           } : null,
           questions: questions.map((q) => ({
             questionId: q.questionId,
@@ -226,6 +240,84 @@
       }).catch((e) => log.warn("ui", "side panel open failed", String(e)));
     } catch (e) { log.warn("ui", "sendMessage threw", String(e)); }
   }
+
+  // --- Generated-answer autofill (message target for the background) ------
+  //
+  // The side panel and background never touch page DOM. They send a validated
+  // payload here; the adapter re-resolves the live field and performs the
+  // write. No selector or script is ever accepted from the caller.
+  function normalizeQuestion(text) {
+    return String(text || "").toLowerCase().replace(/\s+/g, " ").replace(/[^a-z0-9 ?]/g, "").trim();
+  }
+
+  function safeFieldKey(el) {
+    try { return adapter.fieldKey(el) || null; } catch { return null; }
+  }
+
+  function resolveTarget(msg) {
+    const cached = registry.get(msg.questionId);
+    if (cached && window.AplyerFill.isAnswerableElement(cached.fieldReference)) {
+      if (!msg.questionHash || normalizeQuestion(cached.questionText) === msg.questionHash) {
+        return cached.fieldReference;
+      }
+    }
+    try {
+      return adapter.resolveField({
+        questionId: msg.questionId,
+        fieldKey: msg.fieldKey || null,
+        questionHash: msg.questionHash || null,
+      });
+    } catch (e) {
+      log.warn("autofill", "resolveField threw", String(e));
+      return null;
+    }
+  }
+
+  function handleAutofill(msg) {
+    if (msg.adapter && msg.adapter !== adapter.name) return { ok: false, code: "adapter_mismatch" };
+    const answer = window.AplyerFill.sanitizeAnswer(msg.answer);
+    if (!answer) return { ok: false, code: "invalid_answer" };
+    if (typeof msg.questionId !== "string" || !msg.questionId) return { ok: false, code: "invalid_target" };
+
+    const el = resolveTarget(msg);
+    if (!el) return { ok: false, code: "field_not_found" };
+    if (!adapter.isAnswerField(el, "essay") && !window.AplyerFill.isAnswerableElement(el)) {
+      return { ok: false, code: "unsupported_field" };
+    }
+    if (window.AplyerFill.hasMeaningfulText(el) && msg.force !== true) {
+      return { ok: false, code: "field_not_empty", currentValue: window.AplyerFill.readValue(el).slice(0, 400) };
+    }
+
+    let res;
+    try { res = adapter.fillField(el, answer); }
+    catch (e) { log.warn("autofill", "fillField threw", String(e)); return { ok: false, code: "write_failed" }; }
+    if (!res?.ok) return { ok: false, code: res?.code || "write_failed" };
+
+    fillHistory.set(msg.questionId, { previous: res.previousValue ?? "", applied: answer, at: Date.now() });
+    try { el.scrollIntoView({ block: "center", behavior: "smooth" }); } catch { /* ignore */ }
+    log.info("autofill", "Answer inserted", { qid: msg.questionId, chars: answer.length });
+    return { ok: true, filled: true };
+  }
+
+  function handleUndo(msg) {
+    const hist = fillHistory.get(msg.questionId);
+    if (!hist) return { ok: false, code: "nothing_to_undo" };
+    const el = resolveTarget(msg);
+    if (!el) return { ok: false, code: "field_not_found" };
+    if (window.AplyerFill.readValue(el) !== hist.applied) return { ok: false, code: "field_modified" };
+    const res = adapter.fillField(el, hist.previous);
+    if (!res?.ok && hist.previous !== "") return { ok: false, code: res?.code || "write_failed" };
+    if (hist.previous === "") window.AplyerFill.setValue(el, "");
+    fillHistory.delete(msg.questionId);
+    return { ok: true, undone: true };
+  }
+
+  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (!msg || typeof msg !== "object") return false;
+    if (msg.type === "APLYER_AUTOFILL_ANSWER") { sendResponse(handleAutofill(msg)); return true; }
+    if (msg.type === "APLYER_AUTOFILL_UNDO") { sendResponse(handleUndo(msg)); return true; }
+    return false;
+  });
 
   // Initial pass + watch the DOM. Observe body only; restrict to childList
   // + subtree (no attribute churn) to keep CPU low on heavy SPAs.

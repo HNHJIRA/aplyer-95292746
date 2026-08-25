@@ -55,8 +55,18 @@
     <div id="answer-text" class="q-text"></div>
     <div id="answer-meta" class="q-meta"></div>
     <div class="answer-actions">
-      <button id="answer-copy" class="q-generate" type="button">Copy answer</button>
+      <button id="answer-use" class="q-generate" type="button">Use This Answer</button>
+      <button id="answer-copy" class="q-generate q-secondary" type="button">Copy</button>
+      <button id="answer-undo" class="q-generate q-secondary" type="button" style="display:none">Undo</button>
       <button id="answer-regen" class="q-generate q-secondary" type="button">Write a new one</button>
+    </div>
+    <div id="fill-status" class="q-meta"></div>
+    <div id="replace-confirm" class="q-meta" style="display:none">
+      <p class="safety-copy">This field already has text. Replace it with your Aplyer answer?</p>
+      <div class="answer-actions">
+        <button id="replace-yes" class="q-generate" type="button">Replace</button>
+        <button id="replace-no" class="q-generate q-secondary" type="button">Cancel</button>
+      </div>
     </div>
   </section>
 
@@ -65,11 +75,11 @@
     <p class="safety-copy">Both are written only from your resume. Your pick teaches Aplyer how you like to sound.</p>
     <div class="choice-option">
       <div id="opt-a-text" class="q-text"></div>
-      <button id="opt-a-pick" class="q-generate" type="button">Use this one</button>
+      <button id="opt-a-pick" class="q-generate" type="button">Use This One</button>
     </div>
     <div class="choice-option">
       <div id="opt-b-text" class="q-text"></div>
-      <button id="opt-b-pick" class="q-generate" type="button">Use this one</button>
+      <button id="opt-b-pick" class="q-generate" type="button">Use This One</button>
     </div>
   </section>
 
