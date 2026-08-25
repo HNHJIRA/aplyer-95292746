@@ -190,6 +190,12 @@ function normalizeQuestionText(text) {
 }
 
 function hideResults() {
+  const undo = $("answer-undo");
+  if (undo) undo.style.display = "none";
+  const fs = $("fill-status");
+  if (fs) fs.textContent = "";
+  const rc = $("replace-confirm");
+  if (rc) rc.style.display = "none";
   $("answer-card").style.display = "none";
   $("choice-card").style.display = "none";
 }
@@ -306,6 +312,60 @@ async function onGenerateAnswer(force) {
   renderAnswerState(res.state);
 }
 
+/* ---------------------------------------------------------------
+ * Autofill — the panel never touches page DOM. It asks the background
+ * to write the answer into the exact field that started this run.
+ * ------------------------------------------------------------- */
+function setFillStatus(text, isError) {
+  const el = $("fill-status");
+  if (!el) return;
+  el.textContent = text || "";
+  el.classList.toggle("q-error", !!isError);
+}
+
+function showReplaceConfirm(show) {
+  const el = $("replace-confirm");
+  if (el) el.style.display = show ? "" : "none";
+}
+
+async function autofillAnswer(answer, force) {
+  const data = await chrome.storage.local.get(KEY_QUESTION);
+  const questionHash = normalizeQuestionText(data[KEY_QUESTION]?.questionText || "");
+  showReplaceConfirm(false);
+  setFillStatus("Adding your answer to the application…", false);
+  const res = await send(
+    "APLYER_AUTOFILL_ANSWER",
+    { tabId: currentTabId, questionHash, answer, force: force === true },
+    20000,
+  );
+  if (res?.ok) {
+    setFillStatus("✓ Answer added", false);
+    const undo = $("answer-undo");
+    if (undo) undo.style.display = "";
+    return true;
+  }
+  if (res?.code === "field_not_empty") {
+    setFillStatus("", false);
+    showReplaceConfirm(true);
+    return false;
+  }
+  setFillStatus(res?.error || "We couldn't find the original answer field. Reopen the question and try again.", true);
+  return false;
+}
+
+async function undoAutofill() {
+  const data = await chrome.storage.local.get(KEY_QUESTION);
+  const questionHash = normalizeQuestionText(data[KEY_QUESTION]?.questionText || "");
+  const res = await send("APLYER_AUTOFILL_UNDO", { tabId: currentTabId, questionHash }, 20000);
+  if (res?.ok) {
+    setFillStatus("Undone — the field is back to what it was.", false);
+    const undo = $("answer-undo");
+    if (undo) undo.style.display = "none";
+    return;
+  }
+  setFillStatus(res?.error || "We couldn't undo that.", true);
+}
+
 async function pickOption(variantId) {
   if (!lastAnswerId) return;
   setGenStatus("Saving your preference…", false);
@@ -314,13 +374,19 @@ async function pickOption(variantId) {
     setGenStatus(r?.error || "We couldn't save that choice. Try again.", true);
     return;
   }
+  // Preference is saved even if the insert fails — never lose the choice.
   setGenStatus("Saved. Aplyer will keep this style from now on.", false);
   showAnswer(r.answer, null);
+  await autofillAnswer(r.answer, false);
 }
 
 function bind() {
   $("q-generate")?.addEventListener("click", () => onGenerateAnswer(false));
   $("answer-regen")?.addEventListener("click", () => onGenerateAnswer(true));
+  $("answer-use")?.addEventListener("click", () => autofillAnswer($("answer-text").textContent || "", false));
+  $("answer-undo")?.addEventListener("click", () => undoAutofill());
+  $("replace-yes")?.addEventListener("click", () => autofillAnswer($("answer-text").textContent || "", true));
+  $("replace-no")?.addEventListener("click", () => { showReplaceConfirm(false); setFillStatus("Kept your existing text.", false); });
   $("opt-a-pick")?.addEventListener("click", () => pickOption("A"));
   $("opt-b-pick")?.addEventListener("click", () => pickOption("B"));
   $("answer-copy")?.addEventListener("click", async () => {

@@ -3,6 +3,10 @@ const SESSION_KEY = "aplyer.session.v1";
 const STATUS_KEY = "aplyer.ats_status.v1";
 const SELECTED_KEY = "aplyer.selected_question.v1";
 const SAFETY_KEY = "aplyer.job_safety_by_tab.v1";
+const AUTOFILL_TARGET_KEY = "aplyer.autofill_target_by_tab.v1";
+/** Hard cap mirrored in the content script; oversized answers are rejected. */
+const MAX_AUTOFILL_CHARS = 8000;
+const SUPPORTED_ADAPTERS = new Set(["greenhouse", "lever", "workday"]);
 
 const API_BASE = "https://aplyer.devssh.xyz";
 const SAFETY_TTL_MS = 10 * 60 * 1000;
@@ -180,7 +184,88 @@ async function runJobSafetyCheck(tabId, url) {
   return entry;
 }
 
+/* --------------------------------------------------------------------
+ * Autofill targets (tab-scoped).
+ *
+ * A target records WHERE a generated answer may be written: tab, frame,
+ * adapter, questionId, stable field key and question hash. The side panel
+ * can never supply a selector or script — it only names a tab, and the
+ * background matches that against the stored target before messaging the
+ * content script in that exact frame.
+ * ------------------------------------------------------------------ */
+async function readTargetMap() {
+  const res = await chrome.storage.local.get(AUTOFILL_TARGET_KEY);
+  return res[AUTOFILL_TARGET_KEY] || {};
+}
+
+async function writeAutofillTarget(tabId, target) {
+  if (tabId == null) return null;
+  const map = await readTargetMap();
+  if (target) map[String(tabId)] = target;
+  else delete map[String(tabId)];
+  await chrome.storage.local.set({ [AUTOFILL_TARGET_KEY]: map });
+  return target;
+}
+
+async function readAutofillTarget(tabId) {
+  if (tabId == null) return null;
+  const map = await readTargetMap();
+  return map[String(tabId)] || null;
+}
+
+/**
+ * Validates the request against the stored target and forwards a minimal,
+ * fixed-shape payload to the originating frame.
+ */
+async function dispatchAutofill(message, kind) {
+  const tabId = message?.tabId;
+  if (typeof tabId !== "number") return { ok: false, code: "no_target", error: NO_TARGET_MSG };
+
+  const target = await readAutofillTarget(tabId);
+  if (!target || target.tabId !== tabId) return { ok: false, code: "no_target", error: NO_TARGET_MSG };
+  if (!SUPPORTED_ADAPTERS.has(target.adapter)) return { ok: false, code: "unsupported_adapter", error: NO_TARGET_MSG };
+  if (message.questionHash && target.questionHash && message.questionHash !== target.questionHash) {
+    return { ok: false, code: "question_mismatch", error: NO_TARGET_MSG };
+  }
+
+  const payload = {
+    type: kind,
+    adapter: target.adapter,
+    questionId: target.questionId,
+    questionHash: target.questionHash,
+    fieldKey: target.fieldKey,
+  };
+
+  if (kind === "APLYER_AUTOFILL_ANSWER") {
+    const answer = typeof message.answer === "string" ? message.answer.trim() : "";
+    if (!answer) return { ok: false, code: "invalid_answer", error: "There is no answer to insert yet." };
+    if (answer.length > MAX_AUTOFILL_CHARS) return { ok: false, code: "answer_too_long", error: "That answer is too long to insert." };
+    payload.answer = answer;
+    payload.force = message.force === true;
+  }
+
+  try {
+    const res = await chrome.tabs.sendMessage(tabId, payload, { frameId: target.frameId ?? 0 });
+    if (!res) return { ok: false, code: "no_response", error: NO_TARGET_MSG };
+    if (!res.ok && res.code === "field_not_empty") {
+      return { ok: false, code: "field_not_empty", error: "This field already has text. Replace it with your Aplyer answer?" };
+    }
+    if (!res.ok) {
+      return { ok: false, code: res.code || "fill_failed", error: res.code === "field_modified"
+        ? "You've edited this field since Aplyer filled it, so undo was cancelled."
+        : NO_TARGET_MSG };
+    }
+    return { ok: true, ...res };
+  } catch (e) {
+    console.warn("[Aplyer] autofill dispatch failed", String(e));
+    return { ok: false, code: "no_content_script", error: NO_TARGET_MSG };
+  }
+}
+
+const NO_TARGET_MSG = "We couldn't find the original answer field. Reopen the question and try again.";
+
 chrome.tabs?.onRemoved?.addListener((tabId) => {
+  writeAutofillTarget(tabId, null);
   writeSafetyEntry(tabId, null);
   writeFrameworkEntry(tabId, null);
   // Answer state is tab scoped — it must not survive the tab.
@@ -627,6 +712,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
 
+  // Side panel -> background: insert the validated answer into the exact
+  // originating field. Nothing but the answer text crosses this boundary.
+  if (message.type === "APLYER_AUTOFILL_ANSWER") {
+    (async () => sendResponse?.(await dispatchAutofill(message, "APLYER_AUTOFILL_ANSWER")))();
+    return true;
+  }
+
+  if (message.type === "APLYER_AUTOFILL_UNDO") {
+    (async () => sendResponse?.(await dispatchAutofill(message, "APLYER_AUTOFILL_UNDO")))();
+    return true;
+  }
+
   // Side panel -> background: read the framework for the active tab only.
   if (message.type === "APLYER_GET_FRAMEWORK") {
     (async () => {
@@ -657,6 +754,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       [STATUS_KEY]: { platform: payload.platform, platformKey: payload.platformKey, questionsCount: payload.questions?.length || 0, questions: payload.questions || [], url: payload.url },
       [SELECTED_KEY]: payload.question || null,
     };
+    const q = payload.question;
+    if (tabId != null) {
+      writeAutofillTarget(
+        tabId,
+        q && q.answerable && SUPPORTED_ADAPTERS.has(payload.platformKey)
+          ? {
+              tabId,
+              frameId: sender?.frameId ?? 0,
+              adapter: payload.platformKey,
+              questionId: String(q.questionId || ""),
+              fieldKey: q.fieldKey ? String(q.fieldKey) : null,
+              questionHash: String(q.questionHash || ""),
+              url: payload.url || null,
+              at: Date.now(),
+            }
+          : null,
+      );
+    }
     chrome.storage.local.set(writes, () => {
       try {
         if (tabId && chrome.sidePanel?.open) {

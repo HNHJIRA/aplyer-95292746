@@ -6,7 +6,7 @@
     constructor() {
       super("lever");
       this.platformLabel = "Lever";
-      this.adapterVersion = "1.0.0";
+      this.adapterVersion = "1.1.0";
     }
 
     matches(loc) {
@@ -69,6 +69,39 @@
       }
       return field.parentElement || field;
     }
+
+    // --- Autofill -------------------------------------------------------
+
+    fieldKey(el) {
+      return (el && (el.name || el.id)) || null;
+    }
+
+    resolveField(target) {
+      if (!target) return null;
+      const F = window.AplyerFill;
+      const key = target.fieldKey;
+      try {
+        if (key) {
+          const byName = document.querySelector(`textarea[name="${CSS.escape(key)}"]`);
+          if (byName && F.isAnswerableElement(byName)) return byName;
+          const byId = document.getElementById(key);
+          if (byId && F.isAnswerableElement(byId)) return byId;
+        }
+      } catch { /* ignore */ }
+      try {
+        const found = this.extractQuestions() || [];
+        const hit = found.find((q) => q.questionId === target.questionId)
+          || (target.questionHash
+            ? found.find((q) => normalize(q.questionText) === target.questionHash)
+            : null);
+        if (hit && F.isAnswerableElement(hit.fieldReference)) return hit.fieldReference;
+      } catch { /* ignore */ }
+      return null;
+    }
+  }
+
+  function normalize(t) {
+    return String(t || "").toLowerCase().replace(/\s+/g, " ").replace(/[^a-z0-9 ?]/g, "").trim();
   }
 
   function clean(t) { return (t || "").replace(/\s+/g, " ").replace(/\*$/, "").replace(/\(optional\)/i, "").trim(); }

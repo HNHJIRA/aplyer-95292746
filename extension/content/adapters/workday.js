@@ -33,14 +33,14 @@
   ].join(",");
 
   // Identity / autofill fields the user does NOT want a Generate Answer button on.
-  const IDENTITY_RE = /(first[\s_-]?name|last[\s_-]?name|legal name|given name|family name|middle name|preferred (first )?name|full name|email|phone|mobile|tel|country|territory|state|region|province|city|location|address|street|zip|postal|linkedin|website|portfolio|github|twitter|facebook|url|resume|cv|cover letter|date of birth|dob|gender|race|ethnicity|veteran|disability|hispanic|citizenship|work authoriz|visa|sponsor|source|how did you hear|salary|compensation|notice period|start date|available|relocate|password|confirm|search|filter)/i;
+  const IDENTITY_RE = /(first[\s_-]?name|last[\s_-]?name|legal name|given name|family name|middle name|preferred (first )?name|full name|email|phone|mobile|\btel\b|country|territory|state|region|province|city|location|address|street|zip|postal|linkedin|website|portfolio|github|twitter|facebook|\burl\b|resume|\bcv\b|cover letter|date of birth|\bdob\b|gender|race|ethnicity|veteran|disability|hispanic|citizenship|work authoriz|visa|sponsor|source|how did you hear|salary|compensation|notice period|start date|available|relocate|password|confirm|search|filter)/i;
 
 
   class WorkdayAdapter extends Base {
     constructor() {
       super("workday");
       this.platformLabel = "Workday";
-      this.adapterVersion = "1.0.0";
+      this.adapterVersion = "1.4.0";
       // questionId → { stableId, lastSeenAt }. Used by onFieldDetached
       // so the orchestrator can purge buttons for fields that vanish.
       this._fieldCache = new Map();
@@ -212,6 +212,52 @@
       return this._formFieldWrapper(field) || field.parentElement || field;
     }
 
+    // --- Autofill -------------------------------------------------------
+
+    fieldKey(el) {
+      return this.resolveStableId(el);
+    }
+
+    /**
+     * Workday remounts subtrees constantly, so DOM ids are useless. We resolve
+     * strictly through data-automation-id (stable across re-render) and verify
+     * the field still belongs to the same question label.
+     */
+    resolveField(target) {
+      if (!target) return null;
+      const F = window.AplyerFill;
+      const key = String(target.fieldKey || "");
+      const auto = key.startsWith("wd:") ? key.slice(3) : null;
+      const candidates = [];
+      try {
+        if (auto) {
+          document.querySelectorAll(`[data-automation-id="${CSS.escape(auto)}"]`).forEach((node) => {
+            if (F.isAnswerableElement(node)) candidates.push(node);
+            node.querySelectorAll?.('textarea, div[contenteditable="true"]').forEach((inner) => {
+              if (F.isAnswerableElement(inner)) candidates.push(inner);
+            });
+          });
+        }
+      } catch { /* ignore */ }
+
+      for (const el of candidates) {
+        if (!target.questionHash) return el;
+        const label = this.proximityLabel(el);
+        if (label && normalize(label) === target.questionHash) return el;
+      }
+
+      // Second pass: full re-extraction (handles automation-id churn).
+      try {
+        const found = this.extractQuestions() || [];
+        const hit = found.find((q) => q.questionId === target.questionId)
+          || (target.questionHash
+            ? found.find((q) => normalize(q.questionText) === target.questionHash)
+            : null);
+        if (hit && F.isAnswerableElement(hit.fieldReference)) return hit.fieldReference;
+      } catch { /* ignore */ }
+      return candidates.length === 1 && !target.questionHash ? candidates[0] : null;
+    }
+
     // --- Internals --------------------------------------------------------
 
     _formFieldWrapper(el) {
@@ -240,6 +286,9 @@
       .replace(/\(required\)/i, "")
       .replace(/\(optional\)/i, "")
       .trim();
+  }
+  function normalize(t) {
+    return String(t || "").toLowerCase().replace(/\s+/g, " ").replace(/[^a-z0-9 ?]/g, "").trim();
   }
   function hash(s) {
     let h = 0;

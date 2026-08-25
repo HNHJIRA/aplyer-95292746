@@ -4,7 +4,7 @@
 // Milestone 3. Implemented as no-op defaults so simple ATSs (Greenhouse,
 // Lever) can ignore them.
 (function () {
-  const ADAPTER_API_VERSION = "1.1.0";
+  const ADAPTER_API_VERSION = "1.2.0";
 
   class ATSAdapter {
     constructor(name) {
@@ -41,6 +41,57 @@
     /** Hook invoked when a tracked field is removed from the DOM (SPA
      *  re-renders). Adapters can clear caches here. */
     onFieldDetached(_id) { /* no-op */ }
+
+    // --- Autofill API (v1.2.0) -------------------------------------------
+
+    /** Stable, serialisable reference for a field. Never a DOM node. */
+    fieldKey(el) { return this.resolveStableId(el); }
+
+    /** True when this field may receive a generated prose answer. */
+    isAnswerField(el, questionType) {
+      return window.AplyerFill.isAnswerableType(questionType)
+        && window.AplyerFill.isAnswerableElement(el);
+    }
+
+    /**
+     * Re-resolves the live DOM node for a stored target at autofill time.
+     * Adapters must never guess: return null when the field cannot be
+     * matched with certainty.
+     * @param {{questionId:string, fieldKey?:string}} target
+     * @returns {HTMLElement|null}
+     */
+    resolveField(target) {
+      if (!target) return null;
+      const key = target.fieldKey;
+      if (key) {
+        try {
+          const byId = document.getElementById(key);
+          if (byId && window.AplyerFill.isAnswerableElement(byId)) return byId;
+          const byName = document.querySelector(`textarea[name="${cssEscape(key)}"]`);
+          if (byName && window.AplyerFill.isAnswerableElement(byName)) return byName;
+        } catch { /* ignore */ }
+      }
+      // Fall back to a fresh extraction and match on questionId only.
+      try {
+        const found = this.extractQuestions() || [];
+        const hit = found.find((q) => q.questionId === target.questionId);
+        if (hit && window.AplyerFill.isAnswerableElement(hit.fieldReference)) return hit.fieldReference;
+      } catch { /* ignore */ }
+      return null;
+    }
+
+    /**
+     * Fills a resolved field. Adapters override only when the platform
+     * needs extra handling; the write itself always goes through AplyerFill.
+     */
+    fillField(el, answer) {
+      return window.AplyerFill.setValue(el, answer);
+    }
+  }
+
+  function cssEscape(s) {
+    if (window.CSS && CSS.escape) return CSS.escape(String(s));
+    return String(s).replace(/["\\\]]/g, "\\$&");
   }
 
   window.AplyerAdapters = window.AplyerAdapters || {};

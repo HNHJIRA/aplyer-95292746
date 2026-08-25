@@ -27,7 +27,7 @@
     constructor() {
       super("greenhouse");
       this.platformLabel = "Greenhouse";
-      this.adapterVersion = "1.2.0";
+      this.adapterVersion = "1.3.0";
     }
 
     matches(loc) {
@@ -159,6 +159,37 @@
     anchorFor(field) {
       return this._wrapper(field) || field.parentElement || field;
     }
+
+    // --- Autofill -------------------------------------------------------
+
+    fieldKey(el) {
+      return (el && (el.id || el.getAttribute?.("name"))) || null;
+    }
+
+    /** Greenhouse ids are stable per render; never fall back to a global
+     *  "first textarea" lookup, which could hit the wrong question. */
+    resolveField(target) {
+      if (!target) return null;
+      const F = window.AplyerFill;
+      const key = target.fieldKey;
+      try {
+        if (key) {
+          const byId = document.getElementById(key);
+          if (byId && F.isAnswerableElement(byId)) return byId;
+          const byName = document.querySelector(`textarea[name="${CSS.escape(key)}"]`);
+          if (byName && F.isAnswerableElement(byName)) return byName;
+        }
+      } catch { /* ignore */ }
+      try {
+        const found = this.extractQuestions() || [];
+        const hit = found.find((q) => q.questionId === target.questionId)
+          || (target.questionHash
+            ? found.find((q) => normalize(q.questionText) === target.questionHash)
+            : null);
+        if (hit && F.isAnswerableElement(hit.fieldReference)) return hit.fieldReference;
+      } catch { /* ignore */ }
+      return null;
+    }
   }
 
   function clean(t) {
@@ -168,6 +199,9 @@
       .replace(/\(required\)/ig, "")
       .replace(/\(optional\)/ig, "")
       .trim();
+  }
+  function normalize(t) {
+    return String(t || "").toLowerCase().replace(/\s+/g, " ").replace(/[^a-z0-9 ?]/g, "").trim();
   }
   function hash(s) { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return Math.abs(h).toString(36); }
   function isVisible(el) {
