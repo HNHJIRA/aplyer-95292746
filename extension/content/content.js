@@ -185,6 +185,8 @@
     // each iframe would render its own pill (Greenhouse embed forms run
     // inside an iframe, and we now inject into all frames).
     if (window.top !== window) return;
+    // If a page re-render detached our node, rebuild it from scratch.
+    if (pill && !pill.isConnected) pill = null;
     if (!pill) {
       pill = document.createElement("div");
       pill.className = "aplyer-status-wrap";
