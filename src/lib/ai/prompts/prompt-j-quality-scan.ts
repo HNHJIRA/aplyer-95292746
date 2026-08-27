@@ -59,9 +59,9 @@ export const QUALITY_CHECK_CODES: Record<number, string> = Object.fromEntries(
 
 export const PROMPT_J_QUALITY_SCAN: PromptSpec = {
   id: "J_QUALITY_SCAN",
-  version: "2.2.0",
+  version: "2.3.0",
   model: MODEL_OPUS,
-  maxTokens: 3000,
+  maxTokens: 1600,
   temperature: 0,
   json: true,
   system: `You are the Aplyer quality gate. You receive a generated job application answer, the question, the framework it must follow, the candidate's Voice Card (or none) and the canonical candidate fact list — the only facts that may appear in the answer.
