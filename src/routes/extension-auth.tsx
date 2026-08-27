@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { CheckCircle2, Loader2, AlertCircle, Sparkles, ArrowRight } from "lucide-react";
+import { CheckCircle2, Loader2, AlertCircle, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import { LogoMark } from "@/components/extension/Logo";
 
 export const Route = createFileRoute("/extension-auth")({
   validateSearch: (search) => ({
@@ -107,9 +108,7 @@ function ExtensionAuthPage() {
 
       <header className="flex items-center justify-between px-8 py-6">
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-green text-[#06140A]">
-            <Sparkles className="h-4 w-4" />
-          </div>
+          <LogoMark size={30} />
           <span className="text-[15px] font-black tracking-tight">aplyer.ai</span>
         </Link>
       </header>
