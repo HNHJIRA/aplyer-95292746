@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { ArrowRight, Loader2, Mail, Lock, User as UserIcon, Phone, Sparkles } from "lucide-react";
+import { ArrowRight, Loader2, Mail, Lock, User as UserIcon, Phone } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import { LogoMark } from "@/components/extension/Logo";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { redirect?: string } =>
@@ -118,9 +119,7 @@ function AuthPage() {
 
       <header className="flex items-center justify-between px-8 py-6">
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-green text-[#06140A]">
-            <Sparkles className="h-4 w-4" />
-          </div>
+          <LogoMark size={30} />
           <span className="text-[15px] font-black tracking-tight">aplyer.ai</span>
         </Link>
         <Link to="/" className="text-[12px] text-muted-foreground hover:text-foreground">← Back to home</Link>

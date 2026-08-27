@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Loader2, Lock, Sparkles } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import { LogoMark } from "@/components/extension/Logo";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({ meta: [{ title: "Set new password · Aplyer.ai" }] }),
@@ -48,9 +49,7 @@ function ResetPasswordPage() {
       </div>
       <header className="flex items-center justify-between px-8 py-6">
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-green text-[#06140A]">
-            <Sparkles className="h-4 w-4" />
-          </div>
+          <LogoMark size={30} />
           <span className="text-[15px] font-black tracking-tight">aplyer.ai</span>
         </Link>
       </header>

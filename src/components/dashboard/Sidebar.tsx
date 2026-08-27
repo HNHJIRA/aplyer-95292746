@@ -8,13 +8,13 @@ import {
   Settings,
   LifeBuoy,
   LogOut,
-  Sparkles,
   Chrome,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { downloadExtension } from "@/lib/download-extension";
+import { LogoMark } from "@/components/extension/Logo";
 
 const nav: Array<{ to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }> = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -51,9 +51,7 @@ export function Sidebar() {
   return (
     <aside className="hidden w-[240px] shrink-0 flex-col border-r border-border bg-card lg:flex">
       <div className="flex items-center gap-2 px-5 py-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-green text-[#06140A]">
-          <Sparkles className="h-4 w-4" />
-        </div>
+          <LogoMark size={30} />
         <span className="text-[15px] font-black tracking-tight text-foreground">aplyer.ai</span>
       </div>
 
