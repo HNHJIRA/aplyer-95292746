@@ -162,27 +162,60 @@ export function buildQualityScanUser(input: {
 }
 
 export function validateQualityScan(value: unknown): QualityScanResult {
-  const o = (value ?? {}) as Partial<QualityScanResult>;
-  const raw = Array.isArray(o.checks) ? o.checks : [];
-  if (raw.length === 0) throw new Error("Missing checks");
+  const o = (value ?? {}) as Partial<QualityScanResult> & { failed?: unknown };
+
+  // Compact contract (v2.3.0): only failed checks are reported. Anything not
+  // listed passed. This keeps Prompt J's output small, which is the single
+  // biggest latency factor in the A -> J round trip.
+  const failedList = Array.isArray(o.failed) ? o.failed : null;
+  const legacy = Array.isArray(o.checks) ? o.checks : null;
+  if (!failedList && !legacy) throw new Error("Missing checks");
 
   const byId = new Map<number, QualityCheckResult>();
-  raw.forEach((c, i) => {
-    const r = c as Partial<QualityCheckResult>;
-    const id = typeof r.id === "number" && r.id >= 1 && r.id <= QUALITY_CHECKS.length ? r.id : i + 1;
-    byId.set(id, {
-      id,
-      name: String(r.name ?? QUALITY_CHECKS[id - 1] ?? `Check ${id}`),
-      passed: !!r.passed,
-      note: String(r.note ?? "").slice(0, 300),
-    });
-  });
 
-  // A check the model omitted is treated as failed — fail closed, never open.
+  if (failedList) {
+    for (const entry of failedList) {
+      const r = (entry ?? {}) as { id?: unknown; note?: unknown };
+      const id = Number(r.id);
+      if (!Number.isInteger(id) || id < 1 || id > QUALITY_CHECKS.length) {
+        throw new Error(`Invalid failed check id: ${String(r.id)}`);
+      }
+      byId.set(id, {
+        id,
+        name: QUALITY_CHECKS[id - 1] as string,
+        passed: false,
+        note: String(r.note ?? "").slice(0, 300),
+      });
+    }
+  } else if (legacy) {
+    // Legacy shape: every check reported explicitly.
+    legacy.forEach((c, i) => {
+      const r = c as Partial<QualityCheckResult>;
+      const id = typeof r.id === "number" && r.id >= 1 && r.id <= QUALITY_CHECKS.length ? r.id : i + 1;
+      byId.set(id, {
+        id,
+        name: String(r.name ?? QUALITY_CHECKS[id - 1] ?? `Check ${id}`),
+        passed: !!r.passed,
+        note: String(r.note ?? "").slice(0, 300),
+      });
+    });
+  }
+
+  const omittedPasses = !!failedList;
   const checks: QualityCheckResult[] = QUALITY_CHECKS.map((name, i) => {
     const id = i + 1;
-    return byId.get(id) ?? { id, name, passed: false, note: "Not reported by the scan." };
+    return (
+      byId.get(id) ?? {
+        id,
+        name,
+        // Compact contract: unlisted means passed. Legacy contract: an omitted
+        // check is treated as failed — fail closed, never open.
+        passed: omittedPasses,
+        note: omittedPasses ? "" : "Not reported by the scan.",
+      }
+    );
   });
+
 
   const failed = checks.filter((c) => !c.passed);
   const passed = failed.length === 0;
