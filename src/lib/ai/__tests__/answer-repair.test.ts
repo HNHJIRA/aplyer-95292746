@@ -227,3 +227,22 @@ describe("canonical banned vocabulary", () => {
     }
   });
 });
+
+describe("prompt J compact output contract", () => {
+  it("treats unlisted checks as passed and listed ones as failed", async () => {
+    const { validateQualityScan } = await import("../prompts/prompt-j-quality-scan");
+    const ok = validateQualityScan({ failed: [], revisedAnswer: null });
+    expect(ok.passed).toBe(true);
+    expect(ok.checks).toHaveLength(22);
+
+    const bad = validateQualityScan({ failed: [{ id: 1, note: "invented metric" }], revisedAnswer: "fixed" });
+    expect(bad.passed).toBe(false);
+    expect(bad.blockingCodes).toEqual(["check_1"]);
+    expect(bad.revisedAnswer).toBe("fixed");
+  });
+
+  it("rejects an out-of-range failed check id", async () => {
+    const { validateQualityScan } = await import("../prompts/prompt-j-quality-scan");
+    expect(() => validateQualityScan({ failed: [{ id: 99 }] })).toThrow();
+  });
+});
