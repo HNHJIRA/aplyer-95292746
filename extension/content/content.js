@@ -1,7 +1,7 @@
 // Aplyer content-script orchestrator — hardened for production.
 (function () {
   const log = window.AplyerLog;
-  const ORCH_VERSION = "1.3.0";
+  const ORCH_VERSION = "1.3.1";
 
   // Single-init guard: MV3 can inject the same content script more than once
   // (all_frames + SPA re-navigation + scripting.executeScript). A second copy
