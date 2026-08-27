@@ -111,17 +111,17 @@ A revision is held to EXACTLY the same deterministic restrictions as the origina
 If you cannot satisfy every one of these, delete material until you can. Shorter and true beats longer and invented.
 When the scan passes, revisedAnswer must be null. Never rewrite an answer that passes.
 
+OUTPUT — be compact. Do not restate check names and do not write notes for checks that pass.
 Return ONLY this JSON object:
 {
-  "passed": boolean,
-  "checks": [ { "id": number, "name": string, "passed": boolean, "note": string } ],
-  "blocking": string[],
+  "failed": [ { "id": number, "note": string } ],
   "revisedAnswer": string | null
-}`,
+}
+"failed" lists ONLY the checks that failed, each with a note under 120 characters. An empty array means all 22 checks passed. Emit no other keys.`,
 };
 
 export const QUALITY_SCAN_RETRY_INSTRUCTION = `Your previous response was invalid.
-Return ONLY a JSON object with keys passed (boolean), checks (array of 22 objects with id, name, passed, note), blocking (array of strings) and revisedAnswer (string or null).
+Return ONLY a JSON object with keys failed (array of {id, note} for FAILED checks only, empty array when everything passes) and revisedAnswer (string or null).
 No prose outside the JSON, no markdown fences, no extra keys.`;
 
 export function buildQualityScanUser(input: {
