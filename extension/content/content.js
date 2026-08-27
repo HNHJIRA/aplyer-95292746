@@ -376,6 +376,7 @@
     clearTimeout(pendingScan);
     clearTimeout(safetyTimer);
     clearInterval(safetyPoll);
+    clearInterval(uiPoll);
     window.removeEventListener("popstate", onPopState);
     window.removeEventListener("pageshow", onPageShow);
     try { pill?.remove(); } catch {}
