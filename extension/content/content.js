@@ -412,6 +412,14 @@
     scheduleSafety(150);
     clearInterval(safetyPoll);
     safetyPoll = setInterval(() => { if (location.href !== lastSafetyUrl) checkSafety(false); }, 3000);
+    clearInterval(uiPoll);
+    uiPoll = setInterval(() => {
+      try {
+        if (window.top !== window) return;
+        if (!pill || !pill.isConnected) { pill = null; renderPill(); }
+        if (questions.length > 0 && !document.querySelector("[data-aplyer-qid]")) scheduleScan(50);
+      } catch { /* ignore */ }
+    }, 1500);
     log.info("boot", "Content script rebooted from bfcache");
   }
 
