@@ -1,7 +1,7 @@
 // Aplyer content-script orchestrator — hardened for production.
 (function () {
   const log = window.AplyerLog;
-  const ORCH_VERSION = "1.3.0";
+  const ORCH_VERSION = "1.3.1";
 
   // Single-init guard: MV3 can inject the same content script more than once
   // (all_frames + SPA re-navigation + scripting.executeScript). A second copy
@@ -71,6 +71,21 @@
 
     // Refresh the live registry so a re-render never leaves a stale node.
     for (const q of found) registry.set(q.questionId, q);
+
+    // Self-heal: Greenhouse re-renders can drop our injected button (and the
+    // whole field node). If a known question no longer has a button in the
+    // DOM, forget it so it gets re-injected on this pass.
+    for (const q of found) {
+      try {
+        const btn = document.querySelector(`[data-aplyer-qid="${cssEscape(q.questionId)}"]`);
+        if (!btn) {
+          window.AplyerInjector.forget(q.fieldReference);
+          knownIds.delete(q.questionId);
+          const idx = questions.findIndex((x) => x.questionId === q.questionId);
+          if (idx >= 0) questions.splice(idx, 1);
+        }
+      } catch { /* ignore */ }
+    }
 
     const fresh = found.filter((q) => {
       if (knownIds.has(q.questionId)) return false;
@@ -164,12 +179,31 @@
   scheduleSafety(150);
   safetyPoll = setInterval(() => { if (location.href !== lastSafetyUrl) checkSafety(false); }, 3000);
 
+  // UI watchdog: some ATS pages (Greenhouse job-boards) hydrate/re-render and
+  // wipe injected nodes. Re-render the pill and re-scan if our UI vanished.
+  let uiPoll = setInterval(() => {
+    try {
+      if (window.top !== window) return;
+      if (!pill || !pill.isConnected) { pill = null; renderPill(); }
+      if (questions.length > 0 && !document.querySelector("[data-aplyer-qid]")) scheduleScan(50);
+    } catch { /* ignore */ }
+  }, 1500);
+
+  function cssEscape(s) {
+    if (window.CSS && CSS.escape) return CSS.escape(s);
+    return String(s).replace(/["\\\]]/g, "\\$&");
+  }
+
+
+
 
   function renderPill() {
     // Only render the floating status pill in the top frame — otherwise
     // each iframe would render its own pill (Greenhouse embed forms run
     // inside an iframe, and we now inject into all frames).
     if (window.top !== window) return;
+    // If a page re-render detached our node, rebuild it from scratch.
+    if (pill && !pill.isConnected) pill = null;
     if (!pill) {
       pill = document.createElement("div");
       pill.className = "aplyer-status-wrap";
@@ -342,6 +376,7 @@
     clearTimeout(pendingScan);
     clearTimeout(safetyTimer);
     clearInterval(safetyPoll);
+    clearInterval(uiPoll);
     window.removeEventListener("popstate", onPopState);
     window.removeEventListener("pageshow", onPageShow);
     try { pill?.remove(); } catch {}
@@ -377,6 +412,14 @@
     scheduleSafety(150);
     clearInterval(safetyPoll);
     safetyPoll = setInterval(() => { if (location.href !== lastSafetyUrl) checkSafety(false); }, 3000);
+    clearInterval(uiPoll);
+    uiPoll = setInterval(() => {
+      try {
+        if (window.top !== window) return;
+        if (!pill || !pill.isConnected) { pill = null; renderPill(); }
+        if (questions.length > 0 && !document.querySelector("[data-aplyer-qid]")) scheduleScan(50);
+      } catch { /* ignore */ }
+    }, 1500);
     log.info("boot", "Content script rebooted from bfcache");
   }
 

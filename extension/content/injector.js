@@ -68,5 +68,14 @@
     return String(s).replace(/["\\\]]/g, "\\$&");
   }
 
-  window.AplyerInjector = { injectButtons };
+  /** Allow re-injection for a field whose button was wiped by a re-render. */
+  function forget(field) {
+    try {
+      if (!field) return;
+      seen.delete(field);
+      if (field.dataset) delete field.dataset.aplyerSeen;
+    } catch { /* ignore */ }
+  }
+
+  window.AplyerInjector = { injectButtons, forget };
 })();
