@@ -72,6 +72,21 @@
     // Refresh the live registry so a re-render never leaves a stale node.
     for (const q of found) registry.set(q.questionId, q);
 
+    // Self-heal: Greenhouse re-renders can drop our injected button (and the
+    // whole field node). If a known question no longer has a button in the
+    // DOM, forget it so it gets re-injected on this pass.
+    for (const q of found) {
+      try {
+        const btn = document.querySelector(`[data-aplyer-qid="${cssEscape(q.questionId)}"]`);
+        if (!btn) {
+          window.AplyerInjector.forget(q.fieldReference);
+          knownIds.delete(q.questionId);
+          const idx = questions.findIndex((x) => x.questionId === q.questionId);
+          if (idx >= 0) questions.splice(idx, 1);
+        }
+      } catch { /* ignore */ }
+    }
+
     const fresh = found.filter((q) => {
       if (knownIds.has(q.questionId)) return false;
       if (q.fieldReference?.dataset?.aplyerSeen === "1") return false;
