@@ -179,6 +179,23 @@
   scheduleSafety(150);
   safetyPoll = setInterval(() => { if (location.href !== lastSafetyUrl) checkSafety(false); }, 3000);
 
+  // UI watchdog: some ATS pages (Greenhouse job-boards) hydrate/re-render and
+  // wipe injected nodes. Re-render the pill and re-scan if our UI vanished.
+  let uiPoll = setInterval(() => {
+    try {
+      if (window.top !== window) return;
+      if (!pill || !pill.isConnected) { pill = null; renderPill(); }
+      if (questions.length > 0 && !document.querySelector("[data-aplyer-qid]")) scheduleScan(50);
+    } catch { /* ignore */ }
+  }, 1500);
+
+  function cssEscape(s) {
+    if (window.CSS && CSS.escape) return CSS.escape(s);
+    return String(s).replace(/["\\\]]/g, "\\$&");
+  }
+
+
+
 
   function renderPill() {
     // Only render the floating status pill in the top frame — otherwise
