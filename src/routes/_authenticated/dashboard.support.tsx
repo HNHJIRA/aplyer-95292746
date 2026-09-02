@@ -9,8 +9,8 @@ function SupportPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[26px] font-black tracking-tight">Support</h1>
-        <p className="mt-1 text-[13px] text-muted-foreground">We usually reply within a few hours.</p>
+        <h1 className="text-[32px] font-black tracking-tight">Support</h1>
+        <p className="mt-1 text-[15px] text-muted-foreground">We usually reply within a few hours.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -29,8 +29,8 @@ function Card({ icon, title, desc, href }: { icon: React.ReactNode; title: strin
     <Comp href={href} className="flex items-start gap-3 rounded-2xl border border-border bg-card p-5 transition-all hover:border-brand-green/40">
       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-green/10 text-brand-green">{icon}</div>
       <div>
-        <div className="text-[14px] font-bold">{title}</div>
-        <div className="mt-0.5 text-[12px] text-muted-foreground">{desc}</div>
+        <div className="text-[16px] font-bold">{title}</div>
+        <div className="mt-0.5 text-[14px] text-muted-foreground">{desc}</div>
       </div>
     </Comp>
   );

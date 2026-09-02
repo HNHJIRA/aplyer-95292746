@@ -75,8 +75,8 @@ function ProfilePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[26px] font-black tracking-tight">Profile</h1>
-        <p className="mt-1 text-[13px] text-muted-foreground">Used to autofill applications across Workday, Greenhouse, and Lever.</p>
+        <h1 className="text-[32px] font-black tracking-tight">Profile</h1>
+        <p className="mt-1 text-[15px] text-muted-foreground">Used to autofill applications across Workday, Greenhouse, and Lever.</p>
       </div>
 
       {isLoading ? (
@@ -100,7 +100,7 @@ function ProfilePage() {
             <button
               onClick={save}
               disabled={saving}
-              className="inline-flex h-11 items-center gap-2 rounded-lg bg-brand-green px-5 text-[13px] font-semibold text-[#06140A] hover:bg-brand-green-2 disabled:opacity-60"
+              className="inline-flex h-11 items-center gap-2 rounded-lg bg-brand-green px-5 text-[15px] font-semibold text-[#06140A] hover:bg-brand-green-2 disabled:opacity-60"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Save changes
@@ -115,13 +115,13 @@ function ProfilePage() {
 function Field({ label, value, onChange, type = "text", placeholder }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{label}</span>
+      <span className="mb-1.5 block font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">{label}</span>
       <input
         type={type}
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="h-11 w-full rounded-lg border border-border bg-paper px-3 text-[13px] text-foreground placeholder:text-muted-foreground/60 focus:border-brand-green/60 focus:outline-none"
+        className="h-11 w-full rounded-lg border border-border bg-paper px-3 text-[15px] text-foreground placeholder:text-muted-foreground/60 focus:border-brand-green/60 focus:outline-none"
       />
     </label>
   );

@@ -79,13 +79,13 @@ function DashboardHome() {
   return (
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-green/25 bg-brand-green/10 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.18em] text-brand-green">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-green/25 bg-brand-green/10 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-brand-green">
           <Sparkles className="h-2.5 w-2.5" /> Welcome back
         </div>
         <h1 className="mt-3 text-[28px] font-black tracking-tight">
           Hey {firstName}, ready to apply faster?
         </h1>
-        <p className="mt-1 text-[13px] text-muted-foreground">
+        <p className="mt-1 text-[15px] text-muted-foreground">
           Aplyer is set up to assist you on Workday, Greenhouse, and Lever.
         </p>
       </motion.div>
@@ -134,9 +134,9 @@ function DashboardHome() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-[17px] font-bold tracking-tight">Setup checklist</h2>
-              <p className="text-[12px] text-muted-foreground">Complete these to unlock full autofill power.</p>
+              <p className="text-[14px] text-muted-foreground">Complete these to unlock full autofill power.</p>
             </div>
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            <span className="font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
               {steps.filter((s) => s.done).length} / {steps.length}
             </span>
           </div>
@@ -148,7 +148,7 @@ function DashboardHome() {
                 ) : (
                   <Circle className="h-4 w-4 text-muted-foreground" />
                 )}
-                <span className={`text-[13px] ${s.done ? "text-foreground" : "text-sub"}`}>{s.label}</span>
+                <span className={`text-[15px] ${s.done ? "text-foreground" : "text-sub"}`}>{s.label}</span>
               </li>
             ))}
           </ul>
@@ -156,14 +156,14 @@ function DashboardHome() {
 
         <div className="rounded-2xl border border-brand-green/25 bg-gradient-to-br from-brand-green/15 to-transparent p-6">
           <Chrome className="h-6 w-6 text-brand-green" />
-          <h3 className="mt-3 text-[16px] font-bold tracking-tight">Install Chrome extension</h3>
-          <p className="mt-1 text-[12px] text-muted-foreground">
+          <h3 className="mt-3 text-[18px] font-bold tracking-tight">Install Chrome extension</h3>
+          <p className="mt-1 text-[14px] text-muted-foreground">
             Run Aplyer on any careers page. Sync your dashboard data automatically.
           </p>
           <button
             type="button"
             onClick={() => void downloadExtension().catch((e) => alert(e.message))}
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-green px-3.5 py-2.5 text-[12px] font-semibold text-[#06140A]"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-green px-3.5 py-2.5 text-[14px] font-semibold text-[#06140A]"
           >
             Download extension <ArrowRight className="h-3.5 w-3.5" />
           </button>
@@ -176,7 +176,7 @@ function DashboardHome() {
       </div>
 
       {fullName && (
-        <p className="text-center text-[11px] text-muted-foreground">
+        <p className="text-center text-[13px] text-muted-foreground">
           Signed in as <span className="text-foreground">{data.user.email}</span> · {data.subscription?.tier ?? "free"} plan
         </p>
       )}
@@ -192,7 +192,7 @@ function Stat({ label, value, icon, tone }: { label: string; value: string; icon
       className="rounded-xl border border-border bg-card p-4"
     >
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">{label}</span>
+        <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{label}</span>
         <span className={toneCls}>{icon}</span>
       </div>
       <div className="mt-2 text-[22px] font-black tracking-tight">{value}</div>
@@ -207,8 +207,8 @@ function QuickAction({ href, title, desc }: { href: string; title: string; desc:
       className="group flex items-center justify-between rounded-xl border border-border bg-card p-5 transition-all hover:border-brand-green/40"
     >
       <div>
-        <div className="text-[14px] font-bold tracking-tight">{title}</div>
-        <div className="mt-0.5 text-[12px] text-muted-foreground">{desc}</div>
+        <div className="text-[16px] font-bold tracking-tight">{title}</div>
+        <div className="mt-0.5 text-[14px] text-muted-foreground">{desc}</div>
       </div>
       <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-brand-green" />
     </a>
