@@ -94,8 +94,8 @@ function ResumePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[26px] font-black tracking-tight">Resume</h1>
-        <p className="mt-1 text-[13px] text-muted-foreground">Upload PDF or DOCX. We score it locally — your file is private.</p>
+        <h1 className="text-[32px] font-black tracking-tight">Resume</h1>
+        <p className="mt-1 text-[15px] text-muted-foreground">Upload PDF or DOCX. We score it locally — your file is private.</p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -109,16 +109,16 @@ function ResumePage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="h-3.5 w-3.5 text-brand-green" />
-                    <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-green">Current resume · v{meta.version}</span>
+                    <span className="font-mono text-[12px] uppercase tracking-[0.16em] text-brand-green">Current resume · v{meta.version}</span>
                   </div>
-                  <p className="mt-1 truncate text-[14px] font-bold">{meta.file_name}</p>
-                  <p className="mt-0.5 text-[12px] text-muted-foreground">
+                  <p className="mt-1 truncate text-[16px] font-bold">{meta.file_name}</p>
+                  <p className="mt-0.5 text-[14px] text-muted-foreground">
                     {formatSize(meta.file_size)} · uploaded {new Date(meta.uploaded_at).toLocaleString()}
                   </p>
                 </div>
                 <button
                   onClick={() => inputRef.current?.click()}
-                  className="rounded-lg border border-border bg-paper px-3 py-2 text-[12px] hover:bg-field"
+                  className="rounded-lg border border-border bg-paper px-3 py-2 text-[14px] hover:bg-field"
                 >
                   Replace
                 </button>
@@ -137,8 +137,8 @@ function ResumePage() {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-green/10 text-brand-green">
                 {upload.isPending ? <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <Upload className="h-6 w-6" />}
               </div>
-              <p className="mt-3 text-[14px] font-semibold">{upload.isPending ? "Uploading…" : "Drop your resume here"}</p>
-              <p className="mt-1 text-[12px] text-muted-foreground">PDF, DOCX up to 10 MB</p>
+              <p className="mt-3 text-[16px] font-semibold">{upload.isPending ? "Uploading…" : "Drop your resume here"}</p>
+              <p className="mt-1 text-[14px] text-muted-foreground">PDF, DOCX up to 10 MB</p>
             </label>
           )}
           <input ref={inputRef} type="file" accept=".pdf,.docx,.doc,.txt" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload.mutate(f); }} />
@@ -147,11 +147,11 @@ function ResumePage() {
             <div className="mt-5 rounded-2xl border border-border bg-card p-5">
               <div className="mb-3 flex items-center gap-2">
                 <History className="h-4 w-4 text-muted-foreground" />
-                <h3 className="text-[14px] font-bold">Version history</h3>
+                <h3 className="text-[16px] font-bold">Version history</h3>
               </div>
               <ul className="divide-y divide-border">
                 {data.history.map((r) => (
-                  <li key={r.id} className="flex items-center justify-between py-2.5 text-[12px]">
+                  <li key={r.id} className="flex items-center justify-between py-2.5 text-[14px]">
                     <span className="truncate text-foreground">v{r.version} · {r.file_name}</span>
                     <span className="text-muted-foreground">{new Date(r.uploaded_at).toLocaleDateString()}</span>
                   </li>
@@ -164,7 +164,7 @@ function ResumePage() {
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="mb-2 flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-brand-green" />
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Readiness score</span>
+            <span className="font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Readiness score</span>
           </div>
           {score ? (
             <div className="flex flex-col items-center">
@@ -175,7 +175,7 @@ function ResumePage() {
               </div>
             </div>
           ) : (
-            <div className="flex h-[200px] items-center justify-center text-center text-[12px] text-muted-foreground">
+            <div className="flex h-[200px] items-center justify-center text-center text-[14px] text-muted-foreground">
               Upload a resume to generate a score.
             </div>
           )}
@@ -204,8 +204,8 @@ function ResumePage() {
 function Mini({ label, v }: { label: string; v: number }) {
   return (
     <div className="rounded-lg border border-border bg-paper p-3 text-center">
-      <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
-      <div className="mt-1 text-[18px] font-black">{v}<span className="text-[10px] text-muted-foreground">/100</span></div>
+      <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="mt-1 text-[18px] font-black">{v}<span className="text-[12px] text-muted-foreground">/100</span></div>
     </div>
   );
 }
@@ -215,14 +215,14 @@ function Panel({ title, tone, children }: { title: string; tone: "green" | "ambe
     <div className="rounded-2xl border border-border bg-card p-5">
       <div className="mb-3 flex items-center gap-2">
         <span className={`h-1.5 w-1.5 rounded-full ${tone === "green" ? "bg-brand-green" : "bg-[#E5B73A]"}`} />
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{title}</span>
+        <span className="font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">{title}</span>
       </div>
       <ul className="space-y-2">{children}</ul>
     </div>
   );
 }
-function Row({ children }: { children: React.ReactNode }) { return <li className="flex items-start gap-2 text-[13px] text-sub">{children}</li>; }
-function Empty({ children }: { children: React.ReactNode }) { return <li className="text-[12px] text-muted-foreground">{children}</li>; }
+function Row({ children }: { children: React.ReactNode }) { return <li className="flex items-start gap-2 text-[15px] text-sub">{children}</li>; }
+function Empty({ children }: { children: React.ReactNode }) { return <li className="text-[14px] text-muted-foreground">{children}</li>; }
 
 function formatSize(b: number) {
   if (b < 1024) return `${b} B`;

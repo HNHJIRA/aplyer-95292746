@@ -45,8 +45,8 @@ function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[26px] font-black tracking-tight">Settings</h1>
-        <p className="mt-1 text-[13px] text-muted-foreground">Manage your preferences and AI engine.</p>
+        <h1 className="text-[32px] font-black tracking-tight">Settings</h1>
+        <p className="mt-1 text-[15px] text-muted-foreground">Manage your preferences and AI engine.</p>
       </div>
 
       {isLoading ? <div className="h-[300px] animate-pulse rounded-2xl bg-card" /> : (
@@ -59,22 +59,22 @@ function SettingsPage() {
 
           <Section title="AI engine">
             <label className="block">
-              <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Preferred provider</span>
+              <span className="mb-1.5 block font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Preferred provider</span>
               <select
                 value={s.ai_provider}
                 onChange={(e) => setS({ ...s, ai_provider: e.target.value })}
-                className="h-11 w-full rounded-lg border border-border bg-paper px-3 text-[13px]"
+                className="h-11 w-full rounded-lg border border-border bg-paper px-3 text-[15px]"
               >
                 <option value="claude-sonnet">Claude Sonnet (default)</option>
                 <option value="openai-gpt5" disabled>OpenAI GPT-5 (soon)</option>
                 <option value="gemini-2-5-pro" disabled>Gemini 2.5 Pro (soon)</option>
               </select>
-              <p className="mt-2 text-[11px] text-muted-foreground">AI answer generation is active on supported job applications.</p>
+              <p className="mt-2 text-[13px] text-muted-foreground">AI answer generation is active on supported job applications.</p>
             </label>
           </Section>
 
           <div className="flex justify-end">
-            <button onClick={save} disabled={saving} className="inline-flex h-11 items-center gap-2 rounded-lg bg-brand-green px-5 text-[13px] font-semibold text-[#06140A] hover:bg-brand-green-2 disabled:opacity-60">
+            <button onClick={save} disabled={saving} className="inline-flex h-11 items-center gap-2 rounded-lg bg-brand-green px-5 text-[15px] font-semibold text-[#06140A] hover:bg-brand-green-2 disabled:opacity-60">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Save settings
             </button>
@@ -88,7 +88,7 @@ function SettingsPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-6">
-      <h3 className="text-[15px] font-bold tracking-tight">{title}</h3>
+      <h3 className="text-[16px] font-bold tracking-tight">{title}</h3>
       <div className="mt-4 space-y-3">{children}</div>
     </div>
   );
@@ -98,8 +98,8 @@ function Toggle({ label, desc, value, onChange }: { label: string; desc: string;
   return (
     <div className="flex items-center justify-between rounded-lg border border-border bg-paper p-4">
       <div className="pr-4">
-        <div className="text-[13px] font-semibold">{label}</div>
-        <div className="mt-0.5 text-[11px] text-muted-foreground">{desc}</div>
+        <div className="text-[15px] font-semibold">{label}</div>
+        <div className="mt-0.5 text-[13px] text-muted-foreground">{desc}</div>
       </div>
       <button
         onClick={() => onChange(!value)}
