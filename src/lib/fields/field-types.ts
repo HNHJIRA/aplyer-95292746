@@ -111,3 +111,20 @@ export type FieldConfidence = "HIGH" | "MEDIUM" | "LOW";
 export function mayAutofill(confidence: FieldConfidence): boolean {
   return confidence === "HIGH" || confidence === "MEDIUM";
 }
+
+/**
+ * Open-ended application questions ("Tell us about a time you…") that deserve
+ * a generated, validated answer rather than a remembered short value.
+ */
+const ESSAY_PATTERNS: RegExp[] = [
+  /\b(tell us|describe|explain|share|walk us through|why do you|why are you|what (makes|motivates|excites|interests)|how (would|do) you|give an example|cover letter|elaborate)\b/,
+  /\b(experience|motivation|challenge|accomplishment|strength|weakness|project)\b.*\b(about|with|you)\b/,
+];
+
+export function looksLikeApplicationQuestion(text: string): boolean {
+  const n = normalizeQuestion(text);
+  if (!n) return false;
+  if (looksLikeYesNoQuestion(n) && n.split(" ").length < 12) return false;
+  if (n.split(" ").length >= 8) return true;
+  return ESSAY_PATTERNS.some((re) => re.test(n));
+}
