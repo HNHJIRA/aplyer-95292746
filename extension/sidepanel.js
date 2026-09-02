@@ -380,7 +380,114 @@ async function pickOption(variantId) {
   await autofillAnswer(r.answer, false);
 }
 
+/* ------------------- Application details autofill ------------------- */
+
+function setFieldsStatus(text, isError) {
+  const el = $("fields-status");
+  if (!el) return;
+  el.textContent = text || "";
+  el.classList.toggle("q-error", !!isError);
+}
+
+function renderAskFields(ask) {
+  const wrap = $("fields-ask");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  for (const f of ask) {
+    const row = document.createElement("div");
+    row.className = "q-meta";
+    const label = document.createElement("div");
+    label.textContent = f.questionText;
+    row.appendChild(label);
+
+    let input;
+    if (Array.isArray(f.options) && f.options.length) {
+      input = document.createElement("select");
+      for (const o of f.options) {
+        const opt = document.createElement("option");
+        opt.textContent = o;
+        input.appendChild(opt);
+      }
+    } else {
+      input = document.createElement("input");
+      input.type = "text";
+      input.maxLength = 500;
+      input.placeholder = "Your answer";
+    }
+    const save = document.createElement("button");
+    save.type = "button";
+    save.className = "q-generate q-secondary";
+    save.textContent = "Save & fill";
+    save.addEventListener("click", async () => {
+      const value = String(input.value || "").trim();
+      if (!value) return;
+      save.disabled = true;
+      const res = await send(
+        "APLYER_ANSWER_FIELD",
+        {
+          tabId: currentTabId,
+          field: {
+            fieldId: f.fieldId,
+            questionText: f.questionText,
+            fieldType: f.fieldType,
+            options: f.options || [],
+            answerValue: value,
+          },
+        },
+        20000,
+      );
+      save.disabled = false;
+      row.textContent = res?.ok
+        ? `✓ ${f.questionText} — filled${res.remembered ? " and remembered" : ""}`
+        : `We couldn't fill "${f.questionText}".`;
+    });
+
+    row.appendChild(input);
+    row.appendChild(save);
+    wrap.appendChild(row);
+  }
+}
+
+async function autofillAllFields() {
+  const btn = $("fields-autofill");
+  if (btn) btn.disabled = true;
+  setFieldsStatus("Reading this application form…", false);
+  const res = await send("APLYER_AUTOFILL_ALL", { tabId: currentTabId }, 30000);
+  if (btn) btn.disabled = false;
+
+  if (!res?.ok) {
+    if (res?.code === "auth_required") {
+      setFieldsStatus("Your session expired. Please sign in again.", true);
+      return;
+    }
+    setFieldsStatus(res?.error || "We couldn't autofill this form.", true);
+    return;
+  }
+  if (res.nothingToDo) {
+    setFieldsStatus("Everything here is already filled in.", false);
+    return;
+  }
+
+  const list = $("fields-filled");
+  if (list) {
+    list.innerHTML = "";
+    for (const f of res.filled) {
+      const li = document.createElement("li");
+      li.textContent = `${f.questionText}: ${f.value}`;
+      list.appendChild(li);
+    }
+  }
+  renderAskFields(res.ask || []);
+  setFieldsStatus(
+    `✓ Filled ${res.filled.length} field${res.filled.length === 1 ? "" : "s"}` +
+      (res.ask?.length ? ` · ${res.ask.length} need${res.ask.length === 1 ? "s" : ""} your answer` : ""),
+    false,
+  );
+}
+
 function bind() {
+  $("fields-autofill")?.addEventListener("click", () => autofillAllFields());
+
   $("q-generate")?.addEventListener("click", () => onGenerateAnswer(false));
   $("answer-regen")?.addEventListener("click", () => onGenerateAnswer(true));
   $("answer-use")?.addEventListener("click", () => autofillAnswer($("answer-text").textContent || "", false));
