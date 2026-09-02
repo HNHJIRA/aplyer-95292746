@@ -594,5 +594,4 @@ chrome.storage.onChanged.addListener((changes, area) => {
 document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
 
 bind();
-load();
-loadCorrections();
+load().then(() => loadCorrections()).catch(() => {});
