@@ -724,6 +724,95 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  // Side panel -> background: "Autofill All". The content script reports the
+  // fields it can see, the backend decides what may be written, and only the
+  // backend's decisions are applied. No answer is ever invented here.
+  if (message.type === "APLYER_AUTOFILL_ALL") {
+    (async () => {
+      const tabId = message.tabId;
+      if (typeof tabId !== "number") return sendResponse?.({ ok: false, code: "no_tab" });
+      let scan;
+      try {
+        scan = await chrome.tabs.sendMessage(tabId, { type: "APLYER_FI_SCAN" });
+      } catch {
+        return sendResponse?.({ ok: false, code: "no_form", error: "We couldn't read this application form." });
+      }
+      const fields = scan?.fields || [];
+      const pending = fields.filter((f) => !f.filled);
+      if (pending.length === 0) {
+        return sendResponse?.({ ok: true, filled: [], ask: [], nothingToDo: true });
+      }
+
+      const res = await authedFetch("/api/public/field-memory", { action: "resolve", fields: pending });
+      if (res.authFailed) return sendResponse?.({ ok: false, code: "auth_required" });
+      if (!res.ok || !res.json?.ok) {
+        return sendResponse?.({ ok: false, code: "resolve_failed", error: "We couldn't reach your saved answers." });
+      }
+
+      try {
+        const applied = await chrome.tabs.sendMessage(tabId, {
+          type: "APLYER_FI_APPLY",
+          decisions: res.json.decisions,
+        });
+        return sendResponse?.({ ok: true, filled: applied?.filled || [], ask: applied?.ask || [] });
+      } catch {
+        return sendResponse?.({ ok: false, code: "apply_failed", error: "We couldn't fill this form." });
+      }
+    })();
+    return true;
+  }
+
+  // Side panel -> background: the user answered an ASK field themselves.
+  // Write it into the page, then remember it for next time.
+  if (message.type === "APLYER_ANSWER_FIELD") {
+    (async () => {
+      const tabId = message.tabId;
+      const field = message.field || {};
+      if (typeof tabId !== "number" || !field.fieldId) {
+        return sendResponse?.({ ok: false, code: "no_target" });
+      }
+      let wrote;
+      try {
+        wrote = await chrome.tabs.sendMessage(tabId, {
+          type: "APLYER_FI_ANSWER",
+          fieldId: field.fieldId,
+          value: String(field.answerValue ?? "").slice(0, 500),
+        });
+      } catch {
+        return sendResponse?.({ ok: false, code: "apply_failed" });
+      }
+      if (!wrote?.ok) return sendResponse?.({ ok: false, code: wrote?.code || "apply_failed" });
+
+      const saved = await authedFetch("/api/public/field-memory", {
+        action: "save",
+        answer: {
+          questionText: field.questionText,
+          fieldType: field.fieldType,
+          answerValue: field.answerValue,
+          options: field.options || [],
+          source: "user",
+        },
+      });
+      return sendResponse?.({ ok: true, remembered: saved.ok === true && saved.json?.ok === true });
+    })();
+    return true;
+  }
+
+  // Content script -> background: the user edited a field Aplyer filled.
+  // Learn the correction so the next application uses it.
+  if (message.type === "APLYER_FIELD_CORRECTED" && message.field) {
+    (async () => {
+      const res = await authedFetch("/api/public/field-memory", {
+        action: "save",
+        answer: { ...message.field, source: "correction" },
+      });
+      sendResponse?.({ ok: res.ok === true && res.json?.ok === true });
+    })();
+    return true;
+  }
+
+
+
   // Side panel -> background: read the framework for the active tab only.
   if (message.type === "APLYER_GET_FRAMEWORK") {
     (async () => {
