@@ -38,7 +38,25 @@ export async function handleFieldMemory(request: Request): Promise<Response> {
     try {
       if (action === "resolve") {
         const fields = normalizeFieldQueries(body.fields);
-        const decisions = await resolveFieldAnswers(supabaseAdmin, userId, fields);
+        // Priority 2 source: the profile the user already filled in.
+        const { data: profileRow } = await supabaseAdmin
+          .from("profiles")
+          .select("first_name, last_name, email, phone, location, linkedin, portfolio, website")
+          .eq("id", userId)
+          .maybeSingle();
+        const profile = profileRow
+          ? {
+              firstName: profileRow.first_name,
+              lastName: profileRow.last_name,
+              email: profileRow.email,
+              phone: profileRow.phone,
+              location: profileRow.location,
+              linkedin: profileRow.linkedin,
+              portfolio: profileRow.portfolio,
+              website: profileRow.website,
+            }
+          : null;
+        const decisions = await resolveFieldAnswers(supabaseAdmin, userId, fields, profile);
         return jsonWithCors({ ok: true, decisions }, 200, request);
       }
 
