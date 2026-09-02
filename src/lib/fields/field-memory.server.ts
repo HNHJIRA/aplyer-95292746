@@ -177,7 +177,9 @@ export async function resolveFieldAnswers(
       value: usable,
       confidence,
       reason: confidence === "HIGH" ? "exact_previous_answer" : `similar_question_${score.toFixed(2)}`,
+      memoryHash: match.questionHash,
     };
+
   });
 }
 
