@@ -63,7 +63,7 @@ describe("field detection", () => {
     expect(byQ["Email"]).toBe("TEXT");
     expect(byQ["Phone number"]).toBe("TEXT");
     expect(byQ["Gender"]).toBe("DROPDOWN");
-    expect(byQ["Why do you want this role?"]).toBe("TEXTAREA");
+    expect(byQ["Why do you want this role?"]).toBe("ESSAY");
   });
 
   it("classifies a Yes/No dropdown as YES_NO with its options", () => {
