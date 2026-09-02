@@ -56,6 +56,9 @@ export interface FieldDecision {
   /** Options the user may pick from when action is ASK. */
   options: string[];
   questionText: string;
+  /** Hash of the remembered answer that was used; present only for FILL. */
+  memoryHash?: string;
+
 }
 
 interface MemoryRow extends MatchCandidate {
