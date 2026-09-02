@@ -111,7 +111,8 @@ const PREAMBLE_SIGNOFF = [
 
 const FLATTERY = [
   "dream job", "dream company", "esteemed", "your amazing", "love your product",
-  "huge fan", "big fan of", "admire your", "prestigious",
+  "huge fan", "big fan of", "admire your", "prestigious", "truly inspiring",
+  "incredible mission", "inspiring mission", "am passionate about", "excited about the opportunity",
 ];
 
 const AI_TELLS = [
