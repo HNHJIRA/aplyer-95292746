@@ -168,3 +168,96 @@ describe("background wiring", () => {
     expect(bg).toMatch(/source: "correction"/);
   });
 });
+
+describe("complete autofill engine", () => {
+  const FORM2 = `
+    <label for="site">Portfolio URL</label><input id="site" type="url" />
+    <label for="grad">Graduation date</label><input id="grad" type="date" />
+    <label for="yrs">Years of experience</label><input id="yrs" type="number" />
+    <label for="essay">Tell us about a challenge you solved recently</label><textarea id="essay"></textarea>
+    <label for="note">Nickname</label><textarea id="note"></textarea>
+    <fieldset><legend>Preferred work setup</legend>
+      <label for="w1">Remote</label><input id="w1" type="radio" name="setup" value="remote" />
+      <label for="w2">Hybrid</label><input id="w2" type="radio" name="setup" value="hybrid" />
+    </fieldset>`;
+
+  it("classifies every supported field type", () => {
+    const w = boot(FORM2);
+    const byQ = Object.fromEntries(
+      w.AplyerFieldIntel.scanFields().map((f: any) => [f.questionText, f.fieldType]),
+    );
+    expect(byQ["Portfolio URL"]).toBe("URL");
+    expect(byQ["Graduation date"]).toBe("DATE");
+    expect(byQ["Years of experience"]).toBe("NUMBER");
+    expect(byQ["Tell us about a challenge you solved recently"]).toBe("ESSAY");
+    expect(byQ["Nickname"]).toBe("TEXTAREA");
+    expect(byQ["Preferred work setup"]).toBe("RADIO");
+  });
+
+  it("reports GENERATE fields instead of filling them", () => {
+    const w = boot(FORM2);
+    const fields = w.AplyerFieldIntel.scanFields();
+    const essay = fields.find((f: any) => f.fieldType === "ESSAY");
+    const res = w.AplyerFieldIntel.applyDecisions([
+      { fieldId: essay.fieldId, action: "GENERATE", value: null },
+    ]);
+    expect(res.generate.map((g: any) => g.fieldId)).toEqual([essay.fieldId]);
+    expect((document.getElementById("essay") as HTMLTextAreaElement).value).toBe("");
+  });
+
+  it("selects a non yes/no radio option by its label", () => {
+    const w = boot(FORM2);
+    const fields = w.AplyerFieldIntel.scanFields();
+    const setup = fields.find((f: any) => f.fieldType === "RADIO");
+    w.AplyerFieldIntel.applyDecisions([{ fieldId: setup.fieldId, action: "FILL", value: "Hybrid" }]);
+    expect((document.getElementById("w2") as HTMLInputElement).checked).toBe(true);
+  });
+
+  it("counts sensitive fields it refused to touch", () => {
+    const w = boot(FORM);
+    w.AplyerFieldIntel.scanFields();
+    expect(w.AplyerFieldIntel.skippedCount()).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe("Autofill All worker contract", () => {
+  const bg = readFileSync(resolve(root, "background.js"), "utf8");
+
+  it("runs generated answers through the validated pipeline and inserts them", () => {
+    const fn = bg.slice(bg.indexOf("async function generateAnswerForField"), bg.indexOf("/* --------------------------------------------------------------------\n * Tab-scoped"));
+    expect(bg).toMatch(/async function runAutofillAll/);
+    expect(bg).toMatch(/requestValidatedAnswer\(\{ question:/);
+    expect(bg).toMatch(/APLYER_FI_ANSWER/);
+    expect(fn === "" || !/executeScript/.test(fn)).toBe(true);
+  });
+
+  it("never submits or advances the application", () => {
+    expect(bg).not.toMatch(/\.click\(\)/);
+    expect(bg).not.toMatch(/requestSubmit/);
+  });
+
+  it("queues corrections for confirmation instead of saving silently", () => {
+    expect(bg).toMatch(/APLYER_RESOLVE_CORRECTION/);
+    expect(bg).toMatch(/queueCorrection/);
+    const handler = bg.slice(bg.indexOf('message.type === "APLYER_FIELD_CORRECTED"'), bg.indexOf('message.type === "APLYER_RESOLVE_CORRECTION"'));
+    expect(handler).not.toMatch(/authedFetch/);
+  });
+});
+
+describe("side panel autofill summary", () => {
+  const sp = readFileSync(resolve(root, "sidepanel.js"), "utf8");
+  const html = readFileSync(resolve(root, "sidepanel.html"), "utf8");
+
+  it("shows the four summary counters", () => {
+    expect(html).toMatch(/id="fields-summary"/);
+    expect(sp).toMatch(/"Filled"/);
+    expect(sp).toMatch(/"Generated"/);
+    expect(sp).toMatch(/"Needs review"/);
+    expect(sp).toMatch(/"Skipped"/);
+  });
+
+  it("asks before saving a correction", () => {
+    expect(sp).toMatch(/Save this answer for future applications\?/);
+    expect(sp).toMatch(/APLYER_RESOLVE_CORRECTION/);
+  });
+});
