@@ -325,3 +325,112 @@ describe("request hardening", () => {
     expect(sanitizeOptions("not-an-array")).toEqual([]);
   });
 });
+
+/* ------------- complete Autofill All resolution priority ------------- */
+
+describe("Autofill All resolution priority", () => {
+  const PROFILE = {
+    firstName: "Ada",
+    lastName: "Lovelace",
+    email: "ada@example.com",
+    phone: "+1 555 0100",
+    location: "London",
+    linkedin: "https://linkedin.com/in/ada",
+    portfolio: null,
+    website: "https://ada.dev",
+  };
+
+  it("prefers a saved answer over profile data", async () => {
+    const db = makeDb([
+      {
+        id: "r1",
+        user_id: USER,
+        question_hash: "h1",
+        normalized_question: normalizeQuestion("First name"),
+        question_text: "First name",
+        field_type: "TEXT",
+        answer_value: "Augusta",
+        options_snapshot: [],
+        confirmed_by_user: true,
+        updated_at: new Date().toISOString(),
+      },
+    ]);
+    const [d] = await resolveFieldAnswers(db, USER, [
+      { fieldId: "f1", questionText: "First name", fieldType: "TEXT" },
+    ], PROFILE);
+    expect(d.action).toBe("FILL");
+    expect(d.value).toBe("Augusta");
+  });
+
+  it("falls back to profile data when there is no saved answer", async () => {
+    const db = makeDb();
+    const decisions = await resolveFieldAnswers(
+      db,
+      USER,
+      [
+        { fieldId: "f1", questionText: "First name", fieldType: "TEXT" },
+        { fieldId: "f2", questionText: "Email address", fieldType: "TEXT" },
+        { fieldId: "f3", questionText: "Personal website", fieldType: "URL" },
+      ],
+      PROFILE,
+    );
+    expect(decisions.map((d) => d.action)).toEqual(["FILL", "FILL", "FILL"]);
+    expect(decisions.map((d) => d.value)).toEqual(["Ada", "ada@example.com", "https://ada.dev"]);
+    expect(decisions[0].reason).toBe("profile_data");
+  });
+
+  it("routes open-ended application questions to the answer pipeline", async () => {
+    const db = makeDb();
+    const [essay, short] = await resolveFieldAnswers(
+      db,
+      USER,
+      [
+        { fieldId: "f1", questionText: "Tell us about a challenge you solved", fieldType: "ESSAY" },
+        { fieldId: "f2", questionText: "Nickname", fieldType: "TEXT" },
+      ],
+      PROFILE,
+    );
+    expect(essay.action).toBe("GENERATE");
+    expect(essay.reason).toBe("application_question");
+    expect(short.action).toBe("ASK");
+  });
+
+  it("asks about an unknown dropdown and remembers the answer", async () => {
+    const db = makeDb();
+    const [d] = await resolveFieldAnswers(
+      db,
+      USER,
+      [{ fieldId: "f1", questionText: "Preferred work setup", fieldType: "RADIO", options: ["Remote", "Hybrid"] }],
+      PROFILE,
+    );
+    expect(d.action).toBe("ASK");
+
+    await saveFieldAnswer(db, USER, {
+      questionText: "Preferred work setup",
+      fieldType: "RADIO",
+      answerValue: "Hybrid",
+      options: ["Remote", "Hybrid"],
+      source: "correction",
+    });
+    const [again] = await resolveFieldAnswers(
+      db,
+      USER,
+      [{ fieldId: "f1", questionText: "Preferred work setup", fieldType: "RADIO", options: ["Remote", "Hybrid"] }],
+      PROFILE,
+    );
+    expect(again.action).toBe("FILL");
+    expect(again.value).toBe("Hybrid");
+  });
+
+  it("still refuses sensitive fields even when the profile knows them", async () => {
+    const db = makeDb();
+    const [d] = await resolveFieldAnswers(
+      db,
+      USER,
+      [{ fieldId: "f1", questionText: "Social Security Number", fieldType: "TEXT" }],
+      PROFILE,
+    );
+    expect(d.action).toBe("SKIP");
+    expect(d.reason).toBe("sensitive_field");
+  });
+});
