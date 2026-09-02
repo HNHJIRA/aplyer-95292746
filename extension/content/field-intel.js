@@ -53,6 +53,24 @@
 
   const clean = (s) => String(s || "").replace(/\s+/g, " ").replace(/\*+$/, "").trim().slice(0, 500);
 
+  /** The shared question for a radio group (legend or nearest group label). */
+  function groupLabel(el) {
+    const fs = el.closest?.("fieldset");
+    const lg = fs?.querySelector("legend");
+    if (lg?.innerText?.trim()) return lg.innerText;
+    const by = el.closest?.("[role='radiogroup'][aria-label]");
+    if (by) return by.getAttribute("aria-label");
+    let p = el.parentElement;
+    for (let i = 0; i < 5 && p; i++) {
+      const l = [...p.querySelectorAll("label, legend")].find(
+        (n) => !n.contains(el) && n.innerText?.trim().length > 2 && !n.getAttribute("for"),
+      );
+      if (l) return l.innerText;
+      p = p.parentElement;
+    }
+    return el.getAttribute?.("aria-label") || el.name || "";
+  }
+
   /* --------------------------- visibility --------------------------- */
 
   function isVisible(el) {
