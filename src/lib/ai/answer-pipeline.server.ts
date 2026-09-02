@@ -37,6 +37,7 @@ import {
 } from "./prompts/prompt-j-quality-scan";
 import { PROMPT_I_CLASSIFICATION } from "./prompts/prompt-i-classification";
 import type { QuestionFramework } from "./prompts/prompt-i-classification";
+import { auditAnswerRules, type AnswerRuleAudit } from "./answer-rule-audit";
 
 export const ANSWERS_TABLE = "generated_answers";
 const STALE_LOCK_MS = 180 * 1000;
@@ -207,6 +208,17 @@ export async function computeAnswerCacheKey(input: {
 /* Single validated answer (A -> guards -> J -> repair -> re-scan)     */
 /* ------------------------------------------------------------------ */
 
+/** Untrusted job context flattened to sanitized plain text ("" when absent). */
+function jobContextToText(job?: JobContextInput | null): string {
+  if (!job) return "";
+  return [job.title, job.company, job.description]
+    .filter(Boolean)
+    .map((v) => sanitizeJobContextText(String(v)))
+    .join("\n");
+}
+
+
+
 interface GenerateOneInput {
   question: string;
   framework: QuestionFramework;
@@ -237,12 +249,7 @@ async function scan(
       answer,
       voiceCard: input.voiceCard,
       facts: toPromptFacts(input.flat),
-      jobContext: input.jobContext
-        ? [input.jobContext.title, input.jobContext.company, input.jobContext.description]
-            .filter(Boolean)
-            .map((v) => sanitizeJobContextText(String(v)))
-            .join("\n")
-        : null,
+      jobContext: jobContextToText(input.jobContext) || null,
       deterministicViolations: opts.deterministicViolations ?? null,
       requireRevision: opts.requireRevision === true,
     }),
@@ -285,6 +292,7 @@ export async function generateValidatedVariant(input: GenerateOneInput): Promise
   wordCount: number;
   blockingCodes: string[];
   revisionCount: number;
+  ruleAudit: AnswerRuleAudit;
 }> {
   const promptFacts = toPromptFacts(input.flat);
   const allowedIds = promptFacts.map((f) => f.id);
@@ -308,6 +316,18 @@ export async function generateValidatedVariant(input: GenerateOneInput): Promise
   input.budget.providerCalls += a.attempts;
   const draft = a.value;
 
+  // Deterministic 29-rule audit of whatever answer ends up shipping.
+  // Evidence only: it never blocks and never calls a model.
+  const makeAudit = (answer: string, violations: GuardViolation[], factIdsUsed: string[]) =>
+    auditAnswerRules({
+      answer,
+      flat: input.flat,
+      violations,
+      factIdsUsed,
+      allowedFactIds: allowedIds,
+      jobContextText: jobContextToText(input.jobContext),
+    });
+
   // 2. Deterministic guards on the draft.
   const draftGuards = runAnswerGuards(draft.answer, input.flat);
 
@@ -322,6 +342,7 @@ export async function generateValidatedVariant(input: GenerateOneInput): Promise
       wordCount: draft.wordCount,
       blockingCodes: [],
       revisionCount: 0,
+      ruleAudit: makeAudit(draft.answer, draftGuards.violations, draft.factIdsUsed),
     };
   }
 
@@ -337,6 +358,7 @@ export async function generateValidatedVariant(input: GenerateOneInput): Promise
       wordCount: draft.wordCount,
       blockingCodes: firstScan.blockingCodes,
       revisionCount: 0,
+      ruleAudit: makeAudit(draft.answer, draftGuards.violations, draft.factIdsUsed),
     };
   }
 
@@ -401,6 +423,10 @@ export async function generateValidatedVariant(input: GenerateOneInput): Promise
     throw qualityFailed(guardCodes(shipGuards.violations));
   }
 
+  // 10. Deterministic 29-rule audit of the shipped answer. Evidence only —
+  //     it never blocks and never calls a model.
+  const ruleAudit = makeAudit(candidate, shipGuards.violations, draft.factIdsUsed);
+
   return {
     answer: candidate,
     // The repair may drop facts; keep only ids whose value survives verbatim-ish.
@@ -408,6 +434,7 @@ export async function generateValidatedVariant(input: GenerateOneInput): Promise
     wordCount: countWords(candidate),
     blockingCodes: finalScan.blockingCodes,
     revisionCount: corrections + 1,
+    ruleAudit,
   };
 }
 
@@ -542,6 +569,8 @@ export async function generateValidatedAnswer(
     let factIds: string[] = [];
     let revisionCount = 0;
     let blockingCodes: string[] = [];
+    // Deterministic 29-rule audit of exactly what ships. Never blocks.
+    let ruleAudit: AnswerRuleAudit | Record<string, AnswerRuleAudit> | null = null;
 
     if (mode === "resume_only_first_choice") {
       // Both variants are validated independently. A half-valid pair is never shown.
@@ -556,6 +585,7 @@ export async function generateValidatedAnswer(
       factIds = [...new Set([...va.factIdsUsed, ...vb.factIdsUsed])];
       revisionCount = va.revisionCount + vb.revisionCount;
       blockingCodes = [...new Set([...va.blockingCodes, ...vb.blockingCodes])];
+      ruleAudit = { A: va.ruleAudit, B: vb.ruleAudit };
     } else {
       const one = await generateValidatedVariant(base);
       answerText = one.answer;
@@ -563,6 +593,7 @@ export async function generateValidatedAnswer(
       factIds = one.factIdsUsed;
       revisionCount = one.revisionCount;
       blockingCodes = one.blockingCodes;
+      ruleAudit = one.ruleAudit;
     }
 
     // 8. Snapshot revalidation — the source must not have moved under us.
@@ -578,6 +609,7 @@ export async function generateValidatedAnswer(
         fact_ids_used: factIds,
         quality_passed: true,
         quality_blocking: blockingCodes,
+        answer_rule_audit: ruleAudit,
         revision_count: revisionCount,
         logical_scan_count: budget.logicalScans,
         provider_call_count: budget.providerCalls,

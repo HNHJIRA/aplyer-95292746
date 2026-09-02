@@ -23,6 +23,7 @@ import { Route as ApiPublicWaitlistUploadRouteImport } from './routes/api/public
 import { Route as ApiPublicSubscribeRouteImport } from './routes/api/public/subscribe'
 import { Route as ApiPublicJobSafetyCheckRouteImport } from './routes/api/public/job-safety-check'
 import { Route as ApiPublicGenerateAnswerRouteImport } from './routes/api/public/generate-answer'
+import { Route as ApiPublicFieldMemoryRouteImport } from './routes/api/public/field-memory'
 import { Route as ApiPublicFactInventoryRouteImport } from './routes/api/public/fact-inventory'
 import { Route as ApiPublicDemoRouteImport } from './routes/api/public/demo'
 import { Route as ApiAiClassifyQuestionRouteImport } from './routes/api/ai.classify-question'
@@ -103,6 +104,11 @@ const ApiPublicJobSafetyCheckRoute = ApiPublicJobSafetyCheckRouteImport.update({
 const ApiPublicGenerateAnswerRoute = ApiPublicGenerateAnswerRouteImport.update({
   id: '/api/public/generate-answer',
   path: '/api/public/generate-answer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFieldMemoryRoute = ApiPublicFieldMemoryRouteImport.update({
+  id: '/api/public/field-memory',
+  path: '/api/public/field-memory',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicFactInventoryRoute = ApiPublicFactInventoryRouteImport.update({
@@ -187,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/api/ai/classify-question': typeof ApiAiClassifyQuestionRoute
   '/api/public/demo': typeof ApiPublicDemoRoute
   '/api/public/fact-inventory': typeof ApiPublicFactInventoryRoute
+  '/api/public/field-memory': typeof ApiPublicFieldMemoryRoute
   '/api/public/generate-answer': typeof ApiPublicGenerateAnswerRoute
   '/api/public/job-safety-check': typeof ApiPublicJobSafetyCheckRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/api/ai/classify-question': typeof ApiAiClassifyQuestionRoute
   '/api/public/demo': typeof ApiPublicDemoRoute
   '/api/public/fact-inventory': typeof ApiPublicFactInventoryRoute
+  '/api/public/field-memory': typeof ApiPublicFieldMemoryRoute
   '/api/public/generate-answer': typeof ApiPublicGenerateAnswerRoute
   '/api/public/job-safety-check': typeof ApiPublicJobSafetyCheckRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
@@ -240,6 +248,7 @@ export interface FileRoutesById {
   '/api/ai/classify-question': typeof ApiAiClassifyQuestionRoute
   '/api/public/demo': typeof ApiPublicDemoRoute
   '/api/public/fact-inventory': typeof ApiPublicFactInventoryRoute
+  '/api/public/field-memory': typeof ApiPublicFieldMemoryRoute
   '/api/public/generate-answer': typeof ApiPublicGenerateAnswerRoute
   '/api/public/job-safety-check': typeof ApiPublicJobSafetyCheckRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/api/ai/classify-question'
     | '/api/public/demo'
     | '/api/public/fact-inventory'
+    | '/api/public/field-memory'
     | '/api/public/generate-answer'
     | '/api/public/job-safety-check'
     | '/api/public/subscribe'
@@ -293,6 +303,7 @@ export interface FileRouteTypes {
     | '/api/ai/classify-question'
     | '/api/public/demo'
     | '/api/public/fact-inventory'
+    | '/api/public/field-memory'
     | '/api/public/generate-answer'
     | '/api/public/job-safety-check'
     | '/api/public/subscribe'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/api/ai/classify-question'
     | '/api/public/demo'
     | '/api/public/fact-inventory'
+    | '/api/public/field-memory'
     | '/api/public/generate-answer'
     | '/api/public/job-safety-check'
     | '/api/public/subscribe'
@@ -340,6 +352,7 @@ export interface RootRouteChildren {
   ApiAiClassifyQuestionRoute: typeof ApiAiClassifyQuestionRoute
   ApiPublicDemoRoute: typeof ApiPublicDemoRoute
   ApiPublicFactInventoryRoute: typeof ApiPublicFactInventoryRoute
+  ApiPublicFieldMemoryRoute: typeof ApiPublicFieldMemoryRoute
   ApiPublicGenerateAnswerRoute: typeof ApiPublicGenerateAnswerRoute
   ApiPublicJobSafetyCheckRoute: typeof ApiPublicJobSafetyCheckRoute
   ApiPublicSubscribeRoute: typeof ApiPublicSubscribeRoute
@@ -446,6 +459,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/generate-answer'
       fullPath: '/api/public/generate-answer'
       preLoaderRoute: typeof ApiPublicGenerateAnswerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/field-memory': {
+      id: '/api/public/field-memory'
+      path: '/api/public/field-memory'
+      fullPath: '/api/public/field-memory'
+      preLoaderRoute: typeof ApiPublicFieldMemoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/fact-inventory': {
@@ -587,6 +607,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAiClassifyQuestionRoute: ApiAiClassifyQuestionRoute,
   ApiPublicDemoRoute: ApiPublicDemoRoute,
   ApiPublicFactInventoryRoute: ApiPublicFactInventoryRoute,
+  ApiPublicFieldMemoryRoute: ApiPublicFieldMemoryRoute,
   ApiPublicGenerateAnswerRoute: ApiPublicGenerateAnswerRoute,
   ApiPublicJobSafetyCheckRoute: ApiPublicJobSafetyCheckRoute,
   ApiPublicSubscribeRoute: ApiPublicSubscribeRoute,
