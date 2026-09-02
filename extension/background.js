@@ -754,7 +754,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           type: "APLYER_FI_APPLY",
           decisions: res.json.decisions,
         });
-        return sendResponse?.({ ok: true, filled: applied?.filled || [], ask: applied?.ask || [] });
+        const filled = applied?.filled || [];
+        const usedHashes = (res.json.decisions || [])
+          .filter((d) => d.memoryHash && filled.some((f) => f.fieldId === d.fieldId))
+          .map((d) => d.memoryHash);
+        if (usedHashes.length) {
+          authedFetch("/api/public/field-memory", { action: "used", questionHashes: usedHashes }).catch(() => {});
+        }
+        return sendResponse?.({ ok: true, filled, ask: applied?.ask || [] });
       } catch {
         return sendResponse?.({ ok: false, code: "apply_failed", error: "We couldn't fill this form." });
       }
