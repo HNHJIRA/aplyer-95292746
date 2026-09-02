@@ -524,6 +524,151 @@ async function runAnswerFlow(tabId, question, job, force) {
 }
 
 
+/* ------------------------- correction queue -------------------------
+ * A correction is never saved silently. It waits here until the user
+ * answers "Save this answer for future applications?" in the side panel.
+ * ------------------------------------------------------------------ */
+const CORRECTIONS_KEY = "aplyer.pending_corrections.v1";
+
+async function readCorrectionMap() {
+  const res = await chrome.storage.local.get(CORRECTIONS_KEY);
+  return res[CORRECTIONS_KEY] || {};
+}
+
+async function readCorrections(tabId) {
+  if (tabId == null) return [];
+  const map = await readCorrectionMap();
+  return map[String(tabId)] || [];
+}
+
+async function queueCorrection(tabId, field) {
+  if (tabId == null) return;
+  const map = await readCorrectionMap();
+  const list = (map[String(tabId)] || []).filter((c) => c.questionText !== field.questionText);
+  list.push({
+    id: `c${Date.now()}${Math.floor(Math.random() * 1000)}`,
+    questionText: String(field.questionText || "").slice(0, 500),
+    fieldType: String(field.fieldType || "TEXT"),
+    answerValue: String(field.answerValue || "").slice(0, 500),
+    options: Array.isArray(field.options) ? field.options.slice(0, 60) : [],
+    at: Date.now(),
+  });
+  map[String(tabId)] = list.slice(-10);
+  await chrome.storage.local.set({ [CORRECTIONS_KEY]: map });
+}
+
+async function removeCorrection(tabId, correctionId) {
+  if (tabId == null) return;
+  const map = await readCorrectionMap();
+  map[String(tabId)] = (map[String(tabId)] || []).filter((c) => c.id !== correctionId);
+  await chrome.storage.local.set({ [CORRECTIONS_KEY]: map });
+}
+
+/* --------------------------------------------------------------------
+ * Autofill All — the complete application filling pass.
+ *
+ * scan -> classify (content script) -> resolve (backend) -> fill safely.
+ * Resolution priority is decided server-side: confirmed saved answer,
+ * then profile data, then a generated + validated answer for open-ended
+ * application questions, then ask the user. Nothing is invented here and
+ * the application is never submitted or advanced.
+ * ------------------------------------------------------------------ */
+const MAX_GENERATED_PER_RUN = 5;
+
+async function runAutofillAll(tabId) {
+  if (typeof tabId !== "number") return { ok: false, code: "no_tab" };
+
+  let scan;
+  try {
+    scan = await chrome.tabs.sendMessage(tabId, { type: "APLYER_FI_SCAN" });
+  } catch {
+    return { ok: false, code: "no_form", error: "We couldn't read this application form." };
+  }
+  const fields = scan?.fields || [];
+  const skipped = Number(scan?.skipped || 0);
+  const pending = fields.filter((f) => !f.filled);
+  if (pending.length === 0) {
+    return { ok: true, filled: [], ask: [], generated: [], skipped, nothingToDo: true };
+  }
+
+  const res = await authedFetch("/api/public/field-memory", { action: "resolve", fields: pending });
+  if (res.authFailed) return { ok: false, code: "auth_required" };
+  if (!res.ok || !res.json?.ok) {
+    return { ok: false, code: "resolve_failed", error: "We couldn't reach your saved answers." };
+  }
+  const decisions = res.json.decisions || [];
+
+  let applied;
+  try {
+    applied = await chrome.tabs.sendMessage(tabId, { type: "APLYER_FI_APPLY", decisions });
+  } catch {
+    return { ok: false, code: "apply_failed", error: "We couldn't fill this form." };
+  }
+
+  const filled = applied?.filled || [];
+  const ask = applied?.ask || [];
+  const toGenerate = applied?.generate || [];
+
+  // Remembered answers that were actually used.
+  const usedHashes = decisions
+    .filter((d) => d.memoryHash && filled.some((f) => f.fieldId === d.fieldId))
+    .map((d) => d.memoryHash);
+  if (usedHashes.length) {
+    authedFetch("/api/public/field-memory", { action: "used", questionHashes: usedHashes }).catch(() => {});
+  }
+
+  // Open-ended application questions: full A -> J pipeline, inserted
+  // automatically. No "Use This Answer" click is required during a run.
+  const generated = [];
+  const overflow = toGenerate.slice(MAX_GENERATED_PER_RUN);
+  for (const g of toGenerate.slice(0, MAX_GENERATED_PER_RUN)) {
+    const out = await generateAnswerForField(tabId, g);
+    if (out.ok) generated.push({ fieldId: g.fieldId, questionText: g.questionText, wordCount: out.wordCount || null });
+    else ask.push({ ...g, options: [], note: out.error || "Open this question to finish the answer." });
+  }
+  for (const g of overflow) {
+    ask.push({ ...g, options: [], note: "Open this question to write the answer." });
+  }
+
+  return { ok: true, filled, ask, generated, skipped };
+}
+
+/** Generates one validated answer and writes it into its own field. */
+async function generateAnswerForField(tabId, field) {
+  const inv = await ensureFactInventory({ ensure: true });
+  if (inv?.signInRequired) return { ok: false, error: "Please sign in again." };
+  if (!inv?.ok || inv.state?.status !== "ready") {
+    return { ok: false, error: "Still preparing your profile context." };
+  }
+
+  let out = await requestValidatedAnswer({ question: String(field.questionText || "").slice(0, 2000) });
+  let waits = 0;
+  while (out && out.ok === false && out.code === "in_progress" && waits < 20) {
+    waits += 1;
+    await new Promise((r) => setTimeout(r, 3000));
+    out = await requestValidatedAnswer({ question: String(field.questionText || "").slice(0, 2000) });
+  }
+  if (!out || out.ok === false) {
+    return { ok: false, error: out?.error || "We couldn't write an answer you can trust." };
+  }
+  if (out.needsChoice || !out.answer) {
+    return { ok: false, error: "Open this question to pick the wording that sounds like you." };
+  }
+
+  try {
+    const wrote = await chrome.tabs.sendMessage(tabId, {
+      type: "APLYER_FI_ANSWER",
+      fieldId: field.fieldId,
+      value: String(out.answer).slice(0, 8000),
+    });
+    if (!wrote?.ok) return { ok: false, error: "We couldn't write into that field." };
+  } catch {
+    return { ok: false, error: "We couldn't write into that field." };
+  }
+  return { ok: true, wordCount: out.wordCount || null };
+}
+
+
 // Proactive path: tab URL access is granted by host_permissions for supported
 // ATS hosts, so the check runs even if the content script never messages us.
 chrome.tabs?.onUpdated?.addListener((tabId, changeInfo, tab) => {
@@ -728,44 +873,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // fields it can see, the backend decides what may be written, and only the
   // backend's decisions are applied. No answer is ever invented here.
   if (message.type === "APLYER_AUTOFILL_ALL") {
-    (async () => {
-      const tabId = message.tabId;
-      if (typeof tabId !== "number") return sendResponse?.({ ok: false, code: "no_tab" });
-      let scan;
-      try {
-        scan = await chrome.tabs.sendMessage(tabId, { type: "APLYER_FI_SCAN" });
-      } catch {
-        return sendResponse?.({ ok: false, code: "no_form", error: "We couldn't read this application form." });
-      }
-      const fields = scan?.fields || [];
-      const pending = fields.filter((f) => !f.filled);
-      if (pending.length === 0) {
-        return sendResponse?.({ ok: true, filled: [], ask: [], nothingToDo: true });
-      }
-
-      const res = await authedFetch("/api/public/field-memory", { action: "resolve", fields: pending });
-      if (res.authFailed) return sendResponse?.({ ok: false, code: "auth_required" });
-      if (!res.ok || !res.json?.ok) {
-        return sendResponse?.({ ok: false, code: "resolve_failed", error: "We couldn't reach your saved answers." });
-      }
-
-      try {
-        const applied = await chrome.tabs.sendMessage(tabId, {
-          type: "APLYER_FI_APPLY",
-          decisions: res.json.decisions,
-        });
-        const filled = applied?.filled || [];
-        const usedHashes = (res.json.decisions || [])
-          .filter((d) => d.memoryHash && filled.some((f) => f.fieldId === d.fieldId))
-          .map((d) => d.memoryHash);
-        if (usedHashes.length) {
-          authedFetch("/api/public/field-memory", { action: "used", questionHashes: usedHashes }).catch(() => {});
-        }
-        return sendResponse?.({ ok: true, filled, ask: applied?.ask || [] });
-      } catch {
-        return sendResponse?.({ ok: false, code: "apply_failed", error: "We couldn't fill this form." });
-      }
-    })();
+    (async () => sendResponse?.(await runAutofillAll(message.tabId)))();
     return true;
   }
 
@@ -809,16 +917,40 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Learn the correction so the next application uses it.
   if (message.type === "APLYER_FIELD_CORRECTED" && message.field) {
     (async () => {
-      const res = await authedFetch("/api/public/field-memory", {
-        action: "save",
-        answer: { ...message.field, source: "correction" },
-      });
-      sendResponse?.({ ok: res.ok === true && res.json?.ok === true });
+      const tabId = sender?.tab?.id ?? null;
+      await queueCorrection(tabId, message.field);
+      sendResponse?.({ ok: true, queued: true });
     })();
     return true;
   }
 
+  // Side panel -> background: the user answered "Save this answer for future
+  // applications?" — only then is a correction written to memory.
+  if (message.type === "APLYER_RESOLVE_CORRECTION") {
+    (async () => {
+      const pending = await readCorrections(message.tabId);
+      const item = pending.find((c) => c.id === message.correctionId);
+      await removeCorrection(message.tabId, message.correctionId);
+      if (!item || message.save !== true) return sendResponse?.({ ok: true, saved: false });
+      const res = await authedFetch("/api/public/field-memory", {
+        action: "save",
+        answer: {
+          questionText: item.questionText,
+          fieldType: item.fieldType,
+          answerValue: item.answerValue,
+          options: item.options || [],
+          source: "correction",
+        },
+      });
+      sendResponse?.({ ok: true, saved: res.ok === true && res.json?.ok === true });
+    })();
+    return true;
+  }
 
+  if (message.type === "APLYER_GET_CORRECTIONS") {
+    (async () => sendResponse?.({ ok: true, corrections: await readCorrections(message.tabId) }))();
+    return true;
+  }
 
   // Side panel -> background: read the framework for the active tab only.
   if (message.type === "APLYER_GET_FRAMEWORK") {
