@@ -14,8 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      application_field_answers: {
+        Row: {
+          answer_value: string
+          confidence: string
+          confirmed_by_user: boolean
+          created_at: string
+          field_type: string
+          id: string
+          last_used_at: string | null
+          normalized_question: string
+          options_snapshot: Json
+          question_hash: string
+          question_text: string
+          source: string
+          updated_at: string
+          use_count: number
+          user_id: string
+        }
+        Insert: {
+          answer_value: string
+          confidence?: string
+          confirmed_by_user?: boolean
+          created_at?: string
+          field_type: string
+          id?: string
+          last_used_at?: string | null
+          normalized_question: string
+          options_snapshot?: Json
+          question_hash: string
+          question_text: string
+          source?: string
+          updated_at?: string
+          use_count?: number
+          user_id: string
+        }
+        Update: {
+          answer_value?: string
+          confidence?: string
+          confirmed_by_user?: boolean
+          created_at?: string
+          field_type?: string
+          id?: string
+          last_used_at?: string | null
+          normalized_question?: string
+          options_snapshot?: Json
+          question_hash?: string
+          question_text?: string
+          source?: string
+          updated_at?: string
+          use_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       generated_answers: {
         Row: {
+          answer_rule_audit: Json | null
           answer_text: string | null
           cache_key: string
           created_at: string
@@ -51,6 +106,7 @@ export type Database = {
           writedna_version: string | null
         }
         Insert: {
+          answer_rule_audit?: Json | null
           answer_text?: string | null
           cache_key: string
           created_at?: string
@@ -86,6 +142,7 @@ export type Database = {
           writedna_version?: string | null
         }
         Update: {
+          answer_rule_audit?: Json | null
           answer_text?: string | null
           cache_key?: string
           created_at?: string
