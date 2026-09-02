@@ -76,7 +76,7 @@ describe("audit shape", () => {
   });
 
   it("never calls the network", async () => {
-    const spy = vi.spyOn(globalThis, "fetch" as never);
+    const spy = vi.spyOn(globalThis, "fetch");
     auditAnswerRules(ctx(CLEAN));
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
