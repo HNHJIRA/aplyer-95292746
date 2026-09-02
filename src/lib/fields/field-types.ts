@@ -7,16 +7,41 @@
 export const FIELD_TYPES = [
   "TEXT",
   "TEXTAREA",
+  "ESSAY",
   "YES_NO",
+  "RADIO",
   "DROPDOWN",
   "DATE",
   "NUMBER",
+  "URL",
   "FILE",
   "CHECKBOX",
   "UNKNOWN",
 ] as const;
 
 export type FieldType = (typeof FIELD_TYPES)[number];
+
+/** Field types that hold a short, reusable value worth remembering. */
+export const MEMORABLE_TYPES: readonly FieldType[] = [
+  "TEXT",
+  "TEXTAREA",
+  "YES_NO",
+  "RADIO",
+  "DROPDOWN",
+  "DATE",
+  "NUMBER",
+  "URL",
+  "CHECKBOX",
+];
+
+export function isMemorableType(t: FieldType): boolean {
+  return MEMORABLE_TYPES.includes(t);
+}
+
+/** Types that pick one of a rendered option list. */
+export function isOptionType(t: FieldType): boolean {
+  return t === "YES_NO" || t === "RADIO" || t === "DROPDOWN";
+}
 
 export function isFieldType(v: unknown): v is FieldType {
   return typeof v === "string" && (FIELD_TYPES as readonly string[]).includes(v);
