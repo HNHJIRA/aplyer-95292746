@@ -7,16 +7,41 @@
 export const FIELD_TYPES = [
   "TEXT",
   "TEXTAREA",
+  "ESSAY",
   "YES_NO",
+  "RADIO",
   "DROPDOWN",
   "DATE",
   "NUMBER",
+  "URL",
   "FILE",
   "CHECKBOX",
   "UNKNOWN",
 ] as const;
 
 export type FieldType = (typeof FIELD_TYPES)[number];
+
+/** Field types that hold a short, reusable value worth remembering. */
+export const MEMORABLE_TYPES: readonly FieldType[] = [
+  "TEXT",
+  "TEXTAREA",
+  "YES_NO",
+  "RADIO",
+  "DROPDOWN",
+  "DATE",
+  "NUMBER",
+  "URL",
+  "CHECKBOX",
+];
+
+export function isMemorableType(t: FieldType): boolean {
+  return MEMORABLE_TYPES.includes(t);
+}
+
+/** Types that pick one of a rendered option list. */
+export function isOptionType(t: FieldType): boolean {
+  return t === "YES_NO" || t === "RADIO" || t === "DROPDOWN";
+}
 
 export function isFieldType(v: unknown): v is FieldType {
   return typeof v === "string" && (FIELD_TYPES as readonly string[]).includes(v);
@@ -85,4 +110,21 @@ export type FieldConfidence = "HIGH" | "MEDIUM" | "LOW";
 /** Only HIGH and MEDIUM may be written without asking the user first. */
 export function mayAutofill(confidence: FieldConfidence): boolean {
   return confidence === "HIGH" || confidence === "MEDIUM";
+}
+
+/**
+ * Open-ended application questions ("Tell us about a time you…") that deserve
+ * a generated, validated answer rather than a remembered short value.
+ */
+const ESSAY_PATTERNS: RegExp[] = [
+  /\b(tell us|describe|explain|share|walk us through|why do you|why are you|what (makes|motivates|excites|interests)|how (would|do) you|give an example|cover letter|elaborate)\b/,
+  /\b(experience|motivation|challenge|accomplishment|strength|weakness|project)\b.*\b(about|with|you)\b/,
+];
+
+export function looksLikeApplicationQuestion(text: string): boolean {
+  const n = normalizeQuestion(text);
+  if (!n) return false;
+  if (looksLikeYesNoQuestion(n) && n.split(" ").length < 12) return false;
+  if (n.split(" ").length >= 8) return true;
+  return ESSAY_PATTERNS.some((re) => re.test(n));
 }

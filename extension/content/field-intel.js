@@ -1,4 +1,4 @@
-// Aplyer Field Intelligence — v1.11.0
+// Aplyer Field Intelligence — v1.12.0
 //
 // Detects EVERY input on an application form (not just essay questions),
 // classifies it, reports it to the background worker, applies the decisions
@@ -101,10 +101,36 @@
     );
   }
 
-  function classify(el) {
+  // Mirror of the server's looksLikeApplicationQuestion(). Kept identical so
+  // the extension and the backend agree on what deserves a written answer.
+  const ESSAY_PATTERNS = [
+    /\b(tell us|describe|explain|share|walk us through|why do you|why are you|what (makes|motivates|excites|interests)|how (would|do) you|give an example|cover letter|elaborate)\b/,
+    /\b(experience|motivation|challenge|accomplishment|strength|weakness|project)\b.*\b(about|with|you)\b/,
+  ];
+  const YES_NO_Q = /^(are|is|do|does|did|have|has|had|will|would|can|could|should|were|was|may)\b/;
+
+  function normalizeQ(text) {
+    return String(text || "").toLowerCase().replace(/\s+/g, " ").replace(/[^a-z0-9 ]/g, "").trim();
+  }
+
+  function looksLikeApplicationQuestion(text) {
+    const n = normalizeQ(text);
+    if (!n) return false;
+    const words = n.split(" ").length;
+    if (YES_NO_Q.test(n) && words < 12) return false;
+    if (words >= 8) return true;
+    return ESSAY_PATTERNS.some((re) => re.test(n));
+  }
+
+  function classify(el, questionText) {
     const tag = el.tagName;
     const type = (el.getAttribute("type") || "").toLowerCase();
-    if (tag === "TEXTAREA" || el.isContentEditable) return { fieldType: "TEXTAREA", options: [] };
+    if (tag === "TEXTAREA" || el.isContentEditable) {
+      return {
+        fieldType: looksLikeApplicationQuestion(questionText) ? "ESSAY" : "TEXTAREA",
+        options: [],
+      };
+    }
     if (tag === "SELECT") {
       const options = selectOptions(el);
       return { fieldType: isYesNoOptions(options) ? "YES_NO" : "DROPDOWN", options };
@@ -113,12 +139,13 @@
     if (type === "file") return { fieldType: "FILE", options: [] };
     if (type === "date" || type === "month") return { fieldType: "DATE", options: [] };
     if (type === "number") return { fieldType: "NUMBER", options: [] };
+    if (type === "url") return { fieldType: "URL", options: [] };
     if (type === "radio") {
       const options = el.name ? radioGroupOptions(el.name, document) : [];
-      return { fieldType: isYesNoOptions(options) ? "YES_NO" : "DROPDOWN", options };
+      return { fieldType: isYesNoOptions(options) ? "YES_NO" : "RADIO", options };
     }
     if (type === "checkbox") return { fieldType: "CHECKBOX", options: ["Checked", "Unchecked"] };
-    if (["text", "email", "tel", "url", "search", ""].includes(type)) {
+    if (["text", "email", "tel", "search", ""].includes(type)) {
       return { fieldType: "TEXT", options: [] };
     }
     return { fieldType: "UNKNOWN", options: [] };
@@ -130,8 +157,11 @@
   const registry = new Map();
   let seq = 0;
 
+  let skipped = 0;
+
   function scanFields() {
     registry.clear();
+    skipped = 0;
     const seenRadioGroups = new Set();
     const nodes = document.querySelectorAll(
       'input, select, textarea, [contenteditable="true"]',
@@ -153,9 +183,12 @@
       // from the group container instead.
       const questionText = clean(type === "radio" ? groupLabel(el) : labelFor(el));
       if (questionText.length < 2) return;
-      if (SENSITIVE_RE.test(questionText)) return;
+      if (SENSITIVE_RE.test(questionText)) {
+        skipped += 1;
+        return;
+      }
 
-      const { fieldType, options } = classify(el);
+      const { fieldType, options } = classify(el, questionText);
       if (fieldType === "FILE" || fieldType === "UNKNOWN") return;
 
       const fieldId = `f${++seq}`;
@@ -163,12 +196,12 @@
       fields.push({ fieldId, questionText, fieldType, options, filled: hasValue(el, fieldType) });
     });
 
-    log.info("field-intel", `Scanned ${fields.length} field(s)`);
+    log.info("field-intel", `Scanned ${fields.length} field(s), skipped ${skipped} sensitive`);
     return fields;
   }
 
   function hasValue(el, fieldType) {
-    if (fieldType === "YES_NO" || fieldType === "DROPDOWN") {
+    if (fieldType === "YES_NO" || fieldType === "DROPDOWN" || fieldType === "RADIO") {
       if (el.tagName === "SELECT") return !!el.value && el.selectedIndex > 0;
       if (el.name) {
         return [...document.querySelectorAll(`input[type="radio"][name="${CSS.escape(el.name)}"]`)].some(
@@ -243,9 +276,20 @@
   function applyDecisions(decisions) {
     const filled = [];
     const ask = [];
+    const generate = [];
     for (const d of Array.isArray(decisions) ? decisions : []) {
       const entry = registry.get(d.fieldId);
       if (!entry) continue;
+      if (d.action === "GENERATE") {
+        if (!hasValue(entry.el, entry.fieldType)) {
+          generate.push({
+            fieldId: d.fieldId,
+            questionText: entry.questionText,
+            fieldType: entry.fieldType,
+          });
+        }
+        continue;
+      }
       if (d.action !== "FILL" || !d.value) {
         if (d.action === "ASK") {
           ask.push({
@@ -264,8 +308,11 @@
         filled.push({ fieldId: d.fieldId, questionText: entry.questionText, value: d.value });
       }
     }
-    log.info("field-intel", `Filled ${filled.length}, asking about ${ask.length}`);
-    return { filled, ask };
+    log.info(
+      "field-intel",
+      `Filled ${filled.length}, generating ${generate.length}, asking about ${ask.length}`,
+    );
+    return { filled, ask, generate };
   }
 
   /* -------------------------- corrections --------------------------- */
@@ -329,7 +376,7 @@
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (!msg || typeof msg !== "object") return false;
     if (msg.type === "APLYER_FI_SCAN") {
-      sendResponse({ ok: true, fields: scanFields() });
+      sendResponse({ ok: true, fields: scanFields(), skipped });
       return true;
     }
     if (msg.type === "APLYER_FI_APPLY") {
@@ -343,5 +390,13 @@
     return false;
   });
 
-  window.AplyerFieldIntel = { scanFields, applyDecisions, answerField, classify, labelFor };
+  window.AplyerFieldIntel = {
+    scanFields,
+    applyDecisions,
+    answerField,
+    classify,
+    labelFor,
+    looksLikeApplicationQuestion,
+    skippedCount: () => skipped,
+  };
 })();

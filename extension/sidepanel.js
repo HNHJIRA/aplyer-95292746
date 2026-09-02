@@ -6,6 +6,7 @@ const KEY_SESSION = "aplyer.session.v1";
 const KEY_SAFETY = "aplyer.job_safety_by_tab.v1";
 const KEY_FRAMEWORKS = "aplyer.question_frameworks.v1";
 const KEY_DEBUG = "aplyer.debug_mode.v1";
+const KEY_CORRECTIONS = "aplyer.pending_corrections.v1";
 
 // Normal users never see the framework tag or any confidence figure. The
 // framework stays internal and is only surfaced in diagnostics mode.
@@ -452,7 +453,9 @@ async function autofillAllFields() {
   const btn = $("fields-autofill");
   if (btn) btn.disabled = true;
   setFieldsStatus("Reading this application form…", false);
-  const res = await send("APLYER_AUTOFILL_ALL", { tabId: currentTabId }, 30000);
+  // Written answers go through the full validation pipeline, so this run can
+  // take a while on forms with open-ended questions.
+  const res = await send("APLYER_AUTOFILL_ALL", { tabId: currentTabId }, 300000);
   if (btn) btn.disabled = false;
 
   if (!res?.ok) {
@@ -465,24 +468,97 @@ async function autofillAllFields() {
   }
   if (res.nothingToDo) {
     setFieldsStatus("Everything here is already filled in.", false);
+    renderSummary(res);
     return;
   }
 
   const list = $("fields-filled");
   if (list) {
     list.innerHTML = "";
-    for (const f of res.filled) {
+    for (const f of res.filled || []) {
       const li = document.createElement("li");
       li.textContent = `${f.questionText}: ${f.value}`;
       list.appendChild(li);
     }
+    for (const g of res.generated || []) {
+      const li = document.createElement("li");
+      li.textContent = `${g.questionText}: answer written for you`;
+      list.appendChild(li);
+    }
   }
   renderAskFields(res.ask || []);
-  setFieldsStatus(
-    `✓ Filled ${res.filled.length} field${res.filled.length === 1 ? "" : "s"}` +
-      (res.ask?.length ? ` · ${res.ask.length} need${res.ask.length === 1 ? "s" : ""} your answer` : ""),
-    false,
-  );
+  renderSummary(res);
+  setFieldsStatus("✓ Autofill complete.", false);
+}
+
+/** Plain-language completion summary. */
+function renderSummary(res) {
+  const el = $("fields-summary");
+  if (!el) return;
+  const filled = (res.filled || []).length;
+  const generated = (res.generated || []).length;
+  const review = (res.ask || []).length;
+  const skipped = Number(res.skipped || 0);
+  el.innerHTML = "";
+  const rows = [
+    ["Filled", `${filled} field${filled === 1 ? "" : "s"}`],
+    ["Generated", `${generated} answer${generated === 1 ? "" : "s"}`],
+    ["Needs review", `${review} field${review === 1 ? "" : "s"}`],
+    ["Skipped", `${skipped} sensitive field${skipped === 1 ? "" : "s"}`],
+  ];
+  for (const [k, v] of rows) {
+    const row = document.createElement("div");
+    row.textContent = `${k}: ${v}`;
+    el.appendChild(row);
+  }
+}
+
+/* --------------------- correction confirmations --------------------- */
+
+async function loadCorrections() {
+  const wrap = $("fields-corrections");
+  if (!wrap || currentTabId == null) return;
+  const res = await send("APLYER_GET_CORRECTIONS", { tabId: currentTabId }, 8000);
+  const items = res?.corrections || [];
+  wrap.innerHTML = "";
+  for (const c of items) {
+    const row = document.createElement("div");
+    row.className = "q-meta";
+    const p = document.createElement("p");
+    p.className = "safety-copy";
+    p.textContent = `You changed "${c.questionText}" to "${c.answerValue}". Save this answer for future applications?`;
+    const actions = document.createElement("div");
+    actions.className = "answer-actions";
+    const yes = document.createElement("button");
+    yes.type = "button";
+    yes.className = "q-generate";
+    yes.textContent = "Save";
+    const no = document.createElement("button");
+    no.type = "button";
+    no.className = "q-generate q-secondary";
+    no.textContent = "Not now";
+    const resolve = async (save) => {
+      yes.disabled = true;
+      no.disabled = true;
+      const out = await send(
+        "APLYER_RESOLVE_CORRECTION",
+        { tabId: currentTabId, correctionId: c.id, save },
+        15000,
+      );
+      row.textContent = save
+        ? out?.saved
+          ? "✓ Saved for next time."
+          : "We couldn't save that answer."
+        : "Okay, not saved.";
+    };
+    yes.addEventListener("click", () => resolve(true));
+    no.addEventListener("click", () => resolve(false));
+    actions.appendChild(yes);
+    actions.appendChild(no);
+    row.appendChild(p);
+    row.appendChild(actions);
+    wrap.appendChild(row);
+  }
 }
 
 function bind() {
@@ -509,6 +585,7 @@ function bind() {
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
+  if (changes[KEY_CORRECTIONS]) loadCorrections();
   if (changes[KEY_STATUS] || changes[KEY_QUESTION] || changes[KEY_SESSION] || changes[KEY_SAFETY] || changes[KEY_FRAMEWORKS]) {
     load();
   }
@@ -517,4 +594,4 @@ chrome.storage.onChanged.addListener((changes, area) => {
 document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
 
 bind();
-load();
+load().then(() => loadCorrections()).catch(() => {});

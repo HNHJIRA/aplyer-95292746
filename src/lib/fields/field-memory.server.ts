@@ -11,6 +11,8 @@
 //   unconfirmed suggestion.
 import {
   isFieldType,
+  isMemorableType,
+  looksLikeApplicationQuestion,
   isSensitiveQuestion,
   mayAutofill,
   normalizeQuestion,
@@ -19,6 +21,7 @@ import {
   type FieldType,
 } from "./field-types";
 import { matchQuestion, type MatchCandidate } from "./question-match";
+import { resolveProfileValue, type ProfileData } from "./profile-fields";
 
 const TABLE = "application_field_answers";
 const MAX_FIELDS_PER_REQUEST = 60;
@@ -43,7 +46,7 @@ export interface FieldQuery {
   options?: string[];
 }
 
-export type FieldAction = "FILL" | "ASK" | "SKIP";
+export type FieldAction = "FILL" | "GENERATE" | "ASK" | "SKIP";
 
 export interface FieldDecision {
   fieldId: string;
@@ -138,6 +141,7 @@ export async function resolveFieldAnswers(
   db: Db,
   userId: string,
   fields: FieldQuery[],
+  profile?: ProfileData | null,
 ): Promise<FieldDecision[]> {
   const memory = await loadMemory(db, userId);
 
@@ -162,6 +166,21 @@ export async function resolveFieldAnswers(
     const { match, confidence, similarity: score } = matchQuestion(f.questionText, candidates);
 
     if (!match) {
+      // Priority 2 — something the user already told Aplyer about themselves.
+      const fromProfile = resolveProfileValue(f.questionText, f.fieldType, profile);
+      if (fromProfile) {
+        return { ...base, action: "FILL", value: fromProfile, confidence: "HIGH", reason: "profile_data" };
+      }
+      // Priority 3 — an open-ended application question gets a generated,
+      // fully validated answer instead of a remembered value.
+      if (
+        f.fieldType === "ESSAY" ||
+        ((f.fieldType === "TEXTAREA" || f.fieldType === "TEXT") &&
+          looksLikeApplicationQuestion(f.questionText))
+      ) {
+        return { ...base, action: "GENERATE", value: null, confidence: "MEDIUM", reason: "application_question" };
+      }
+      // Priority 4 — ask the user.
       return { ...base, action: "ASK", value: null, confidence: "LOW", reason: "no_memory" };
     }
     const usable = valueIsSelectable(match.answerValue, options, f.fieldType);
@@ -208,7 +227,7 @@ export async function saveFieldAnswer(
   if (isSensitiveQuestion(questionText)) {
     throw new FieldMemoryError("sensitive_field", "Aplyer never stores answers to this kind of question.");
   }
-  if (!isFieldType(input.fieldType) || input.fieldType === "FILE" || input.fieldType === "UNKNOWN") {
+  if (!isFieldType(input.fieldType) || !isMemorableType(input.fieldType)) {
     throw new FieldMemoryError("unsupported_field_type", "This field type can't be remembered.");
   }
 
