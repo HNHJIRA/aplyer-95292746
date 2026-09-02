@@ -157,7 +157,7 @@ describe("background wiring", () => {
   const bg = readFileSync(resolve(root, "background.js"), "utf8");
 
   it("routes Autofill All through the authenticated fetch only", () => {
-    const fn = bg.slice(bg.indexOf('message.type === "APLYER_AUTOFILL_ALL"'), bg.indexOf('message.type === "APLYER_ANSWER_FIELD"'));
+    const fn = bg.slice(bg.indexOf("async function runAutofillAll"), bg.indexOf("async function generateAnswerForField"));
     expect(fn).toMatch(/authedFetch\("\/api\/public\/field-memory", \{ action: "resolve"/);
     expect(fn).not.toMatch(/executeScript/);
     expect(fn).toMatch(/auth_required/);
