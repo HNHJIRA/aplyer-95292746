@@ -131,7 +131,9 @@
         seenRadioGroups.add(el.name);
       }
 
-      const questionText = clean(labelFor(el));
+      // A radio's own label is its option ("Yes"), so the question comes
+      // from the group container instead.
+      const questionText = clean(type === "radio" ? groupLabel(el) : labelFor(el));
       if (questionText.length < 2) return;
       if (SENSITIVE_RE.test(questionText)) return;
 
