@@ -74,3 +74,9 @@ main, .cards { flex: 1 1 auto; }
 .q-secondary { background: transparent; color: #1DB954; border: 1px solid #1DB954; }
 .choice-option { border: 1px solid #E6E8EB; border-radius: 10px; padding: 10px; margin-top: 10px; }
 .choice-option .q-generate { margin-top: 8px; }
+
+/* Primary step card: makes the main action obvious without scrolling. */
+.card-primary { border-color: rgba(29,185,84,.35); background: linear-gradient(180deg, rgba(29,185,84,.07), rgba(29,185,84,0) 60%), var(--card); }
+.card { margin: 10px 12px; padding: 13px 12px 12px; }
+.card-label { margin-bottom: 8px; }
+.hdr { padding: 11px 14px; }

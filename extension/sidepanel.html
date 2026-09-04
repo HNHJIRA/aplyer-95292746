@@ -41,18 +41,19 @@
     </div>
   </section>
 
-  <section class="card" id="safety-card" style="display:none">
-    <div class="card-label">Job safety</div>
-    <div class="safety-row">
-      <span id="safety-badge" class="safety-badge">Checking…</span>
-      <span id="safety-score" class="safety-score"></span>
-    </div>
-    <p id="safety-copy" class="safety-copy"></p>
-    <div id="safety-host" class="q-meta"></div>
+  <section class="card card-primary" id="fields-card">
+    <div class="card-label">Step 1 · Application details</div>
+    <p class="q-meta">Aplyer fills the standard details it already knows and asks you about anything new.</p>
+    <button id="fields-autofill" class="q-generate" type="button">Autofill All</button>
+    <div id="fields-status" class="q-meta"></div>
+    <div id="fields-summary" class="q-meta"></div>
+    <ol id="fields-filled" class="q-list"></ol>
+    <div id="fields-ask"></div>
+    <div id="fields-corrections"></div>
   </section>
 
   <section class="card" id="question-card" style="display:none">
-    <div class="card-label">Selected question</div>
+    <div class="card-label">Step 2 · Selected question</div>
     <div id="q-text" class="q-text"></div>
     <div id="q-meta" class="q-meta"></div>
     <button id="q-generate" class="q-generate" type="button">Generate Answer</button>
@@ -60,7 +61,7 @@
   </section>
 
   <section class="card" id="answer-card" style="display:none">
-    <div class="card-label">Your answer</div>
+    <div class="card-label">Step 3 · Your answer</div>
     <div id="answer-text" class="q-text"></div>
     <div id="answer-meta" class="q-meta"></div>
     <div class="answer-actions">
@@ -94,23 +95,22 @@
 
   <section class="card" id="questions-card" style="display:none">
     <div class="card-label">All detected questions</div>
+    <p class="q-meta">Choose a question to write an answer for it.</p>
     <ol id="q-list" class="q-list"></ol>
   </section>
 
-  <section class="card" id="fields-card">
-    <div class="card-label">Application details</div>
-    <p class="q-meta">Aplyer fills the standard details it already knows and asks you about anything new.</p>
-    <button id="fields-autofill" class="q-generate" type="button">Autofill All</button>
-    <div id="fields-status" class="q-meta"></div>
-    <div id="fields-summary" class="q-meta"></div>
-    <ol id="fields-filled" class="q-list"></ol>
-    <div id="fields-ask"></div>
-    <div id="fields-corrections"></div>
+  <section class="card" id="safety-card" style="display:none">
+    <div class="card-label">Job safety</div>
+    <div class="safety-row">
+      <span id="safety-badge" class="safety-badge">Checking…</span>
+      <span id="safety-score" class="safety-score"></span>
+    </div>
+    <p id="safety-copy" class="safety-copy"></p>
+    <div id="safety-host" class="q-meta"></div>
   </section>
 
-
-
   </main>
+
   <footer class="ftr">Powered by WriteDNA Technology™ · <a href="https://www.aplyer.ai/" target="_blank" rel="noreferrer noopener">aplyer.ai</a></footer>
 
   <script src="sidepanel.js"></script>

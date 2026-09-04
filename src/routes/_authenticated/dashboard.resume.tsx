@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { FileText, Upload, CheckCircle2, AlertCircle, History, TrendingUp, Check } from "lucide-react";
+import { FileText, Upload, CheckCircle2, AlertCircle, History, TrendingUp, Check, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { parseResume } from "@/lib/resume/parse";
 import { scoreResume } from "@/lib/resume/score";
@@ -183,20 +183,23 @@ function ResumePage() {
       </div>
 
       {score && (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-3">
           <Panel title="Strengths" tone="green">
             {score.strengths.length === 0 && <Empty>Add core sections to unlock strengths.</Empty>}
             {score.strengths.map((s) => (
-              <Row key={s}><Check className="h-3.5 w-3.5 text-brand-green" /><span>{s}</span></Row>
+              <Row key={s}><Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-brand-green" /><span>{s}</span></Row>
             ))}
           </Panel>
           <Panel title="Suggestions" tone="amber">
+            {score.suggestions.length === 0 && <Empty>No suggestions right now.</Empty>}
             {score.suggestions.map((s) => (
-              <Row key={s}><AlertCircle className="h-3.5 w-3.5 text-[#E5B73A]" /><span>{s}</span></Row>
+              <Row key={s}><AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[#E5B73A]" /><span>{s}</span></Row>
             ))}
           </Panel>
+          <ScoreExplainer sections={(score.sections ?? {}) as Record<string, boolean>} />
         </div>
       )}
+
     </div>
   );
 }
@@ -209,6 +212,63 @@ function Mini({ label, v }: { label: string; v: number }) {
     </div>
   );
 }
+
+/** Describes the actual deterministic scorer in src/lib/resume/score.ts. */
+const SCORE_SECTIONS: { key: string; label: string; points: number }[] = [
+  { key: "experience", label: "Experience", points: 22 },
+  { key: "contact", label: "Contact information", points: 18 },
+  { key: "skills", label: "Skills", points: 16 },
+  { key: "education", label: "Education", points: 14 },
+  { key: "summary", label: "Professional summary", points: 10 },
+  { key: "certifications", label: "Certifications", points: 8 },
+];
+
+function ScoreExplainer({ sections }: { sections: Record<string, boolean> }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <Info className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">How your score works</span>
+      </div>
+      <p className="text-[14px] text-sub">
+        Your resume is scored on your device from the text in your file — nothing is sent anywhere to
+        produce it. Six sections earn points when they're found, and two bonuses are added on top.
+      </p>
+      <ul className="mt-3 space-y-1.5">
+        {SCORE_SECTIONS.map((s) => {
+          const found = !!sections[s.key];
+          return (
+            <li key={s.key} className="flex items-center justify-between gap-2 text-[14px]">
+              <span className="flex items-center gap-2">
+                {found
+                  ? <Check className="h-3.5 w-3.5 flex-shrink-0 text-brand-green" />
+                  : <span className="h-3.5 w-3.5 flex-shrink-0 rounded-full border border-border" />}
+                <span className={found ? "text-sub" : "text-muted-foreground"}>{s.label}</span>
+              </span>
+              <span className="font-mono text-[12px] text-muted-foreground">+{s.points}</span>
+            </li>
+          );
+        })}
+      </ul>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="mt-3 text-[13px] font-semibold text-brand-green"
+      >
+        {open ? "Hide details" : "Show the two bonuses"}
+      </button>
+      {open && (
+        <div className="mt-2 space-y-2 border-t border-border pt-2 text-[13px] text-muted-foreground">
+          <p><span className="text-sub">Length bonus — up to 12 points.</span> Longer, more detailed resumes earn more, one point per 600 characters.</p>
+          <p><span className="text-sub">Quantified achievements — up to 8 points.</span> One point for each number or percentage found in your resume.</p>
+          <p><span className="text-sub">Complete</span> is how many of the six sections were found. <span className="text-sub">Strength</span> combines your score with how many quantified achievements you included.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 function Panel({ title, tone, children }: { title: string; tone: "green" | "amber"; children: React.ReactNode }) {
   return (
