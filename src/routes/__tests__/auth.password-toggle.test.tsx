@@ -24,7 +24,7 @@ const indexRoute = createRoute({
 
 rootRoute.addChildren([authRoute, forgotRoute, indexRoute]);
 
-function mount() {
+async function mount() {
   const container = document.createElement("div");
   document.body.appendChild(container);
   const router = createRouter({
@@ -32,6 +32,7 @@ function mount() {
     context: { queryClient: new QueryClient() },
     defaultPreload: "intent",
   });
+  await act(() => router.navigate({ to: "/auth" }));
   const root = createRoot(container);
   act(() => {
     root.render(
