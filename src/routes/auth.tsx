@@ -240,7 +240,7 @@ function goToRedirect(redirectTo: string, navigate: ReturnType<typeof useNavigat
   navigate({ to: redirectTo as "/dashboard" });
 }
 
-function Field({
+export function Field({
   icon,
   type = "text",
   placeholder,
