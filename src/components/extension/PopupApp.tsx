@@ -37,7 +37,7 @@ const FLOW: OnboardingStep[] = [
   "done",
 ];
 
-export function PopupApp() {
+export function PopupApp({ preview = false }: { preview?: boolean } = {}) {
   const inExtension = isExtensionRuntime();
   const [session, setSession] = useState<ExtensionSession | null>(null);
   const [sessionChecked, setSessionChecked] = useState(!inExtension);
@@ -181,6 +181,7 @@ export function PopupApp() {
         onSignIn={() => (inExtension ? openAuthInTab(APP_WEB_URL) : (window.location.href = "/auth"))}
         onRefresh={refreshSession}
         checking={checking}
+        preview={preview}
       />
     );
   }

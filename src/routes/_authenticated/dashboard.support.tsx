@@ -9,8 +9,8 @@ function SupportPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[32px] font-black tracking-tight">Support</h1>
-        <p className="mt-1 text-[15px] text-muted-foreground">We usually reply within a few hours.</p>
+        <h1 className="text-[32px] font-black tracking-tight">Customer Support</h1>
+        <p className="mt-1 text-[15px] text-muted-foreground">We typically reply to requests within a few hours</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

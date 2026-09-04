@@ -7,10 +7,12 @@ export function SignIn({
   onSignIn,
   onRefresh,
   checking,
+  preview,
 }: {
   onSignIn: () => void;
   onRefresh: () => void;
   checking?: boolean;
+  preview?: boolean;
 }) {
   return (
     <div className="relative flex h-full flex-col">
@@ -32,24 +34,25 @@ export function SignIn({
           Connect your <span className="text-brand-green">Aplyer</span> account
         </h1>
         <p className="mt-3 text-[15px] leading-relaxed text-sub">
-          Sign in once on the web. Your resume, profile, and writing samples
-          stay synced across devices.
+          Sign in to Aplyer once, then use the extension while you apply.
         </p>
       </div>
 
-      <div className="relative z-10 flex flex-col gap-2 px-6 pb-6">
-        <Button size="lg" onClick={onSignIn} className="w-full">
-          Sign in with Aplyer <ArrowRight className="h-4 w-4" />
-        </Button>
-        <button
-          onClick={onRefresh}
-          disabled={checking}
-          className="inline-flex items-center justify-center gap-1.5 py-1 text-[13px] text-muted-foreground hover:text-foreground"
-        >
-          <RefreshCw className={`h-3 w-3 ${checking ? "animate-spin" : ""}`} />
-          {checking ? "Checking…" : "I've signed in — check again"}
-        </button>
-      </div>
+      {!preview && (
+        <div className="relative z-10 flex flex-col gap-2 px-6 pb-6">
+          <Button size="lg" onClick={onSignIn} className="w-full">
+            Sign in with Aplyer <ArrowRight className="h-4 w-4" />
+          </Button>
+          <button
+            onClick={onRefresh}
+            disabled={checking}
+            className="inline-flex items-center justify-center gap-1.5 py-1 text-[13px] text-muted-foreground hover:text-foreground"
+          >
+            <RefreshCw className={`h-3 w-3 ${checking ? "animate-spin" : ""}`} />
+            {checking ? "Checking…" : "I've signed in — check again"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
