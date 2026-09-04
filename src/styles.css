@@ -126,4 +126,29 @@
   background: linear-gradient(90deg, #E5373A, #1DB954);
   height: 4px;
 }
+
+/* ─── Dashboard typography scale ─────────────────────────────
+   Scoped to .dash-typography (authenticated web dashboard only).
+   Never applied to the Chrome extension popup / side panel /
+   onboarding, which render outside this scope and keep their
+   compact sizes. Unlayered rules intentionally override the
+   fixed px utilities below so the whole dashboard follows one
+   consistent scale:
+   page title 36 > section 24–30 > card heading 17–19 > body 15–16 > helper 12.5–14 */
+.dash-typography .text-\[11px\] { font-size: 12.5px; }
+.dash-typography .text-\[12px\] { font-size: 13px; }
+.dash-typography .text-\[13px\] { font-size: 14px; }
+.dash-typography .text-\[14px\] { font-size: 15px; }
+.dash-typography .text-\[15px\] { font-size: 16px; }
+.dash-typography .text-\[16px\] { font-size: 17px; }
+.dash-typography .text-\[17px\] { font-size: 18px; }
+.dash-typography .text-\[18px\] { font-size: 19.5px; }
+.dash-typography .text-\[22px\] { font-size: 24px; }
+.dash-typography .text-\[28px\] { font-size: 30px; }
+.dash-typography .text-\[32px\] { font-size: 36px; }
+/* shared (shadcn-style) components rendered inside the dashboard */
+.dash-typography .text-xs { font-size: 12.5px; }
+.dash-typography .text-sm { font-size: 14.5px; }
+.dash-typography .text-base { font-size: 16px; }
+.dash-typography .text-lg { font-size: 18px; }
 .grid-hairline { background: var(--border2); gap: 2px; }
