@@ -49,59 +49,67 @@ export function Dashboard({ onResume, onProfile, onSettings }: { onResume: () =>
         </button>
       </div>
 
-      <div className="popup-scroll flex-1 space-y-3 overflow-y-auto px-5 py-4">
-        {/* Hero score card */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-xl border border-brand-green/20 bg-gradient-to-br from-paper to-field p-4"
-        >
-          <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-brand-green/10 blur-2xl" />
-          <div className="relative flex items-center gap-4">
-            <div className="relative flex h-16 w-16 items-center justify-center">
-              <svg className="-rotate-90" width={64} height={64}>
-                <circle cx={32} cy={32} r={28} stroke="rgba(0,0,0,0.08)" strokeWidth={6} fill="none" />
-                <motion.circle
-                  cx={32}
-                  cy={32}
-                  r={28}
-                  stroke="#1DB954"
-                  strokeWidth={6}
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeDasharray={2 * Math.PI * 28}
-                  initial={{ strokeDashoffset: 2 * Math.PI * 28 }}
-                  animate={{ strokeDashoffset: 2 * Math.PI * 28 * (1 - (state.resumeScore?.score ?? 0) / 100) }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                />
-              </svg>
-              <span className="absolute text-[18px] font-black">{state.resumeScore?.score ?? 0}</span>
-            </div>
-            <div className="flex-1">
-              <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-brand-green">Resume Readiness</p>
-              <p className="mt-0.5 text-[16px] font-bold leading-tight">{getReadinessLabel(state.resumeScore?.score ?? 0)}</p>
-              <p className="text-[13px] text-muted-foreground">{state.resumeMetadata?.fileName ?? "No resume on file"}</p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Status grid */}
-        <div className="grid grid-cols-2 gap-2">
-          <StatusCard icon={<FileText className="h-4 w-4" />} label="Resume" value={state.resumeMetadata ? "Active" : "Missing"} ok={!!state.resumeMetadata} onClick={onResume} />
-          <StatusCard icon={<User className="h-4 w-4" />} label="Profile" value={`${profilePct}%`} ok={profilePct >= 80} onClick={onProfile} />
-          <StatusCard icon={<PenLine className="h-4 w-4" />} label="Samples" value={`${state.writingSamples.length}`} ok={state.writingSamples.length > 0} />
-          <StatusCard icon={<Crown className="h-4 w-4" />} label="Plan" value={state.subscriptionStatus.tier.toUpperCase()} ok onClick={openSubscription} />
+      <div className="popup-scroll flex-1 space-y-2.5 overflow-y-auto px-4 py-3">
+        {/* 1. Connection / account */}
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-brand-green/25 bg-brand-green/5 px-3 py-2">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-brand-green" />
+            <span className="truncate text-[13px] font-semibold text-brand-green">Connected</span>
+            <span className="truncate text-[12px] text-muted-foreground">{state.profile?.email || "Signed in"}</span>
+          </span>
         </div>
 
-        {/* Supported platforms */}
-        <div className="rounded-xl border border-border bg-paper p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Supported Platforms</span>
-            <span className="font-mono text-[11px] text-brand-green">Ready</span>
+        {/* 2. Resume status */}
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 rounded-xl border border-border bg-paper p-3"
+        >
+          <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center">
+            <svg className="-rotate-90" width={48} height={48}>
+              <circle cx={24} cy={24} r={20} stroke="rgba(0,0,0,0.08)" strokeWidth={5} fill="none" />
+              <motion.circle
+                cx={24}
+                cy={24}
+                r={20}
+                stroke="#1DB954"
+                strokeWidth={5}
+                fill="none"
+                strokeLinecap="round"
+                strokeDasharray={2 * Math.PI * 20}
+                initial={{ strokeDashoffset: 2 * Math.PI * 20 }}
+                animate={{ strokeDashoffset: 2 * Math.PI * 20 * (1 - (state.resumeScore?.score ?? 0) / 100) }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              />
+            </svg>
+            <span className="absolute text-[13px] font-black">{state.resumeScore?.score ?? 0}</span>
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="min-w-0 flex-1">
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-green">Resume</p>
+            <p className="truncate text-[14px] font-bold leading-tight">
+              {state.resumeMetadata?.fileName ?? "No resume on file"}
+            </p>
+            <p className="truncate text-[12px] text-muted-foreground">{getReadinessLabel(state.resumeScore?.score ?? 0)}</p>
+          </div>
+          <button
+            onClick={onResume}
+            className="flex-shrink-0 rounded-md border border-border bg-field px-2.5 py-1.5 text-[12px] font-semibold hover:border-brand-green/30"
+          >
+            {state.resumeMetadata ? "Replace" : "Upload"}
+          </button>
+        </motion.div>
+
+        {/* 3. What Aplyer can do here + primary action */}
+        <div className="rounded-xl border border-border bg-paper p-3">
+          <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">On job pages</div>
+          <p className="mt-1 text-[13px] leading-snug text-foreground">
+            Open a job application on a supported site and Aplyer's side panel appears — use{" "}
+            <span className="font-semibold">Autofill All</span> for your details and{" "}
+            <span className="font-semibold">Generate Answer</span> for written questions.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
             {PLATFORMS.map((p) => (
-              <span key={p.name} className="inline-flex items-center gap-1.5 rounded-md border border-border bg-field px-2 py-1 text-[13px]">
+              <span key={p.name} className="inline-flex items-center gap-1.5 rounded-md border border-border bg-field px-2 py-0.5 text-[12px]">
                 <span className="h-1.5 w-1.5 rounded-full" style={{ background: p.color }} />
                 {p.name}
               </span>
@@ -109,37 +117,44 @@ export function Dashboard({ onResume, onProfile, onSettings }: { onResume: () =>
           </div>
         </div>
 
-        {/* Quick actions */}
-        <div className="rounded-xl border border-border bg-paper p-3">
-          <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Quick Actions</div>
+        <Button size="sm" className="w-full" onClick={() => openWebPath("/dashboard")}>
+          Open Aplyer dashboard
+        </Button>
+
+        {/* 4. Current state */}
+        <div className="grid grid-cols-3 gap-2">
+          <StatusCard icon={<User className="h-4 w-4" />} label="Profile" value={`${profilePct}%`} ok={profilePct >= 80} onClick={onProfile} />
+          <StatusCard icon={<PenLine className="h-4 w-4" />} label="Samples" value={`${state.writingSamples.length}`} ok={state.writingSamples.length > 0} />
+          <StatusCard icon={<Crown className="h-4 w-4" />} label="Plan" value={state.subscriptionStatus.tier.toUpperCase()} ok onClick={openSubscription} />
+        </div>
+
+        {/* 5. Secondary actions */}
+        <div className="rounded-xl border border-border bg-paper p-2.5">
           <div className="space-y-1.5">
-            <QuickAction icon={<Upload className="h-4 w-4" />} label="Re-upload Resume" onClick={onResume} />
-            <QuickAction icon={<User className="h-4 w-4" />} label="Edit Profile" onClick={onProfile} />
-            <QuickAction icon={<RefreshCcw className="h-4 w-4" />} label="Re-run Resume Analysis" onClick={onResume} />
-            
+            <QuickAction icon={<Upload className="h-4 w-4" />} label="Re-upload resume" onClick={onResume} />
+            <QuickAction icon={<User className="h-4 w-4" />} label="Edit profile" onClick={onProfile} />
+            <QuickAction icon={<RefreshCcw className="h-4 w-4" />} label="Re-run resume analysis" onClick={onResume} />
+            <QuickAction icon={<SettingsIcon className="h-4 w-4" />} label="Settings" onClick={openSettings} />
           </div>
         </div>
 
         {/* Pro upsell */}
         {state.subscriptionStatus.tier === "free" && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-xl border border-brand-red/30 bg-gradient-to-br from-[#1a0e10] to-paper p-3"
-          >
-            <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-red/15 text-brand-red">
+          <div className="rounded-xl border border-brand-red/30 bg-gradient-to-br from-[#1a0e10] to-paper p-3">
+            <div className="flex items-start gap-2.5">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-brand-red/15 text-brand-red">
                 <Crown className="h-4 w-4" />
               </div>
-              <div className="flex-1">
-                <p className="text-[15px] font-bold">Unlock Aplyer Pro</p>
-                <p className="mt-0.5 text-[13px] text-muted-foreground">Unlimited apps, advanced AI models, priority support.</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-bold">Aplyer Pro — $29 / month</p>
+                <p className="mt-0.5 text-[12px] text-muted-foreground">AI answer generation, Voice Card and Autofill All.</p>
               </div>
             </div>
-            <Button size="sm" className="mt-2.5 w-full" onClick={openSubscription}>Upgrade</Button>
-          </motion.div>
+            <Button size="sm" className="mt-2 w-full" onClick={openSubscription}>See plans</Button>
+          </div>
         )}
       </div>
+
     </div>
   );
 }
