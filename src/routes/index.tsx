@@ -6,13 +6,13 @@ import {
   Sparkles,
   ArrowRight,
   Check,
-  X,
   Upload,
   Wand2,
   Send,
   Briefcase,
   ShieldCheck,
   Zap,
+  Type,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
