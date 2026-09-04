@@ -81,7 +81,7 @@ function Index() {
       <Hero />
       <CompareSection />
       <HowItWorks />
-      <StatsRow />
+      <BenefitsRow />
       <FinalCTA />
       <Footer />
     </main>
