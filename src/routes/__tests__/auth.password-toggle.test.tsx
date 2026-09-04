@@ -67,8 +67,8 @@ describe("Auth password visibility toggle", () => {
     cleanup();
   });
 
-  it("reveals password when toggled", () => {
-    const { container, cleanup } = mount();
+  it("reveals password when toggled", async () => {
+    const { container, cleanup } = await mount();
     const toggle = container.querySelector('button[aria-label="Show password"]') as HTMLButtonElement;
     expect(toggle).not.toBeNull();
     act(() => toggle?.click());
