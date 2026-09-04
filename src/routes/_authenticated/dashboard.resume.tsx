@@ -183,20 +183,23 @@ function ResumePage() {
       </div>
 
       {score && (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-3">
           <Panel title="Strengths" tone="green">
             {score.strengths.length === 0 && <Empty>Add core sections to unlock strengths.</Empty>}
             {score.strengths.map((s) => (
-              <Row key={s}><Check className="h-3.5 w-3.5 text-brand-green" /><span>{s}</span></Row>
+              <Row key={s}><Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-brand-green" /><span>{s}</span></Row>
             ))}
           </Panel>
           <Panel title="Suggestions" tone="amber">
+            {score.suggestions.length === 0 && <Empty>No suggestions right now.</Empty>}
             {score.suggestions.map((s) => (
-              <Row key={s}><AlertCircle className="h-3.5 w-3.5 text-[#E5B73A]" /><span>{s}</span></Row>
+              <Row key={s}><AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[#E5B73A]" /><span>{s}</span></Row>
             ))}
           </Panel>
+          <ScoreExplainer sections={(score.sections ?? {}) as Record<string, boolean>} />
         </div>
       )}
+
     </div>
   );
 }
