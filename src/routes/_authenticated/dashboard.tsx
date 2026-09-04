@@ -13,7 +13,7 @@ function DashboardLayout() {
       <Toaster />
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-6 py-8 lg:px-10 lg:py-10">
+        <div className="mx-auto max-w-7xl px-5 py-6 lg:px-8 lg:py-7">
           <Outlet />
         </div>
       </main>

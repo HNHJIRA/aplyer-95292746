@@ -43,14 +43,14 @@ function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
         <h1 className="text-[32px] font-black tracking-tight">Settings</h1>
         <p className="mt-1 text-[15px] text-muted-foreground">Manage your preferences and AI engine.</p>
       </div>
 
       {isLoading ? <div className="h-[300px] animate-pulse rounded-2xl bg-card" /> : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <Section title="Preferences">
             <Toggle label="Email notifications" desc="Updates about your account and applications." value={s.notifications} onChange={(v) => setS({ ...s, notifications: v })} />
             <Toggle label="Autofill on supported ATS" desc="Aplyer fills fields when you visit Workday, Greenhouse, Lever." value={s.autofill_enabled} onChange={(v) => setS({ ...s, autofill_enabled: v })} />
@@ -87,16 +87,16 @@ function SettingsPage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-6">
+    <div className="rounded-2xl border border-border bg-card p-5">
       <h3 className="text-[16px] font-bold tracking-tight">{title}</h3>
-      <div className="mt-4 space-y-3">{children}</div>
+      <div className="mt-3 space-y-2.5">{children}</div>
     </div>
   );
 }
 
 function Toggle({ label, desc, value, onChange }: { label: string; desc: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-border bg-paper p-4">
+    <div className="flex items-center justify-between rounded-lg border border-border bg-paper px-4 py-3">
       <div className="pr-4">
         <div className="text-[15px] font-semibold">{label}</div>
         <div className="mt-0.5 text-[13px] text-muted-foreground">{desc}</div>

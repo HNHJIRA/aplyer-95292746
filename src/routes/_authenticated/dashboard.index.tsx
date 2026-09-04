@@ -77,12 +77,12 @@ function DashboardHome() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
         <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-green/25 bg-brand-green/10 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-brand-green">
           <Sparkles className="h-2.5 w-2.5" /> Welcome back
         </div>
-        <h1 className="mt-3 text-[28px] font-black tracking-tight">
+        <h1 className="mt-2 text-[28px] font-black tracking-tight">
           Hey {firstName}, ready to apply faster?
         </h1>
         <p className="mt-1 text-[15px] text-muted-foreground">
@@ -90,7 +90,7 @@ function DashboardHome() {
         </p>
       </motion.div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-4">
         <Stat label="Resume" value={data.resume ? "Uploaded" : "Missing"} icon={<FileText className="h-4 w-4" />} tone={data.resume ? "green" : "muted"} />
         <Stat label="Resume score" value={data.score ? `${data.score.score}/100` : "—"} icon={<TrendingUp className="h-4 w-4" />} tone={data.score ? "green" : "muted"} />
         <Stat label="Profile" value={`${profileCompletion}%`} icon={<UserIcon className="h-4 w-4" />} tone={profileCompletion >= 80 ? "green" : "amber"} />
@@ -129,8 +129,8 @@ function DashboardHome() {
         return <WriteDnaCard writeDna={dna} />;
       })()}
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-card p-6 lg:col-span-2">
+      <div className="grid gap-3 lg:grid-cols-3">
+        <div className="rounded-2xl border border-border bg-card p-5 lg:col-span-2">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-[17px] font-bold tracking-tight">Setup checklist</h2>
@@ -140,9 +140,9 @@ function DashboardHome() {
               {steps.filter((s) => s.done).length} / {steps.length}
             </span>
           </div>
-          <ul className="mt-4 space-y-2.5">
+          <ul className="mt-3 space-y-2">
             {steps.map((s) => (
-              <li key={s.label} className="flex items-center gap-3 rounded-lg border border-border bg-paper px-4 py-3">
+              <li key={s.label} className="flex items-center gap-3 rounded-lg border border-border bg-paper px-4 py-2.5">
                 {s.done ? (
                   <CheckCircle2 className="h-4 w-4 text-brand-green" />
                 ) : (
@@ -154,7 +154,7 @@ function DashboardHome() {
           </ul>
         </div>
 
-        <div className="rounded-2xl border border-brand-green/25 bg-gradient-to-br from-brand-green/15 to-transparent p-6">
+        <div className="rounded-2xl border border-brand-green/25 bg-gradient-to-br from-brand-green/15 to-transparent p-5">
           <Chrome className="h-6 w-6 text-brand-green" />
           <h3 className="mt-3 text-[18px] font-bold tracking-tight">Install Chrome extension</h3>
           <p className="mt-1 text-[14px] text-muted-foreground">
@@ -170,7 +170,7 @@ function DashboardHome() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2">
         <QuickAction href="/dashboard/resume" title="Update your resume" desc="Upload a new version, refresh your score." />
         <QuickAction href="/dashboard/profile" title="Finish your profile" desc="Used to autofill applications instantly." />
       </div>
@@ -204,7 +204,7 @@ function QuickAction({ href, title, desc }: { href: string; title: string; desc:
   return (
     <a
       href={href}
-      className="group flex items-center justify-between rounded-xl border border-border bg-card p-5 transition-all hover:border-brand-green/40"
+      className="group flex items-center justify-between rounded-xl border border-border bg-card p-4 transition-all hover:border-brand-green/40"
     >
       <div>
         <div className="text-[16px] font-bold tracking-tight">{title}</div>
