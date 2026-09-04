@@ -253,18 +253,33 @@ function Field({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const [show, setShow] = useState(false);
+  const isPassword = type === "password";
+  const inputType = isPassword ? (show ? "text" : "password") : type;
+
   return (
     <label className="group relative flex h-11 items-center rounded-lg border border-border bg-paper transition-colors focus-within:border-brand-green/60">
       {icon ? (
         <span className="pl-3 text-muted-foreground group-focus-within:text-brand-green">{icon}</span>
       ) : null}
       <input
-        type={type}
+        type={inputType}
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="h-full w-full bg-transparent px-3 text-[15px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
       />
+      {isPassword && (
+        <button
+          type="button"
+          onClick={() => setShow((s) => !s)}
+          aria-label={show ? "Hide password" : "Show password"}
+          aria-pressed={show}
+          className="mr-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-field hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-green/60"
+        >
+          {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
+      )}
     </label>
   );
 }
