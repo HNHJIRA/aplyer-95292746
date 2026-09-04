@@ -6,13 +6,13 @@ import {
   Sparkles,
   ArrowRight,
   Check,
-  X,
   Upload,
   Wand2,
   Send,
   Briefcase,
   ShieldCheck,
   Zap,
+  Type,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -81,7 +81,7 @@ function Index() {
       <Hero />
       <CompareSection />
       <HowItWorks />
-      <StatsRow />
+      <BenefitsRow />
       <FinalCTA />
       <Footer />
     </main>
@@ -502,13 +502,13 @@ function HowItWorks() {
   );
 }
 
-/* ─────────────── Stats ─────────────── */
-function StatsRow() {
-  const stats = [
-    { n: "1,200+", l: "Essay prompts faced per active job seeker each year", icon: Briefcase },
-    { n: "62%", l: "Of applications abandoned at open-ended questions", icon: X },
-    { n: "3.4×", l: "More applications sent after installing Aplyer", icon: Zap },
-    { n: "100%", l: "Your voice — never a generic AI answer", icon: ShieldCheck },
+/* ─────────────── Benefits ─────────────── */
+export function BenefitsRow() {
+  const benefits = [
+    { title: "Answer open-ended questions faster", icon: Zap },
+    { title: "Write answers grounded in your experience", icon: Briefcase },
+    { title: "Apply with less repetitive typing", icon: Type },
+    { title: "Written in your voice, never a generic AI answer", icon: ShieldCheck },
   ];
   return (
     <Section className="mx-auto max-w-6xl px-6 py-12">
@@ -517,19 +517,16 @@ function StatsRow() {
         className="overflow-hidden rounded-2xl border border-border bg-paper"
       >
         <div className="grid gap-px bg-border md:grid-cols-4">
-          {stats.map((s, i) => (
+          {benefits.map((b, i) => (
             <motion.div
               key={i}
               variants={fadeUp}
-              className="bg-paper p-6"
+              className="flex flex-col justify-center bg-paper p-6"
             >
-              <s.icon className="h-4 w-4 text-brand-green" />
-              <div className="mt-3 font-mono text-[32px] leading-none text-brand-green">
-                {s.n}
-              </div>
-              <div className="mt-2 text-[13px] leading-relaxed text-sub">
-                {s.l}
-              </div>
+              <b.icon className="h-4 w-4 text-brand-green" aria-hidden="true" />
+              <h3 className="mt-3 text-[16px] font-semibold leading-snug text-foreground">
+                {b.title}
+              </h3>
             </motion.div>
           ))}
         </div>
