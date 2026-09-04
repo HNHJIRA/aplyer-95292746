@@ -105,8 +105,8 @@ describe("Auth password visibility toggle", () => {
     cleanup();
   });
 
-  it("toggle has type button and does not submit the form", () => {
-    const { container, cleanup } = mount();
+  it("toggle has type button and does not submit the form", async () => {
+    const { container, cleanup } = await mount();
     const toggle = container.querySelector('button[aria-label="Show password"]') as HTMLButtonElement;
     expect(toggle?.getAttribute("type")).toBe("button");
     cleanup();
