@@ -1,10 +1,8 @@
 import { motion } from "framer-motion";
 import {
-  FileText,
   User,
   PenLine,
   Settings as SettingsIcon,
-  Sparkles,
   Crown,
   ChevronRight,
   RefreshCcw,
