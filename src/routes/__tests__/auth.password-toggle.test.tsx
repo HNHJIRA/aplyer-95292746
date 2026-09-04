@@ -78,8 +78,8 @@ describe("Auth password visibility toggle", () => {
     cleanup();
   });
 
-  it("hides password when toggled again", () => {
-    const { container, cleanup } = mount();
+  it("hides password when toggled again", async () => {
+    const { container, cleanup } = await mount();
     const showBtn = container.querySelector('button[aria-label="Show password"]') as HTMLButtonElement;
     act(() => showBtn?.click());
     const hideBtn = container.querySelector('button[aria-label="Hide password"]') as HTMLButtonElement;
