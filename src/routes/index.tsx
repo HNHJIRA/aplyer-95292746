@@ -447,10 +447,10 @@ function HowItWorks() {
   return (
     <Section id="how" className="mx-auto max-w-6xl px-6 py-20">
       <motion.div variants={fadeUp} className="mx-auto max-w-2xl text-center">
-        <span className="font-mono text-[12px] uppercase tracking-[0.18em] text-brand-green">
+        <span className="font-mono text-[13px] uppercase tracking-[0.18em] text-brand-green">
           Q.02 — How it works
         </span>
-        <h2 className="mt-3 text-[28px] font-black tracking-tight md:text-[40px]">
+        <h2 className="mt-3 text-[30px] font-black tracking-tight md:text-[44px]">
           Three steps to a sent application.
         </h2>
       </motion.div>
@@ -470,11 +470,11 @@ function HowItWorks() {
             <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand-green/15 text-brand-green">
               <s.icon className="h-5 w-5" />
             </div>
-            <div className="font-mono text-[11px] text-muted-foreground">
+            <div className="font-mono text-[12px] text-muted-foreground">
               Step {String(i + 1).padStart(2, "0")}
             </div>
-            <h3 className="mt-1 text-[18px] font-bold">{s.title}</h3>
-            <p className="mt-2 text-[14px] leading-relaxed text-sub">{s.body}</p>
+            <h3 className="mt-1 text-[20px] font-bold">{s.title}</h3>
+            <p className="mt-2 text-[15px] leading-relaxed text-sub">{s.body}</p>
           </motion.div>
         ))}
       </motion.div>
