@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardLayout() {
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="dash-typography flex min-h-screen bg-background text-foreground">
       <Toaster />
       <Sidebar />
       <main className="flex-1 overflow-y-auto">

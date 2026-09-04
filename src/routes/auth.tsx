@@ -122,7 +122,7 @@ function AuthPage() {
           <LogoMark size={30} />
           <span className="text-[15px] font-black tracking-tight">aplyer.ai</span>
         </Link>
-        <Link to="/" className="text-[12px] text-muted-foreground hover:text-foreground">← Back to home</Link>
+        <Link to="/" className="text-[13px] text-muted-foreground hover:text-foreground">← Back to home</Link>
       </header>
 
       <div className="mx-auto flex max-w-md flex-col px-6 py-8">
@@ -132,13 +132,13 @@ function AuthPage() {
           transition={{ duration: 0.4 }}
           className="rounded-2xl border border-border bg-card p-8 shadow-[0_30px_80px_-40px_rgba(29,185,84,0.4)]"
         >
-          <div className="mb-1 inline-flex items-center gap-1.5 rounded-full border border-brand-green/25 bg-brand-green/10 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.18em] text-brand-green">
+          <div className="mb-1 inline-flex items-center gap-1.5 rounded-full border border-brand-green/25 bg-brand-green/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-brand-green">
             {mode === "signin" ? "Sign in" : "Create account"}
           </div>
-          <h1 className="mt-2 text-[26px] font-black tracking-tight">
+          <h1 className="mt-2 text-[30px] font-black tracking-tight">
             {mode === "signin" ? "Welcome back" : "Get started free"}
           </h1>
-          <p className="mt-1 text-[13px] text-muted-foreground">
+          <p className="mt-1.5 text-[15px] text-muted-foreground">
             {mode === "signin"
               ? "Sign in to your Aplyer dashboard."
               : "Upload your resume once, apply faster everywhere."}
@@ -188,7 +188,7 @@ function AuthPage() {
               <div className="flex justify-end">
                 <Link
                   to="/auth/forgot"
-                  className="text-[11px] text-muted-foreground hover:text-foreground"
+                  className="text-[13px] text-muted-foreground hover:text-foreground"
                 >
                   Forgot password?
                 </Link>
@@ -198,7 +198,7 @@ function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand-green text-[13px] font-semibold text-[#06140A] shadow-[0_10px_30px_-12px_rgba(29,185,84,0.7)] transition-all hover:bg-brand-green-2 disabled:opacity-60"
+              className="mt-2 inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-brand-green text-[15px] font-semibold text-[#06140A] shadow-[0_10px_30px_-12px_rgba(29,185,84,0.7)] transition-all hover:bg-brand-green-2 disabled:opacity-60"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {mode === "signin" ? "Sign in" : "Create account"}
@@ -206,7 +206,7 @@ function AuthPage() {
             </button>
           </form>
 
-          <p className="mt-5 text-center text-[12px] text-muted-foreground">
+          <p className="mt-5 text-center text-[14px] text-muted-foreground">
             {mode === "signin" ? "New to Aplyer?" : "Already have an account?"}{" "}
             <button
               type="button"
@@ -218,7 +218,7 @@ function AuthPage() {
           </p>
         </motion.div>
 
-        <p className="mt-6 text-center text-[11px] text-muted-foreground">
+        <p className="mt-6 text-center text-[12.5px] text-muted-foreground">
           By continuing you agree to Aplyer's Terms and Privacy.
         </p>
       </div>
@@ -263,7 +263,7 @@ function Field({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-full w-full bg-transparent px-3 text-[13px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+        className="h-full w-full bg-transparent px-3 text-[15px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
       />
     </label>
   );
