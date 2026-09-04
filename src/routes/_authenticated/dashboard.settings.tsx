@@ -19,16 +19,16 @@ function SettingsPage() {
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
       const { data } = await supabase.from("user_settings").select("*").eq("user_id", u.user!.id).maybeSingle();
-      return data;
+      return { settings: data, email: u.user?.email ?? null };
     },
   });
 
   useEffect(() => {
-    if (data) setS({
-      notifications: data.notifications,
-      autofill_enabled: data.autofill_enabled,
-      telemetry: data.telemetry,
-      ai_provider: data.ai_provider,
+    if (data?.settings) setS({
+      notifications: data.settings.notifications,
+      autofill_enabled: data.settings.autofill_enabled,
+      telemetry: data.settings.telemetry,
+      ai_provider: data.settings.ai_provider,
     });
   }, [data]);
 
@@ -43,21 +43,25 @@ function SettingsPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-[32px] font-black tracking-tight">Settings</h1>
-        <p className="mt-1 text-[15px] text-muted-foreground">Manage your preferences and AI engine.</p>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-[32px] font-black tracking-tight">Settings</h1>
+          <p className="mt-1 text-[15px] text-muted-foreground">Manage your account, applications and notifications.</p>
+        </div>
+        <button onClick={save} disabled={saving || isLoading} className="inline-flex h-11 items-center gap-2 rounded-lg bg-brand-green px-5 text-[15px] font-semibold text-[#06140A] hover:bg-brand-green-2 disabled:opacity-60">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          Save settings
+        </button>
       </div>
 
       {isLoading ? <div className="h-[300px] animate-pulse rounded-2xl bg-card" /> : (
-        <div className="space-y-3">
-          <Section title="Preferences">
-            <Toggle label="Email notifications" desc="Updates about your account and applications." value={s.notifications} onChange={(v) => setS({ ...s, notifications: v })} />
-            <Toggle label="Autofill on supported ATS" desc="Aplyer fills fields when you visit Workday, Greenhouse, Lever." value={s.autofill_enabled} onChange={(v) => setS({ ...s, autofill_enabled: v })} />
-            <Toggle label="Anonymous telemetry" desc="Help us improve. Never shares your resume or answers." value={s.telemetry} onChange={(v) => setS({ ...s, telemetry: v })} />
-          </Section>
-
-          <Section title="AI engine">
+        <div className="grid gap-3 lg:grid-cols-2">
+          <Section title="Account" desc="The account your extension and dashboard share.">
+            <div className="rounded-lg border border-border bg-paper px-4 py-3">
+              <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Signed in as</div>
+              <div className="mt-1 truncate text-[15px] font-semibold">{data?.email ?? "—"}</div>
+            </div>
             <div className="flex items-center justify-between rounded-lg border border-border bg-paper px-4 py-3">
               <div className="pr-4">
                 <div className="text-[15px] font-semibold">AI-powered answer generation</div>
@@ -67,17 +71,23 @@ function SettingsPage() {
             </div>
           </Section>
 
-          <div className="flex justify-end">
-            <button onClick={save} disabled={saving} className="inline-flex h-11 items-center gap-2 rounded-lg bg-brand-green px-5 text-[15px] font-semibold text-[#06140A] hover:bg-brand-green-2 disabled:opacity-60">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save settings
-            </button>
-          </div>
+          <Section title="Applications" desc="How Aplyer behaves on job sites.">
+            <Toggle label="Autofill on supported job sites" desc="Aplyer fills fields when you visit Workday, Greenhouse, Lever." value={s.autofill_enabled} onChange={(v) => setS({ ...s, autofill_enabled: v })} />
+          </Section>
+
+          <Section title="Notifications" desc="What we send you by email.">
+            <Toggle label="Email notifications" desc="Updates about your account and applications." value={s.notifications} onChange={(v) => setS({ ...s, notifications: v })} />
+          </Section>
+
+          <Section title="Privacy" desc="What you share with us.">
+            <Toggle label="Anonymous telemetry" desc="Help us improve. Never shares your resume or answers." value={s.telemetry} onChange={(v) => setS({ ...s, telemetry: v })} />
+          </Section>
         </div>
       )}
     </div>
   );
 }
+
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
