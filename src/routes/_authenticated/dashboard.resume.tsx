@@ -213,6 +213,63 @@ function Mini({ label, v }: { label: string; v: number }) {
   );
 }
 
+/** Describes the actual deterministic scorer in src/lib/resume/score.ts. */
+const SCORE_SECTIONS: { key: string; label: string; points: number }[] = [
+  { key: "experience", label: "Experience", points: 22 },
+  { key: "contact", label: "Contact information", points: 18 },
+  { key: "skills", label: "Skills", points: 16 },
+  { key: "education", label: "Education", points: 14 },
+  { key: "summary", label: "Professional summary", points: 10 },
+  { key: "certifications", label: "Certifications", points: 8 },
+];
+
+function ScoreExplainer({ sections }: { sections: Record<string, boolean> }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <Info className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">How your score works</span>
+      </div>
+      <p className="text-[14px] text-sub">
+        Your resume is scored on your device from the text in your file — nothing is sent anywhere to
+        produce it. Six sections earn points when they're found, and two bonuses are added on top.
+      </p>
+      <ul className="mt-3 space-y-1.5">
+        {SCORE_SECTIONS.map((s) => {
+          const found = !!sections[s.key];
+          return (
+            <li key={s.key} className="flex items-center justify-between gap-2 text-[14px]">
+              <span className="flex items-center gap-2">
+                {found
+                  ? <Check className="h-3.5 w-3.5 flex-shrink-0 text-brand-green" />
+                  : <span className="h-3.5 w-3.5 flex-shrink-0 rounded-full border border-border" />}
+                <span className={found ? "text-sub" : "text-muted-foreground"}>{s.label}</span>
+              </span>
+              <span className="font-mono text-[12px] text-muted-foreground">+{s.points}</span>
+            </li>
+          );
+        })}
+      </ul>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="mt-3 text-[13px] font-semibold text-brand-green"
+      >
+        {open ? "Hide details" : "Show the two bonuses"}
+      </button>
+      {open && (
+        <div className="mt-2 space-y-2 border-t border-border pt-2 text-[13px] text-muted-foreground">
+          <p><span className="text-sub">Length bonus — up to 12 points.</span> Longer, more detailed resumes earn more, one point per 600 characters.</p>
+          <p><span className="text-sub">Quantified achievements — up to 8 points.</span> One point for each number or percentage found in your resume.</p>
+          <p><span className="text-sub">Complete</span> is how many of the six sections were found. <span className="text-sub">Strength</span> combines your score with how many quantified achievements you included.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function Panel({ title, tone, children }: { title: string; tone: "green" | "amber"; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
