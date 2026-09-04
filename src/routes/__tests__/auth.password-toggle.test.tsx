@@ -28,7 +28,7 @@ function mountPasswordField() {
   rerender(value);
   return {
     container,
-    getValue: () => value,
+    setValue: (v: string) => { onChange(v); },
     cleanup: () => { root.unmount(); container.remove(); },
   };
 }
