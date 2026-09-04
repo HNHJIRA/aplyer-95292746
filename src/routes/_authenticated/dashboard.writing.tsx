@@ -81,7 +81,7 @@ function WritingPage() {
   const totalWords = samples.reduce((a, s) => a + (s.word_count ?? 0), 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-[32px] font-black tracking-tight">Writing samples</h1>
@@ -102,9 +102,9 @@ function WritingPage() {
       </div>
 
       {open && (
-        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-border bg-card p-6">
+        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-border bg-card p-5">
           <h3 className="text-[16px] font-bold">New sample</h3>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
             <label className="block">
               <span className="mb-1.5 block font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Type</span>
               <select
@@ -141,7 +141,7 @@ function WritingPage() {
       {isLoading ? (
         <div className="h-[200px] animate-pulse rounded-2xl bg-card" />
       ) : samples.length === 0 ? (
-        <div className="flex flex-col items-center rounded-2xl border border-dashed border-border bg-paper py-16">
+        <div className="flex flex-col items-center rounded-2xl border border-dashed border-border bg-paper py-10">
           <BookOpen className="h-8 w-8 text-muted-foreground" />
           <p className="mt-3 text-[16px] font-semibold">No writing samples yet</p>
           <p className="mt-1 text-[14px] text-muted-foreground">Add a cover letter or bio to help Aplyer match your voice later.</p>

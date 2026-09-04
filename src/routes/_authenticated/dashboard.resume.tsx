@@ -92,13 +92,13 @@ function ResumePage() {
   const score = data?.score;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
         <h1 className="text-[32px] font-black tracking-tight">Resume</h1>
         <p className="mt-1 text-[15px] text-muted-foreground">Upload PDF or DOCX. We score it locally — your file is private.</p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         <div className="lg:col-span-2">
           {meta ? (
             <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-brand-green/25 bg-brand-green/5 p-5">
@@ -132,7 +132,7 @@ function ResumePage() {
                 e.preventDefault(); setDragOver(false);
                 const f = e.dataTransfer.files?.[0]; if (f) upload.mutate(f);
               }}
-              className={`flex h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-paper text-center transition-all ${dragOver ? "border-brand-green bg-brand-green/5" : "border-border hover:border-brand-green/40"}`}
+              className={`flex h-[180px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-paper text-center transition-all ${dragOver ? "border-brand-green bg-brand-green/5" : "border-border hover:border-brand-green/40"}`}
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-green/10 text-brand-green">
                 {upload.isPending ? <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <Upload className="h-6 w-6" />}
@@ -144,7 +144,7 @@ function ResumePage() {
           <input ref={inputRef} type="file" accept=".pdf,.docx,.doc,.txt" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload.mutate(f); }} />
 
           {!isLoading && data && data.history.length > 1 && (
-            <div className="mt-5 rounded-2xl border border-border bg-card p-5">
+            <div className="mt-4 rounded-2xl border border-border bg-card p-5">
               <div className="mb-3 flex items-center gap-2">
                 <History className="h-4 w-4 text-muted-foreground" />
                 <h3 className="text-[16px] font-bold">Version history</h3>
@@ -183,7 +183,7 @@ function ResumePage() {
       </div>
 
       {score && (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2">
           <Panel title="Strengths" tone="green">
             {score.strengths.length === 0 && <Empty>Add core sections to unlock strengths.</Empty>}
             {score.strengths.map((s) => (
