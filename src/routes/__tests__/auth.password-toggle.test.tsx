@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { act } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createRouter, createRootRoute, createRoute } from "@tanstack/react-router";
-import AuthRoute from "../auth";
+import { Route as AuthRoute } from "../auth";
 
 const rootRoute = createRootRoute();
 const authRoute = createRoute({
