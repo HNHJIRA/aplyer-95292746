@@ -488,7 +488,7 @@ export function parseEmploymentHistory(resumeText: string): EmploymentEntry[] {
     if (!m) return;
     const start = scoreDate(m[1] ?? "");
     const end = scoreDate(m[2] ?? "");
-    const context = [lines[i - 1] ?? "", line, lines[i + 1] ?? ""].join(" ");
+    const context = [lines[i - 2] ?? "", lines[i - 1] ?? "", line, lines[i + 1] ?? ""].join(" ");
     const label = context.replace(DATE_RANGE_RE, " ").replace(/\s+/g, " ").trim();
     entries.push({ label, start, end, order: entries.length });
   });
