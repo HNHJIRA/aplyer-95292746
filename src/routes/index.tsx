@@ -82,7 +82,6 @@ function Index() {
       <CompareSection />
       <HowItWorks />
       <StatsRow />
-      <FounderStory />
       <FinalCTA />
       <Footer />
     </main>
@@ -136,12 +135,6 @@ function Nav() {
             className="hidden rounded-md px-3 py-2 text-sm text-sub hover:text-foreground sm:block"
           >
             How it works
-          </a>
-          <a
-            href="#founder"
-            className="hidden rounded-md px-3 py-2 text-sm text-sub hover:text-foreground sm:block"
-          >
-            Founder
           </a>
           <Link
             to="/dashboard"
@@ -242,7 +235,7 @@ function Hero() {
           >
             {[
               { l: "Status", v: "● Early Access", green: true },
-              { l: "Works on", v: "Workday · Greenhouse · Lever" },
+              { l: "Works on", v: ["Workday", "Greenhouse", "Lever"] },
               { l: "Requires", v: "Google Chrome" },
               { l: "Pricing", v: "Free to join" },
             ].map((m, i) => (
@@ -257,7 +250,15 @@ function Hero() {
                 <div
                   className={`mt-1 text-[13px] font-semibold ${m.green ? "text-brand-green" : "text-foreground"}`}
                 >
-                  {m.v}
+                  {Array.isArray(m.v) ? (
+                    <ul className="list-disc space-y-0.5 pl-4">
+                      {m.v.map((platform) => (
+                        <li key={platform}>{platform}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    m.v
+                  )}
                 </div>
               </motion.div>
             ))}
@@ -293,7 +294,7 @@ function Hero() {
               </span>
             </div>
             <div className="h-[620px] w-[400px] overflow-hidden bg-background">
-              <PopupApp />
+              <PopupApp preview />
             </div>
           </motion.div>
         </motion.div>
@@ -517,42 +518,6 @@ function StatsRow() {
   );
 }
 
-/* ─────────────── Founder ─────────────── */
-function FounderStory() {
-  return (
-    <Section id="founder" className="mx-auto max-w-4xl px-6 py-20">
-      <motion.div
-        variants={fadeUp}
-        className="rounded-2xl border border-border bg-paper p-8 md:p-10"
-      >
-        <div className="flex flex-col items-start gap-6 md:flex-row">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-green to-brand-green-2 text-2xl font-black text-[#06140A]">
-            A
-          </div>
-          <div>
-            <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-brand-green">
-              From the founder
-            </span>
-            <h3 className="mt-2 text-[22px] font-black md:text-[26px]">
-              I built Aplyer because I kept{" "}
-              <em className="font-bold not-italic text-brand-green">
-                skipping
-              </em>{" "}
-              jobs I actually wanted.
-            </h3>
-            <p className="mt-3 text-[15px] leading-relaxed text-sub">
-              After 20 applications in a day, the next "Tell us about a time
-              you led a team" question would just close the tab for me. Aplyer
-              fixes that one moment — the moment between qualified and applied —
-              by writing a first draft in your voice, from your resume, right
-              inside the careers page.
-            </p>
-          </div>
-        </div>
-      </motion.div>
-    </Section>
-  );
-}
 
 /* ─────────────── Final CTA ─────────────── */
 function FinalCTA() {
@@ -606,7 +571,6 @@ function Footer() {
         </div>
         <div className="flex gap-5 text-[13px] text-sub">
           <a href="#how" className="hover:text-foreground">How it works</a>
-          <a href="#founder" className="hover:text-foreground">Founder</a>
           <a href="mailto:hello@aplyer.ai" className="hover:text-foreground">Contact</a>
         </div>
       </div>
