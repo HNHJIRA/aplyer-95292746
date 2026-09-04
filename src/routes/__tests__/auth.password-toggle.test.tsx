@@ -59,8 +59,8 @@ describe("Auth password visibility toggle", () => {
     document.body.innerHTML = "";
   });
 
-  it("hides password by default", () => {
-    const { container, cleanup } = mount();
+  it("hides password by default", async () => {
+    const { container, cleanup } = await mount();
     const input = container.querySelector('input[type="password"]') as HTMLInputElement;
     expect(input).not.toBeNull();
     expect(input?.placeholder.toLowerCase()).toContain("password");
