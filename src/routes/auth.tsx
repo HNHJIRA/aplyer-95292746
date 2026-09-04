@@ -144,28 +144,7 @@ function AuthPage() {
               : "Upload your resume once, apply faster everywhere."}
           </p>
 
-          <div className="mt-5 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-paper px-3 py-2.5 text-[12px] text-muted-foreground"
-            >
-              Google · Soon
-            </button>
-            <button
-              type="button"
-              disabled
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-paper px-3 py-2.5 text-[12px] text-muted-foreground"
-            >
-              LinkedIn · Soon
-            </button>
-          </div>
-
-          <div className="my-5 flex items-center gap-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            <div className="h-px flex-1 bg-border" /> or email <div className="h-px flex-1 bg-border" />
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form onSubmit={handleSubmit} className="mt-5 space-y-3">
             {mode === "signup" && (
               <div className="grid grid-cols-2 gap-2">
                 <Field
