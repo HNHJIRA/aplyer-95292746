@@ -68,13 +68,8 @@ describe("Auth password visibility toggle", () => {
   });
 
   it("preserves password value while toggling", () => {
-    const { container, cleanup } = mountPasswordField();
-    const input = container.querySelector('input[type="password"]') as HTMLInputElement;
-    // Simulate user typing by setting the controlled value through the field's onChange.
-    act(() => {
-      input.value = "secret123";
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-    });
+    const { container, setValue, cleanup } = mountPasswordField();
+    act(() => setValue("secret123"));
     const showBtn = container.querySelector('button[aria-label="Show password"]') as HTMLButtonElement;
     act(() => showBtn?.click());
     expect((container.querySelector('input[type="text"]') as HTMLInputElement)?.value).toBe("secret123");
