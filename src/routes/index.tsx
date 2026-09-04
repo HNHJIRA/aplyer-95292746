@@ -297,7 +297,7 @@ function Hero() {
             aria-hidden="true"
             role="img"
             aria-label="Chrome Extension Preview"
-            className="overflow-hidden rounded-[28px] border border-white/10 bg-paper shadow-[0_40px_100px_-30px_rgba(0,0,0,0.9)]"
+            className="pointer-events-none overflow-hidden rounded-[28px] border border-white/10 bg-paper shadow-[0_40px_100px_-30px_rgba(0,0,0,0.9)]"
           >
             <div className="flex items-center gap-1.5 border-b border-border bg-[#0a1322] px-3 py-2">
               <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
