@@ -89,8 +89,8 @@ describe("Auth password visibility toggle", () => {
     cleanup();
   });
 
-  it("preserves password value while toggling", () => {
-    const { container, cleanup } = mount();
+  it("preserves password value while toggling", async () => {
+    const { container, cleanup } = await mount();
     const input = container.querySelector('input[type="password"]') as HTMLInputElement;
     act(() => {
       input.value = "secret123";
