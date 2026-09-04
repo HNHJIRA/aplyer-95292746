@@ -89,14 +89,16 @@ function SettingsPage() {
 }
 
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
       <h3 className="text-[16px] font-bold tracking-tight">{title}</h3>
+      {desc && <p className="mt-0.5 text-[13px] text-muted-foreground">{desc}</p>}
       <div className="mt-3 space-y-2.5">{children}</div>
     </div>
   );
 }
+
 
 function Toggle({ label, desc, value, onChange }: { label: string; desc: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
