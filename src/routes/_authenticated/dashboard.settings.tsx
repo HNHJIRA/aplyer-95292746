@@ -58,19 +58,13 @@ function SettingsPage() {
           </Section>
 
           <Section title="AI engine">
-            <label className="block">
-              <span className="mb-1.5 block font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Preferred provider</span>
-              <select
-                value={s.ai_provider}
-                onChange={(e) => setS({ ...s, ai_provider: e.target.value })}
-                className="h-11 w-full rounded-lg border border-border bg-paper px-3 text-[15px]"
-              >
-                <option value="claude-sonnet">Claude Sonnet (default)</option>
-                <option value="openai-gpt5" disabled>OpenAI GPT-5 (soon)</option>
-                <option value="gemini-2-5-pro" disabled>Gemini 2.5 Pro (soon)</option>
-              </select>
-              <p className="mt-2 text-[13px] text-muted-foreground">AI answer generation is active on supported job applications.</p>
-            </label>
+            <div className="flex items-center justify-between rounded-lg border border-border bg-paper px-4 py-3">
+              <div className="pr-4">
+                <div className="text-[15px] font-semibold">AI-powered answer generation</div>
+                <div className="mt-0.5 text-[13px] text-muted-foreground">Aplyer generates answers for supported job applications.</div>
+              </div>
+              <div className="flex-shrink-0 rounded-full bg-brand-green/15 px-3 py-1 text-[13px] font-semibold text-brand-green">Active</div>
+            </div>
           </Section>
 
           <div className="flex justify-end">
