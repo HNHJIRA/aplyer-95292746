@@ -9,7 +9,7 @@ const rootRoute = createRootRoute();
 const authRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/auth",
-  component: AuthRoute.component,
+  component: AuthRoute.options.component,
 });
 const forgotRoute = createRoute({
   getParentRoute: () => rootRoute,
