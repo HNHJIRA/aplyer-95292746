@@ -270,7 +270,7 @@ function Hero() {
           initial={{ opacity: 0, y: 30, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.9, ease: "easeOut", delay: 0.1 }}
-          className="relative mx-auto"
+          className="relative mx-auto max-w-full"
         >
           <div
             aria-hidden
@@ -280,10 +280,24 @@ function Hero() {
                 "radial-gradient(50% 50% at 50% 30%, rgba(29,185,84,0.35), transparent 70%)",
             }}
           />
-          <motion.div
-            animate={{ y: [0, -10, 0] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-            className="overflow-hidden rounded-[28px] border border-white/10 bg-paper shadow-[0_40px_100px_-30px_rgba(0,0,0,0.9)]"
+
+          <div className="mb-3 text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-paper/80 px-3 py-1.5">
+              <span className="h-2 w-2 rounded-full bg-brand-green" />
+              <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                Chrome Extension Preview
+              </span>
+            </div>
+            <p className="mt-2 text-[13px] text-sub">
+              See how Aplyer works while you apply.
+            </p>
+          </div>
+
+          <div
+            aria-hidden="true"
+            role="img"
+            aria-label="Chrome Extension Preview"
+            className="pointer-events-none overflow-hidden rounded-[28px] border border-white/10 bg-paper shadow-[0_40px_100px_-30px_rgba(0,0,0,0.9)]"
           >
             <div className="flex items-center gap-1.5 border-b border-border bg-[#0a1322] px-3 py-2">
               <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
@@ -293,10 +307,16 @@ function Hero() {
                 aplyer · popup
               </span>
             </div>
-            <div className="h-[620px] w-[400px] overflow-hidden bg-background">
+            <div className="h-[620px] w-[400px] max-w-full overflow-hidden bg-background">
               <PopupApp preview />
             </div>
-          </motion.div>
+          </div>
+
+          <p className="mt-4 text-center text-[13px] leading-relaxed text-sub lg:text-left">
+            This is a preview of the Aplyer Chrome extension.
+            <br />
+            Install the extension to use Aplyer while applying for jobs.
+          </p>
         </motion.div>
       </div>
     </section>
