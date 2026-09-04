@@ -42,6 +42,20 @@ export function countQualifyingSamples(samples: WritingSample[]): number {
   return samples.filter((s) => isQualifyingProse(s.content, s.type)).length;
 }
 
+/**
+ * Canonical WriteDNA progress. Mirrors the database function recalc_writedna().
+ * Milestones: resume uploaded, first qualifying sample, second qualifying sample.
+ */
+export function computeWriteDnaProgress(
+  resumeUploaded: boolean,
+  qualifyingProseCount: number,
+): number {
+  if (!resumeUploaded) return 0;
+  const samples = Math.max(0, Math.min(2, qualifyingProseCount));
+  return [33, 67, 100][samples]!;
+}
+
+
 export function computeWriteDna(input: {
   resumeUploaded: boolean;
   qualifyingProseCount: number;
