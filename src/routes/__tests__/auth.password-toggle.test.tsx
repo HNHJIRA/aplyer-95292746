@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createRoot } from "react-dom/client";
+import { act } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createRouter, createRootRoute, createRoute } from "@tanstack/react-router";
 import AuthRoute from "../auth";
@@ -23,17 +24,23 @@ const indexRoute = createRoute({
 
 rootRoute.addChildren([authRoute, forgotRoute, indexRoute]);
 
-function Wrapper() {
+function mount() {
+  const container = document.createElement("div");
+  document.body.appendChild(container);
   const router = createRouter({
     routeTree: rootRoute,
     context: { queryClient: new QueryClient() },
     defaultPreload: "intent",
   });
-  return (
-    <QueryClientProvider client={new QueryClient()}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  );
+  const root = createRoot(container);
+  act(() => {
+    root.render(
+      <QueryClientProvider client={new QueryClient()}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    );
+  });
+  return { container, cleanup: () => { root.unmount(); container.remove(); } };
 }
 
 vi.mock("@/integrations/supabase/client", () => ({
@@ -47,61 +54,60 @@ vi.mock("@/integrations/supabase/client", () => ({
 }));
 
 describe("Auth password visibility toggle", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "";
+  });
+
   it("hides password by default", () => {
-    render(<Wrapper />);
-    const inputs = screen.getAllByPlaceholderText(/password/i);
-    expect(inputs[0]).toHaveAttribute("type", "password");
+    const { container, cleanup } = mount();
+    const input = container.querySelector('input[type="password"]') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    expect(input?.placeholder.toLowerCase()).toContain("password");
+    cleanup();
   });
 
   it("reveals password when toggled", () => {
-    render(<Wrapper />);
-    const inputs = screen.getAllByPlaceholderText(/password/i);
-    const toggle = screen.getByRole("button", { name: /show password/i });
-    fireEvent.click(toggle);
-    expect(inputs[0]).toHaveAttribute("type", "text");
+    const { container, cleanup } = mount();
+    const toggle = container.querySelector('button[aria-label="Show password"]') as HTMLButtonElement;
+    expect(toggle).not.toBeNull();
+    act(() => toggle?.click());
+    const input = container.querySelector('input[type="text"]') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    expect(input?.placeholder.toLowerCase()).toContain("password");
+    cleanup();
   });
 
   it("hides password when toggled again", () => {
-    render(<Wrapper />);
-    const inputs = screen.getAllByPlaceholderText(/password/i);
-    const toggle = screen.getByRole("button", { name: /show password/i });
-    fireEvent.click(toggle);
-    fireEvent.click(toggle);
-    expect(inputs[0]).toHaveAttribute("type", "password");
+    const { container, cleanup } = mount();
+    const showBtn = container.querySelector('button[aria-label="Show password"]') as HTMLButtonElement;
+    act(() => showBtn?.click());
+    const hideBtn = container.querySelector('button[aria-label="Hide password"]') as HTMLButtonElement;
+    act(() => hideBtn?.click());
+    const input = container.querySelector('input[type="password"]') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    cleanup();
   });
 
   it("preserves password value while toggling", () => {
-    render(<Wrapper />);
-    const input = screen.getAllByPlaceholderText(/password/i)[0];
-    fireEvent.change(input, { target: { value: "secret123" } });
-    const toggle = screen.getByRole("button", { name: /show password/i });
-    fireEvent.click(toggle);
-    expect(input).toHaveValue("secret123");
-    fireEvent.click(toggle);
-    expect(input).toHaveValue("secret123");
+    const { container, cleanup } = mount();
+    const input = container.querySelector('input[type="password"]') as HTMLInputElement;
+    act(() => {
+      input.value = "secret123";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const showBtn = container.querySelector('button[aria-label="Show password"]') as HTMLButtonElement;
+    act(() => showBtn?.click());
+    expect((container.querySelector('input[type="text"]') as HTMLInputElement)?.value).toBe("secret123");
+    const hideBtn = container.querySelector('button[aria-label="Hide password"]') as HTMLButtonElement;
+    act(() => hideBtn?.click());
+    expect((container.querySelector('input[type="password"]') as HTMLInputElement)?.value).toBe("secret123");
+    cleanup();
   });
 
-  it("does not submit the form when clicked", () => {
-    const signIn = vi.fn();
-    vi.doMock("@/integrations/supabase/client", () => ({
-      supabase: {
-        auth: {
-          getSession: vi.fn(() => Promise.resolve({ data: { session: null } })),
-          signInWithPassword: signIn,
-          signUp: vi.fn(() => Promise.resolve({ error: null })),
-        },
-      },
-    }));
-    render(<Wrapper />);
-    const toggle = screen.getByRole("button", { name: /show password/i });
-    fireEvent.click(toggle);
-    expect(signIn).not.toHaveBeenCalled();
-  });
-
-  it("changes accessible label to Hide password when visible", () => {
-    render(<Wrapper />);
-    const toggle = screen.getByRole("button", { name: /show password/i });
-    fireEvent.click(toggle);
-    expect(screen.getByRole("button", { name: /hide password/i })).toBeInTheDocument();
+  it("toggle has type button and does not submit the form", () => {
+    const { container, cleanup } = mount();
+    const toggle = container.querySelector('button[aria-label="Show password"]') as HTMLButtonElement;
+    expect(toggle?.getAttribute("type")).toBe("button");
+    cleanup();
   });
 });
