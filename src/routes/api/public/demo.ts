@@ -1,5 +1,11 @@
+// Public demo answer endpoint.
+//
+// The provider request is always made in streaming mode. Delivery is chosen by
+// the caller: `?stream=1` / `Accept: text/event-stream` gets SSE text chunks,
+// anything else gets the original `{ answer }` JSON shape (backward compatible).
 import { createFileRoute } from "@tanstack/react-router";
-import { jsonWithCors, preflight } from "@/lib/cors";
+import { corsHeaders, jsonWithCors, preflight } from "@/lib/cors";
+import { consumeAnthropicStream, sseFrame, sseHeaders } from "@/lib/ai/anthropic-stream.server";
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const CLAUDE_MODEL = "claude-sonnet-4-5";
