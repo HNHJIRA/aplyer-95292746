@@ -47,6 +47,38 @@ function statusFor(code: string): number {
   }
 }
 
+/** Streaming is opt-in so existing JSON clients are untouched. */
+export function wantsStream(request: Request): boolean {
+  try {
+    if (new URL(request.url).searchParams.get("stream") === "1") return true;
+  } catch {
+    /* relative URLs in tests */
+  }
+  return (request.headers.get("accept") ?? "").includes("text/event-stream");
+}
+
+/** The single client-facing shape, shared by the JSON and SSE responses. */
+export function toClientPayload(result: {
+  answerId: string;
+  answer: string | null;
+  wordCount: number | null;
+  variants: Array<{ id: string; answer: string; wordCount: number }> | null;
+  needsVariantChoice: boolean;
+  cached: boolean;
+}) {
+  return {
+    ok: true as const,
+    answerId: result.answerId,
+    answer: result.answer,
+    wordCount: result.wordCount,
+    options: result.variants
+      ? result.variants.map((v) => ({ id: v.id, answer: v.answer, wordCount: v.wordCount }))
+      : null,
+    needsChoice: result.needsVariantChoice,
+    cached: result.cached,
+  };
+}
+
 export async function handleGenerateAnswer(request: Request): Promise<Response> {
   try {
     const auth = request.headers.get("authorization") ?? "";
