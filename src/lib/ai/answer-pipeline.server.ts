@@ -304,6 +304,23 @@ export async function generateValidatedVariant(input: GenerateOneInput): Promise
   const allowedIds = promptFacts.map((f) => f.id);
 
   // 1. Prompt A (one strict format retry inside the runner).
+  // Draft preview: forward ONLY the incremental `answer` field of the model's
+  // JSON. The JSON envelope, fact ids and every other internal field stay
+  // server-side.
+  let previewBuffer = "";
+  let previewSent = "";
+  const onDelta = input.onDraftDelta
+    ? (chunk: string) => {
+        previewBuffer += chunk;
+        const soFar = extractPartialJsonString(previewBuffer, "answer");
+        if (soFar.length > previewSent.length) {
+          const delta = soFar.slice(previewSent.length);
+          previewSent = soFar;
+          input.onDraftDelta?.(delta);
+        }
+      }
+    : undefined;
+
   const a = await runPromptValidated(
     PROMPT_A_ANSWER_GENERATION,
     buildAnswerUser({
