@@ -38,6 +38,7 @@ import {
 import { PROMPT_I_CLASSIFICATION } from "./prompts/prompt-i-classification";
 import type { QuestionFramework } from "./prompts/prompt-i-classification";
 import { auditAnswerRules, type AnswerRuleAudit } from "./answer-rule-audit";
+import { extractPartialJsonString } from "./anthropic-stream.server";
 
 export const ANSWERS_TABLE = "generated_answers";
 const STALE_LOCK_MS = 180 * 1000;
@@ -335,6 +336,7 @@ export async function generateValidatedVariant(input: GenerateOneInput): Promise
     }),
     (v) => validateGeneratedAnswer(v, allowedIds),
     ANSWER_RETRY_INSTRUCTION,
+    onDelta ? { onDelta } : {},
   );
   input.budget.providerCalls += a.attempts;
   const draft = a.value;
