@@ -190,7 +190,26 @@ function normalizeQuestionText(text) {
   return String(text || "").toLowerCase().replace(/\s+/g, " ").replace(/[^a-z0-9 ?]/g, "").trim();
 }
 
+/**
+ * Live text shown while the answer is still being written. It is preview only:
+ * no button is wired to it and it is cleared the moment the finished answer
+ * (or an error) arrives, so it can never be copied or filled into a form.
+ */
+function showLiveAnswer(text) {
+  const el = $("answer-live");
+  if (!el) return;
+  if (!text) {
+    el.style.display = "none";
+    el.textContent = "";
+    return;
+  }
+  el.style.display = "";
+  el.textContent = text;
+  el.scrollTop = el.scrollHeight;
+}
+
 function hideResults() {
+  showLiveAnswer("");
   const undo = $("answer-undo");
   if (undo) undo.style.display = "none";
   const fs = $("fill-status");
