@@ -471,7 +471,7 @@ export async function generateValidatedAnswer(
   supabase: Db,
   userId: string,
   request: AnswerRequest,
-  opts: { writeDb?: Db } = {},
+  opts: { writeDb?: Db; onDraftDelta?: ((text: string) => void) | null } = {},
 ): Promise<AnswerResult> {
   const write = await resolveWriteDb(opts.writeDb);
   const question = String(request.question ?? "").trim().slice(0, MAX_QUESTION_CHARS);
@@ -612,7 +612,9 @@ export async function generateValidatedAnswer(
       blockingCodes = [...new Set([...va.blockingCodes, ...vb.blockingCodes])];
       ruleAudit = { A: va.ruleAudit, B: vb.ruleAudit };
     } else {
-      const one = await generateValidatedVariant(base);
+      // Draft preview is only wired for the single-answer modes; the A/B mode
+      // runs two generations concurrently and their deltas would interleave.
+      const one = await generateValidatedVariant({ ...base, onDraftDelta: opts.onDraftDelta ?? null });
       answerText = one.answer;
       wordCount = one.wordCount;
       factIds = one.factIdsUsed;
