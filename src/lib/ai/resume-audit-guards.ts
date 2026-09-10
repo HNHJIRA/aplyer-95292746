@@ -328,6 +328,21 @@ function resumeNumbers(resumeText: string): Set<string> {
 /** Metric-looking numbers only: percentages, currency, magnitudes, big numbers. */
 const METRIC_RE = /(\$\s?\d[\d,.]*\s?[kmb]?|\b\d[\d,.]*\s?%|\b\d[\d,.]*\s?[kmb]\b|\b\d{4,}\b|\b\d[\d,.]*x\b)/gi;
 
+/**
+ * Fix advice and the closing priority are PRESCRIPTIVE: they tell the candidate
+ * what to write next, so they legitimately contain example wording, example
+ * numbers, and tool names the resume does not have yet. Grounding applies to
+ * statements ABOUT the resume, not to suggestions for it.
+ */
+function isPrescriptiveField(field: string): boolean {
+  return field.includes("fixPoints") || field === "topPriority";
+}
+
+/** Quoted spans are suggested wording, not claims about the resume. */
+function stripQuoted(text: string): string {
+  return text.replace(/["\u201c\u201d'\u2018\u2019][^"\u201c\u201d\n]{0,200}?["\u201c\u201d]/g, " ");
+}
+
 export function checkGrounding(
   fields: GeneratedField[],
   resumeText: string,
@@ -336,7 +351,10 @@ export function checkGrounding(
   const resumeLower = resumeText.toLowerCase();
   const numbers = resumeNumbers(resumeText);
 
-  for (const { field, text } of fields) {
+  for (const { field, text: rawText } of fields) {
+    if (isPrescriptiveField(field)) continue;
+    const text = stripQuoted(rawText);
+
     // employers / proper nouns
     PROPER_NOUN_RE.lastIndex = 0;
     let m: RegExpExecArray | null;
