@@ -38,6 +38,7 @@ import {
 import { PROMPT_I_CLASSIFICATION } from "./prompts/prompt-i-classification";
 import type { QuestionFramework } from "./prompts/prompt-i-classification";
 import { auditAnswerRules, type AnswerRuleAudit } from "./answer-rule-audit";
+import { extractPartialJsonString } from "./anthropic-stream.server";
 
 export const ANSWERS_TABLE = "generated_answers";
 const STALE_LOCK_MS = 180 * 1000;
@@ -228,6 +229,12 @@ interface GenerateOneInput {
   variant?: VariantId | null;
   preferredStyleNote?: string | null;
   budget: Budget;
+  /**
+   * Optional live preview of the Prompt A draft. Delivery only: the text is
+   * an UNVALIDATED draft and never replaces the validated answer that this
+   * function returns after guards + Prompt J + repair + post-guard.
+   */
+  onDraftDelta?: ((text: string) => void) | null;
 }
 
 /** Blocking guard reason codes, de-duplicated. Diagnostics only. */
@@ -298,6 +305,23 @@ export async function generateValidatedVariant(input: GenerateOneInput): Promise
   const allowedIds = promptFacts.map((f) => f.id);
 
   // 1. Prompt A (one strict format retry inside the runner).
+  // Draft preview: forward ONLY the incremental `answer` field of the model's
+  // JSON. The JSON envelope, fact ids and every other internal field stay
+  // server-side.
+  let previewBuffer = "";
+  let previewSent = "";
+  const onDelta = input.onDraftDelta
+    ? (chunk: string) => {
+        previewBuffer += chunk;
+        const soFar = extractPartialJsonString(previewBuffer, "answer");
+        if (soFar.length > previewSent.length) {
+          const delta = soFar.slice(previewSent.length);
+          previewSent = soFar;
+          input.onDraftDelta?.(delta);
+        }
+      }
+    : undefined;
+
   const a = await runPromptValidated(
     PROMPT_A_ANSWER_GENERATION,
     buildAnswerUser({
@@ -312,6 +336,7 @@ export async function generateValidatedVariant(input: GenerateOneInput): Promise
     }),
     (v) => validateGeneratedAnswer(v, allowedIds),
     ANSWER_RETRY_INSTRUCTION,
+    onDelta ? { onDelta } : {},
   );
   input.budget.providerCalls += a.attempts;
   const draft = a.value;
@@ -446,7 +471,7 @@ export async function generateValidatedAnswer(
   supabase: Db,
   userId: string,
   request: AnswerRequest,
-  opts: { writeDb?: Db } = {},
+  opts: { writeDb?: Db; onDraftDelta?: ((text: string) => void) | null } = {},
 ): Promise<AnswerResult> {
   const write = await resolveWriteDb(opts.writeDb);
   const question = String(request.question ?? "").trim().slice(0, MAX_QUESTION_CHARS);
@@ -587,7 +612,9 @@ export async function generateValidatedAnswer(
       blockingCodes = [...new Set([...va.blockingCodes, ...vb.blockingCodes])];
       ruleAudit = { A: va.ruleAudit, B: vb.ruleAudit };
     } else {
-      const one = await generateValidatedVariant(base);
+      // Draft preview is only wired for the single-answer modes; the A/B mode
+      // runs two generations concurrently and their deltas would interleave.
+      const one = await generateValidatedVariant({ ...base, onDraftDelta: opts.onDraftDelta ?? null });
       answerText = one.answer;
       wordCount = one.wordCount;
       factIds = one.factIdsUsed;

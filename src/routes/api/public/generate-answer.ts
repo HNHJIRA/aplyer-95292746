@@ -9,8 +9,18 @@
 //   or { select: { answerId: string, variantId: "A" | "B" } }
 // Any framework, facts, resume text, inventory, voice card, mode, model,
 // prompt version or user id supplied by the client is ignored outright.
+//
+// STREAMING (opt-in, backward compatible): a request with `?stream=1` or
+// `Accept: text/event-stream` gets an SSE response instead of JSON. The SSE
+// stream carries:
+//   event: draft  -> UNVALIDATED live preview text of the Prompt A draft
+//   event: final  -> the same JSON payload the non-streaming response returns,
+//                    produced only after guards + Prompt J + repair + post-guard
+//   event: error  -> { code, error } using the existing safe error mapping
+// A `draft` chunk must never be treated as the final answer.
 import { createFileRoute } from "@tanstack/react-router";
-import { jsonWithCors, preflight } from "@/lib/cors";
+import { corsHeaders, jsonWithCors, preflight } from "@/lib/cors";
+import { sseFrame, sseHeaders } from "@/lib/ai/anthropic-stream.server";
 
 function statusFor(code: string): number {
   switch (code) {
@@ -35,6 +45,38 @@ function statusFor(code: string): number {
     default:
       return 502;
   }
+}
+
+/** Streaming is opt-in so existing JSON clients are untouched. */
+export function wantsStream(request: Request): boolean {
+  try {
+    if (new URL(request.url).searchParams.get("stream") === "1") return true;
+  } catch {
+    /* relative URLs in tests */
+  }
+  return (request.headers.get("accept") ?? "").includes("text/event-stream");
+}
+
+/** The single client-facing shape, shared by the JSON and SSE responses. */
+export function toClientPayload(result: {
+  answerId: string;
+  answer: string | null;
+  wordCount: number | null;
+  variants: Array<{ id: string; answer: string; wordCount: number }> | null;
+  needsVariantChoice: boolean;
+  cached: boolean;
+}) {
+  return {
+    ok: true as const,
+    answerId: result.answerId,
+    answer: result.answer,
+    wordCount: result.wordCount,
+    options: result.variants
+      ? result.variants.map((v) => ({ id: v.id, answer: v.answer, wordCount: v.wordCount }))
+      : null,
+    needsChoice: result.needsVariantChoice,
+    cached: result.cached,
+  };
 }
 
 export async function handleGenerateAnswer(request: Request): Promise<Response> {
@@ -77,29 +119,71 @@ export async function handleGenerateAnswer(request: Request): Promise<Response> 
           }
         : null;
 
+      const pipelineRequest = {
+        question: String(body.question ?? ""),
+        jobContext: job,
+        force: body.force === true,
+      };
+
+      // ---- Opt-in SSE delivery. Validation architecture is untouched: the
+      // `final` event is emitted only after the full A -> J pipeline resolves.
+      if (wantsStream(request)) {
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream<Uint8Array>({
+          start(controller) {
+            let closed = false;
+            const send = (event: string, data: unknown) => {
+              if (closed) return;
+              try {
+                controller.enqueue(encoder.encode(sseFrame(event, data)));
+              } catch {
+                closed = true;
+              }
+            };
+            void (async () => {
+              send("open", { ok: true });
+              try {
+                const streamed = await generateValidatedAnswer(supabaseAdmin, userId, pipelineRequest, {
+                  writeDb: supabaseAdmin,
+                  // Preview only. Never a final answer.
+                  onDraftDelta: (text) => send("draft", { text }),
+                });
+                send("final", toClientPayload(streamed));
+              } catch (err) {
+                if (err instanceof AnswerPipelineError) {
+                  send("error", { ok: false, code: err.code, error: err.message });
+                } else {
+                  console.error("[generate-answer:stream]", err);
+                  send("error", {
+                    ok: false,
+                    code: "pipeline_failed",
+                    error: "We couldn't produce an answer you can trust. Try again.",
+                  });
+                }
+              } finally {
+                send("done", { ok: true });
+                closed = true;
+                try {
+                  controller.close();
+                } catch {
+                  /* already closed by the client disconnecting */
+                }
+              }
+            })();
+          },
+        });
+        return new Response(stream, { status: 200, headers: sseHeaders(corsHeaders(request)) });
+      }
+
       const result = await generateValidatedAnswer(
         supabaseAdmin,
         userId,
-        { question: String(body.question ?? ""), jobContext: job, force: body.force === true },
+        pipelineRequest,
         { writeDb: supabaseAdmin },
       );
 
       // Internal validation details, fact ids, prompt names and models stay server-side.
-      return jsonWithCors(
-        {
-          ok: true,
-          answerId: result.answerId,
-          answer: result.answer,
-          wordCount: result.wordCount,
-          options: result.variants
-            ? result.variants.map((v) => ({ id: v.id, answer: v.answer, wordCount: v.wordCount }))
-            : null,
-          needsChoice: result.needsVariantChoice,
-          cached: result.cached,
-        },
-        200,
-        request,
-      );
+      return jsonWithCors(toClientPayload(result), 200, request);
     } catch (e) {
       if (e instanceof AnswerPipelineError) {
         return jsonWithCors({ ok: false, code: e.code, error: e.message }, statusFor(e.code), request);

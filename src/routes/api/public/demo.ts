@@ -1,11 +1,27 @@
+// Public demo answer endpoint.
+//
+// The provider request is always made in streaming mode. Delivery is chosen by
+// the caller: `?stream=1` / `Accept: text/event-stream` gets SSE text chunks,
+// anything else gets the original `{ answer }` JSON shape (backward compatible).
 import { createFileRoute } from "@tanstack/react-router";
-import { jsonWithCors, preflight } from "@/lib/cors";
+import { corsHeaders, jsonWithCors, preflight } from "@/lib/cors";
+import { consumeAnthropicStream, sseFrame, sseHeaders } from "@/lib/ai/anthropic-stream.server";
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const CLAUDE_MODEL = "claude-sonnet-4-5";
 
 function str(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
+}
+
+/** Streaming is opt-in; the default response stays the original JSON shape. */
+export function wantsStream(request: Request): boolean {
+  try {
+    if (new URL(request.url).searchParams.get("stream") === "1") return true;
+  } catch {
+    /* relative URLs in tests */
+  }
+  return (request.headers.get("accept") ?? "").includes("text/event-stream");
 }
 
 export const Route = createFileRoute("/api/public/demo")({
@@ -53,30 +69,71 @@ export const Route = createFileRoute("/api/public/demo")({
               max_tokens: 1500,
               system,
               messages: [{ role: "user", content: user }],
+              stream: true,
             }),
           });
 
-          if (!res.ok) {
+          if (!res.ok || !res.body) {
             const text = await res.text().catch(() => "");
             console.error("[demo] anthropic error", res.status, text.slice(0, 500));
             if (res.status === 429 || res.status === 529) {
               return jsonWithCors(
                 { error: "The demo is busy. Please try again in a moment." },
                 503,
+                request,
               );
             }
-            return jsonWithCors({ error: "Something went wrong. Please try again." }, 500);
+            return jsonWithCors({ error: "Something went wrong. Please try again." }, 500, request);
           }
 
-          const data = (await res.json()) as {
-            content?: Array<{ type: string; text?: string }>;
-          };
-          const answer = data.content?.find((c) => c.type === "text")?.text?.trim();
-          if (!answer) {
-            return jsonWithCors({ error: "Empty response from model." }, 500);
+          const providerBody = res.body;
+
+          if (wantsStream(request)) {
+            const encoder = new TextEncoder();
+            const out = new ReadableStream<Uint8Array>({
+              start(controller) {
+                let closed = false;
+                const send = (event: string, data: unknown) => {
+                  if (closed) return;
+                  try {
+                    controller.enqueue(encoder.encode(sseFrame(event, data)));
+                  } catch {
+                    closed = true;
+                  }
+                };
+                void (async () => {
+                  try {
+                    const result = await consumeAnthropicStream(providerBody, (text) =>
+                      send("delta", { text }),
+                    );
+                    if (result.sawError || !result.text.trim()) {
+                      send("error", { error: "Something went wrong. Please try again." });
+                    }
+                  } catch (streamErr) {
+                    console.error("[demo] stream interrupted", streamErr);
+                    send("error", { error: "The answer stopped early. Please try again." });
+                  } finally {
+                    send("done", { ok: true });
+                    closed = true;
+                    try {
+                      controller.close();
+                    } catch {
+                      /* client already disconnected */
+                    }
+                  }
+                })();
+              },
+            });
+            return new Response(out, { status: 200, headers: sseHeaders(corsHeaders(request)) });
           }
 
-          return jsonWithCors({ answer });
+          const collected = await consumeAnthropicStream(providerBody);
+          const answer = collected.text.trim();
+          if (!answer || collected.sawError) {
+            return jsonWithCors({ error: "Empty response from model." }, 500, request);
+          }
+
+          return jsonWithCors({ answer }, 200, request);
         } catch (err) {
           console.error("[demo]", err);
           return jsonWithCors({ error: "Something went wrong. Please try again." }, 500);
