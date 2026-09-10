@@ -151,21 +151,7 @@ export async function handleGenerateAnswer(request: Request): Promise<Response> 
       );
 
       // Internal validation details, fact ids, prompt names and models stay server-side.
-      return jsonWithCors(
-        {
-          ok: true,
-          answerId: result.answerId,
-          answer: result.answer,
-          wordCount: result.wordCount,
-          options: result.variants
-            ? result.variants.map((v) => ({ id: v.id, answer: v.answer, wordCount: v.wordCount }))
-            : null,
-          needsChoice: result.needsVariantChoice,
-          cached: result.cached,
-        },
-        200,
-        request,
-      );
+      return jsonWithCors(toClientPayload(result), 200, request);
     } catch (e) {
       if (e instanceof AnswerPipelineError) {
         return jsonWithCors({ ok: false, code: e.code, error: e.message }, statusFor(e.code), request);
