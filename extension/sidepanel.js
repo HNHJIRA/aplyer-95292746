@@ -229,6 +229,7 @@ function showAnswer(answer, wordCount) {
 }
 
 function showChoice(options) {
+  showLiveAnswer("");
   $("answer-card").style.display = "none";
   $("choice-card").style.display = "";
   const a = options.find((o) => o.id === "A") || options[0];
