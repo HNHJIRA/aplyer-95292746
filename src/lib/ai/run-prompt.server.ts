@@ -210,7 +210,10 @@ export async function runPromptValidated<T>(
   let lastMessage = "";
   for (let attempt = 1; attempt <= 2; attempt++) {
     const message = attempt === 1 ? user : `${user}\n\n---\n\n${retryInstruction}`;
-    const text = await runPromptText(spec, message, opts);
+    // A correction retry is never previewed: the first draft was invalid, so
+    // only the first attempt may emit deltas to a live preview consumer.
+    const attemptOpts: RunPromptOptions = attempt === 1 ? opts : { ...opts, onDelta: undefined };
+    const text = await runPromptText(spec, message, attemptOpts);
     try {
       return { value: validate(parseJsonLoose(text)), attempts: attempt };
     } catch (e) {
