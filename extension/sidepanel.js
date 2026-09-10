@@ -250,6 +250,8 @@ function renderAnswerState(state) {
     hideResults();
     if (btn) btn.disabled = true;
     setGenStatus(state.status || "Writing your answer…", false);
+    // Text written so far, if the answer is arriving progressively.
+    showLiveAnswer(typeof state.draft === "string" ? state.draft : "");
     return;
   }
   if (btn) btn.disabled = false;
