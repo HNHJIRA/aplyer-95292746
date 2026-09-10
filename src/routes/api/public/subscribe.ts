@@ -118,54 +118,9 @@ export const Route = createFileRoute("/api/public/subscribe")({
             return jsonWithCors({ error: "Something went wrong. Please try again." }, 500, request);
           }
 
-          // Brevo integration — best-effort, never fail the response
-          const brevoKey = process.env.BREVO_API_KEY;
-          if (brevoKey) {
-            const brevoHeaders = {
-              "api-key": brevoKey,
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            };
-            try {
-              const contactRes = await fetch("https://api.brevo.com/v3/contacts", {
-                method: "POST",
-                headers: brevoHeaders,
-                body: JSON.stringify({
-                  email,
-                  listIds: [3],
-                  updateEnabled: true,
-                  attributes: {
-                    SOURCE: source ?? "",
-                    ...(firstName ? { FIRSTNAME: firstName } : {}),
-                  },
-                }),
-                signal: AbortSignal.timeout(8000),
-              });
-              if (!contactRes.ok) {
-                const txt = await contactRes.text().catch(() => "");
-                let isDuplicate = false;
-                try {
-                  const parsed = JSON.parse(txt) as { code?: string };
-                  isDuplicate =
-                    contactRes.status === 400 && parsed.code === "duplicate_parameter";
-                } catch {
-                  // ignore
-                }
-                if (!isDuplicate) {
-                  console.warn(
-                    "[subscribe] brevo contact non-ok",
-                    contactRes.status,
-                    txt.slice(0, 300),
-                  );
-                }
-              }
-            } catch (e) {
-              console.warn("[subscribe] brevo contact error", e);
-            }
-          }
-
-          // Immediate transactional welcome email — ADDITIONAL to the list
-          // automation above, idempotent per address, and strictly fail-soft:
+          // Send the branded welcome email directly. Do not also add the contact
+          // to the legacy provider automation, which still contains outdated copy.
+          // Dispatch is idempotent per address and strictly fail-soft:
           // a provider outage must never turn a valid signup into an error.
           try {
             const { sendWelcomeEmailOnce } = await import("@/lib/email/brevo.server");
