@@ -399,6 +399,126 @@ async function requestValidatedAnswer(payload = {}) {
   }
 }
 
+/* --------------------------------------------------------------------
+ * Streaming answer delivery (opt-in, same endpoint).
+ *
+ * SAFETY: `draft` chunks are UNVALIDATED previews. They are only ever shown
+ * as live text. The one and only trusted answer is the payload carried by the
+ * `final` event, which the server emits after its full validation pipeline.
+ * If anything about the stream is unusable we fall back to the existing JSON
+ * request — never to a draft.
+ * ------------------------------------------------------------------ */
+
+/** Streaming twin of `authedFetch`: same token rules, one refresh + retry. */
+async function authedStream(path, body) {
+  let token = await getAccessToken();
+  if (!token) return { authFailed: true };
+
+  const call = async (bearer) =>
+    fetch(`${API_BASE}${path}?stream=1`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+        Authorization: `Bearer ${bearer}`,
+      },
+      body: JSON.stringify(body ?? {}),
+    });
+
+  let res = await call(token);
+  if (res.status === 401 || res.status === 403) {
+    const refreshed = await refreshStoredSession();
+    if (!refreshed?.access_token) return { authFailed: true };
+    res = await call(refreshed.access_token);
+    if (res.status === 401 || res.status === 403) {
+      await writeStoredSession(null);
+      return { authFailed: true };
+    }
+  }
+  return { ok: res.ok, status: res.status, res };
+}
+
+/** Parses one SSE block into { event, data } — malformed blocks yield null. */
+function parseExtensionSseBlock(block) {
+  let event = "message";
+  const dataLines = [];
+  for (const line of String(block).split("\n")) {
+    if (line.startsWith("event:")) event = line.slice(6).trim();
+    else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
+  }
+  if (dataLines.length === 0) return null;
+  try {
+    return { event, data: JSON.parse(dataLines.join("")) };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Requests a streamed answer. `onDelta(text)` receives unvalidated preview
+ * text. Resolves with the validated `final` payload, an error envelope, or
+ * `{ unsupported: true }` meaning the caller should use the JSON path.
+ */
+async function requestStreamingAnswer(payload, onDelta) {
+  let r;
+  try {
+    r = await authedStream("/api/public/generate-answer", payload);
+  } catch (e) {
+    console.warn("[Aplyer] answer stream failed", String(e));
+    return { unsupported: true };
+  }
+  if (r.authFailed) return { ...AUTH_REQUIRED };
+  const res = r.res;
+  const type = res?.headers?.get?.("content-type") || "";
+  if (!r.ok || !res?.body || !type.includes("text/event-stream")) return { unsupported: true };
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let finalPayload = null;
+  let errorPayload = null;
+
+  const handle = (block) => {
+    const evt = parseExtensionSseBlock(block);
+    if (!evt) return; // malformed events are ignored, never fatal
+    if ((evt.event === "draft" || evt.event === "delta") && typeof evt.data?.text === "string") {
+      try { onDelta?.(evt.data.text); } catch (e) { void e; }
+    } else if (evt.event === "final") {
+      finalPayload = evt.data;
+    } else if (evt.event === "error") {
+      errorPayload = evt.data;
+    }
+  };
+
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer = (buffer + decoder.decode(value, { stream: true })).replace(/\r\n/g, "\n");
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop() ?? "";
+      for (const part of parts) handle(part);
+    }
+    if (buffer.trim()) handle(buffer);
+  } catch (e) {
+    console.warn("[Aplyer] answer stream interrupted", String(e));
+    if (!finalPayload && !errorPayload) return { unsupported: true };
+  }
+
+  if (errorPayload) {
+    return {
+      ok: false,
+      error: errorPayload.error || "We couldn't produce an answer you can trust. Try again.",
+      code: errorPayload.code || "pipeline_failed",
+    };
+  }
+  // A stream that ended without a validated final answer is NOT an answer.
+  if (!finalPayload || finalPayload.ok !== true || (!finalPayload.answer && !finalPayload.options)) {
+    return { unsupported: true };
+  }
+  return finalPayload;
+}
+
 
 /* --------------------------------------------------------------------
  * Tab-scoped answer state + single-flight generation.
@@ -484,11 +604,39 @@ async function runAnswerFlow(tabId, question, job, force) {
     }
 
     await setPhase("answer");
-    let out = await requestValidatedAnswer({
+    const answerPayload = {
       question: String(question?.questionText || "").slice(0, 2000),
       job: job || null,
       force: force === true,
+    };
+
+    // Live preview. The draft is stored on the RUNNING state only, so no
+    // final action (Use this one / Copy / Autofill) can ever reach it.
+    let draft = "";
+    let lastDraftWrite = 0;
+    const flushDraft = (finalFlush) => {
+      const now = Date.now();
+      if (!finalFlush && now - lastDraftWrite < 250) return;
+      lastDraftWrite = now;
+      void writeAnswerState(tabId, {
+        questionHash,
+        phase: "running",
+        status: phaseFor("answer"),
+        draft,
+        at: now,
+      });
+    };
+
+    let out = await requestStreamingAnswer(answerPayload, (text) => {
+      draft += text;
+      flushDraft(false);
     });
+    // Streaming unavailable/interrupted -> existing JSON behaviour, once.
+    if (out?.unsupported) {
+      draft = "";
+      await setPhase("answer");
+      out = await requestValidatedAnswer(answerPayload);
+    }
 
     // The server holds one generation lock per snapshot. A concurrent caller
     // waits for that run instead of starting a second pipeline.

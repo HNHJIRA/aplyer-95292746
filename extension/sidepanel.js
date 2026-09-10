@@ -190,7 +190,26 @@ function normalizeQuestionText(text) {
   return String(text || "").toLowerCase().replace(/\s+/g, " ").replace(/[^a-z0-9 ?]/g, "").trim();
 }
 
+/**
+ * Live text shown while the answer is still being written. It is preview only:
+ * no button is wired to it and it is cleared the moment the finished answer
+ * (or an error) arrives, so it can never be copied or filled into a form.
+ */
+function showLiveAnswer(text) {
+  const el = $("answer-live");
+  if (!el) return;
+  if (!text) {
+    el.style.display = "none";
+    el.textContent = "";
+    return;
+  }
+  el.style.display = "";
+  el.textContent = text;
+  el.scrollTop = el.scrollHeight;
+}
+
 function hideResults() {
+  showLiveAnswer("");
   const undo = $("answer-undo");
   if (undo) undo.style.display = "none";
   const fs = $("fill-status");
@@ -202,6 +221,7 @@ function hideResults() {
 }
 
 function showAnswer(answer, wordCount) {
+  showLiveAnswer("");
   $("choice-card").style.display = "none";
   $("answer-card").style.display = "";
   $("answer-text").textContent = answer;
@@ -209,6 +229,7 @@ function showAnswer(answer, wordCount) {
 }
 
 function showChoice(options) {
+  showLiveAnswer("");
   $("answer-card").style.display = "none";
   $("choice-card").style.display = "";
   const a = options.find((o) => o.id === "A") || options[0];
@@ -231,6 +252,8 @@ function renderAnswerState(state) {
     hideResults();
     if (btn) btn.disabled = true;
     setGenStatus(state.status || "Writing your answer…", false);
+    // Text written so far, if the answer is arriving progressively.
+    showLiveAnswer(typeof state.draft === "string" ? state.draft : "");
     return;
   }
   if (btn) btn.disabled = false;
@@ -263,8 +286,9 @@ async function pollAnswerState(questionHash) {
   if (polling) return;
   polling = true;
   try {
-    for (let i = 0; i < 120; i += 1) {
-      await new Promise((r) => setTimeout(r, 2000));
+    // Polls quickly so text appears as it is written, for up to 10 minutes.
+    for (let i = 0; i < 1200; i += 1) {
+      await new Promise((r) => setTimeout(r, 500));
       const res = await send("APLYER_GET_ANSWER_STATE", { tabId: currentTabId, questionHash }, 8000);
       const state = res?.state ?? null;
       renderAnswerState(state);
