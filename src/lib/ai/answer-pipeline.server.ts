@@ -228,6 +228,12 @@ interface GenerateOneInput {
   variant?: VariantId | null;
   preferredStyleNote?: string | null;
   budget: Budget;
+  /**
+   * Optional live preview of the Prompt A draft. Delivery only: the text is
+   * an UNVALIDATED draft and never replaces the validated answer that this
+   * function returns after guards + Prompt J + repair + post-guard.
+   */
+  onDraftDelta?: ((text: string) => void) | null;
 }
 
 /** Blocking guard reason codes, de-duplicated. Diagnostics only. */
