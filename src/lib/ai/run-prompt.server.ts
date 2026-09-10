@@ -42,6 +42,13 @@ export class PromptError extends Error {
 
 export interface RunPromptOptions {
   maxTokens?: number;
+  /**
+   * When provided, the provider request is made in streaming mode
+   * (`stream: true`) and each raw text delta is handed to this callback as it
+   * arrives. The full text is still returned once the stream completes, so
+   * every downstream validation step is unchanged.
+   */
+  onDelta?: (text: string) => void;
 }
 
 function isModelUnavailable(status: number, body: string): boolean {
@@ -83,6 +90,8 @@ async function callAnthropic(spec: PromptSpec, user: string, opts: RunPromptOpti
     });
   }
 
+  const streaming = typeof opts.onDelta === "function";
+
   try {
     const res = await fetch(ANTHROPIC_URL, {
       method: "POST",
@@ -99,8 +108,27 @@ async function callAnthropic(spec: PromptSpec, user: string, opts: RunPromptOpti
           ? `${spec.system}\n\nRespond with ONLY a valid JSON object. No prose, no markdown fences.`
           : spec.system,
         messages: [{ role: "user", content: user }],
+        ...(streaming ? { stream: true } : {}),
       }),
     });
+
+    if (streaming && res.ok && res.body) {
+      const { consumeAnthropicStream } = await import("./anthropic-stream.server");
+      const streamed = await consumeAnthropicStream(res.body, opts.onDelta);
+      const out = streamed.text.trim();
+      if (!out || streamed.sawError) {
+        throw new PromptError({
+          code: streamed.sawError ? "provider_error" : "invalid_output",
+          promptId: spec.id,
+          model,
+          message: streamed.sawError
+            ? `Provider stream error for ${spec.id}.`
+            : "Model returned an empty response.",
+        });
+      }
+      return out;
+    }
+
     const text = await res.text();
     if (!res.ok) {
       const unavailable = isModelUnavailable(res.status, text);
