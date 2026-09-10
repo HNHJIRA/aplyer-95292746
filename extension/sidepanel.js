@@ -284,8 +284,9 @@ async function pollAnswerState(questionHash) {
   if (polling) return;
   polling = true;
   try {
-    for (let i = 0; i < 120; i += 1) {
-      await new Promise((r) => setTimeout(r, 2000));
+    // Polls quickly so text appears as it is written, for up to 10 minutes.
+    for (let i = 0; i < 1200; i += 1) {
+      await new Promise((r) => setTimeout(r, 500));
       const res = await send("APLYER_GET_ANSWER_STATE", { tabId: currentTabId, questionHash }, 8000);
       const state = res?.state ?? null;
       renderAnswerState(state);
