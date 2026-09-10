@@ -221,6 +221,7 @@ function hideResults() {
 }
 
 function showAnswer(answer, wordCount) {
+  showLiveAnswer("");
   $("choice-card").style.display = "none";
   $("answer-card").style.display = "";
   $("answer-text").textContent = answer;
