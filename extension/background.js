@@ -604,11 +604,39 @@ async function runAnswerFlow(tabId, question, job, force) {
     }
 
     await setPhase("answer");
-    let out = await requestValidatedAnswer({
+    const answerPayload = {
       question: String(question?.questionText || "").slice(0, 2000),
       job: job || null,
       force: force === true,
+    };
+
+    // Live preview. The draft is stored on the RUNNING state only, so no
+    // final action (Use this one / Copy / Autofill) can ever reach it.
+    let draft = "";
+    let lastDraftWrite = 0;
+    const flushDraft = (finalFlush) => {
+      const now = Date.now();
+      if (!finalFlush && now - lastDraftWrite < 250) return;
+      lastDraftWrite = now;
+      void writeAnswerState(tabId, {
+        questionHash,
+        phase: "running",
+        status: phaseFor("answer"),
+        draft,
+        at: now,
+      });
+    };
+
+    let out = await requestStreamingAnswer(answerPayload, (text) => {
+      draft += text;
+      flushDraft(false);
     });
+    // Streaming unavailable/interrupted -> existing JSON behaviour, once.
+    if (out?.unsupported) {
+      draft = "";
+      await setPhase("answer");
+      out = await requestValidatedAnswer(answerPayload);
+    }
 
     // The server holds one generation lock per snapshot. A concurrent caller
     // waits for that run instead of starting a second pipeline.
