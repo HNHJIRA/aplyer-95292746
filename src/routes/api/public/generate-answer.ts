@@ -87,10 +87,66 @@ export async function handleGenerateAnswer(request: Request): Promise<Response> 
           }
         : null;
 
+      const pipelineRequest = {
+        question: String(body.question ?? ""),
+        jobContext: job,
+        force: body.force === true,
+      };
+
+      // ---- Opt-in SSE delivery. Validation architecture is untouched: the
+      // `final` event is emitted only after the full A -> J pipeline resolves.
+      if (wantsStream(request)) {
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream<Uint8Array>({
+          start(controller) {
+            let closed = false;
+            const send = (event: string, data: unknown) => {
+              if (closed) return;
+              try {
+                controller.enqueue(encoder.encode(sseFrame(event, data)));
+              } catch {
+                closed = true;
+              }
+            };
+            void (async () => {
+              send("open", { ok: true });
+              try {
+                const streamed = await generateValidatedAnswer(supabaseAdmin, userId, pipelineRequest, {
+                  writeDb: supabaseAdmin,
+                  // Preview only. Never a final answer.
+                  onDraftDelta: (text) => send("draft", { text }),
+                });
+                send("final", toClientPayload(streamed));
+              } catch (err) {
+                if (err instanceof AnswerPipelineError) {
+                  send("error", { ok: false, code: err.code, error: err.message });
+                } else {
+                  console.error("[generate-answer:stream]", err);
+                  send("error", {
+                    ok: false,
+                    code: "pipeline_failed",
+                    error: "We couldn't produce an answer you can trust. Try again.",
+                  });
+                }
+              } finally {
+                send("done", { ok: true });
+                closed = true;
+                try {
+                  controller.close();
+                } catch {
+                  /* already closed by the client disconnecting */
+                }
+              }
+            })();
+          },
+        });
+        return new Response(stream, { status: 200, headers: sseHeaders(corsHeaders(request)) });
+      }
+
       const result = await generateValidatedAnswer(
         supabaseAdmin,
         userId,
-        { question: String(body.question ?? ""), jobContext: job, force: body.force === true },
+        pipelineRequest,
         { writeDb: supabaseAdmin },
       );
 
