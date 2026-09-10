@@ -55,35 +55,81 @@ export async function generateResumeAudit(resume: string, now: Date): Promise<Re
     const correction = `${baseUser}\n\n---\n\n${buildResumeAuditCorrection(
       Array.from(new Set(violations.map((v) => v.detail))),
     )}`;
-    const second = await runPromptValidated(
-      PROMPT_C_RESUME_AUDIT,
-      correction,
-      validateResumeAudit,
-      RESUME_AUDIT_RETRY_INSTRUCTION,
-    );
-    audit = second.value;
-    violations = runResumeAuditGuards(guardable(audit), { resumeText: resume, now });
+    try {
+      const second = await runPromptValidated(
+        PROMPT_C_RESUME_AUDIT,
+        correction,
+        validateResumeAudit,
+        RESUME_AUDIT_RETRY_INSTRUCTION,
+      );
+      const secondViolations = runResumeAuditGuards(guardable(second.value), {
+        resumeText: resume,
+        now,
+      });
+      // Keep whichever pass is cleaner; style guards are quality signals, not
+      // a reason to deny the candidate an audit.
+      if (secondViolations.length <= violations.length) {
+        audit = second.value;
+        violations = secondViolations;
+      }
+    } catch (e) {
+      console.warn(
+        JSON.stringify({
+          evt: "resume_audit_retry_failed",
+          prompt: PROMPT_C_RESUME_AUDIT.id,
+          reason: e instanceof Error ? e.message.slice(0, 160) : "unknown",
+        }),
+      );
+    }
+
     if (violations.length > 0) {
       console.warn(
         JSON.stringify({
-          evt: "resume_audit_guard_failed",
+          evt: "resume_audit_guard_residual",
           prompt: PROMPT_C_RESUME_AUDIT.id,
           promptVersion: PROMPT_C_RESUME_AUDIT.version,
-          attempt: 2,
           violations: guardSummary(violations),
         }),
       );
-      throw new PromptError({
-        code: "invalid_output",
-        promptId: PROMPT_C_RESUME_AUDIT.id,
-        model: PROMPT_C_RESUME_AUDIT.model,
-        message: "Resume audit failed deterministic guards twice.",
-      });
     }
   }
 
+  audit = sanitizeAudit(audit);
   return { ...audit, redFlags: orderRedFlags(audit.redFlags, resume) };
 }
+
+/** Deterministic cleanup of style rules that can be fixed without the model. */
+function cleanText(text: string): string {
+  return text
+    .replace(/\s*[\u2014\u2013]\s*/g, ", ")
+    .replace(/\s+-{1,2}\s+/g, ", ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function sanitizeAudit(audit: ResumeAudit): ResumeAudit {
+  const overallTakePoints = audit.overallTakePoints.map(cleanText);
+  const redFlags = audit.redFlags.map((f) => {
+    const whyPoints = f.whyPoints.map(cleanText);
+    const fixPoints = f.fixPoints.map(cleanText);
+    return {
+      ...f,
+      flag: cleanText(f.flag),
+      whyPoints,
+      fixPoints,
+      why: whyPoints.join(" "),
+      fix: fixPoints.join(" "),
+    };
+  });
+  return {
+    overallTake: overallTakePoints.join(" "),
+    overallTakePoints,
+    redFlags,
+    strengths: audit.strengths.map((s) => ({ point: cleanText(s.point) })),
+    topPriority: cleanText(audit.topPriority),
+  };
+}
+
 
 /** Canonical payload plus legacy aliases so existing consumers keep working. */
 export function buildAuditPayload(audit: ResumeAudit) {
