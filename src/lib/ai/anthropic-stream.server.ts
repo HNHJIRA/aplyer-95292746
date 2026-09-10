@@ -179,3 +179,157 @@ export function extractPartialJsonString(buffer: string, key: string): string {
   }
   return out;
 }
+
+/** Scans one JSON string literal starting at `start` ('"'). */
+function scanJsonString(buf: string, start: number): { text: string; end: number; closed: boolean } | null {
+  if (buf[start] !== '"') return null;
+  let i = start + 1;
+  let out = "";
+  while (i < buf.length) {
+    const ch = buf[i]!;
+    if (ch === "\\") {
+      const next = buf[i + 1];
+      if (next === undefined) return { text: out, end: i, closed: false };
+      switch (next) {
+        case "n":
+          out += "\n";
+          break;
+        case "t":
+          out += "\t";
+          break;
+        case "r":
+          out += "\r";
+          break;
+        case "u": {
+          const hex = buf.slice(i + 2, i + 6);
+          if (hex.length < 4) return { text: out, end: i, closed: false };
+          out += String.fromCharCode(parseInt(hex, 16));
+          i += 6;
+          continue;
+        }
+        default:
+          out += next;
+      }
+      i += 2;
+      continue;
+    }
+    if (ch === '"') return { text: out, end: i + 1, closed: true };
+    out += ch;
+    i++;
+  }
+  return { text: out, end: i, closed: false };
+}
+
+/**
+ * Incrementally extracts a top-level JSON array-of-strings property from a
+ * partially received document, joined with a single space. Used to preview
+ * only one human-readable field of a structured response.
+ */
+export function extractPartialJsonStringArray(buffer: string, key: string): string {
+  const marker = `"${key}"`;
+  const at = buffer.indexOf(marker);
+  if (at < 0) return "";
+  let i = at + marker.length;
+  while (i < buffer.length && /\s/.test(buffer[i]!)) i++;
+  if (buffer[i] !== ":") return "";
+  i++;
+  while (i < buffer.length && /\s/.test(buffer[i]!)) i++;
+  if (buffer[i] !== "[") return "";
+  i++;
+
+  const parts: string[] = [];
+  while (i < buffer.length) {
+    const ch = buffer[i]!;
+    if (/\s|,/.test(ch)) {
+      i++;
+      continue;
+    }
+    if (ch === "]") break;
+    if (ch !== '"') break;
+    const scanned = scanJsonString(buffer, i);
+    if (!scanned) break;
+    parts.push(scanned.text);
+    if (!scanned.closed) break;
+    i = scanned.end;
+  }
+  return parts.join(" ");
+}
+
+/**
+ * Builds a delta consumer that turns raw model output chunks into a safe,
+ * incremental preview of ONE field of a structured JSON response. Nothing
+ * else in the envelope is ever emitted.
+ */
+export function makeJsonFieldPreview(opts: {
+  key: string;
+  array?: boolean;
+  onText: (delta: string) => void;
+}): (chunk: string) => void {
+  let buffer = "";
+  let emitted = "";
+  return (chunk: string) => {
+    buffer += chunk;
+    const full = opts.array
+      ? extractPartialJsonStringArray(buffer, opts.key)
+      : extractPartialJsonString(buffer, opts.key);
+    if (full.length > emitted.length && full.startsWith(emitted)) {
+      const delta = full.slice(emitted.length);
+      emitted = full;
+      if (delta) opts.onText(delta);
+    }
+  };
+}
+
+/** Streaming is opt-in; the default response of every endpoint stays JSON. */
+export function wantsStream(request: Request): boolean {
+  try {
+    if (new URL(request.url).searchParams.get("stream") === "1") return true;
+  } catch {
+    /* relative URLs in tests */
+  }
+  return (request.headers.get("accept") ?? "").includes("text/event-stream");
+}
+
+export type SseSend = (event: string, data: unknown) => void;
+
+/**
+ * Shared SSE envelope: emits `open`, runs `run`, and always closes with
+ * `done`. Unhandled failures become a safe `error` event — never a `final`.
+ */
+export function sseResponse(
+  run: (send: SseSend) => Promise<void>,
+  extraHeaders: Record<string, string> = {},
+): Response {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      let closed = false;
+      const send: SseSend = (event, data) => {
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(sseFrame(event, data)));
+        } catch {
+          closed = true; // client disconnected
+        }
+      };
+      void (async () => {
+        send("open", { ok: true });
+        try {
+          await run(send);
+        } catch (err) {
+          console.error("[sse]", err);
+          send("error", { error: "Something went wrong. Please try again." });
+        } finally {
+          send("done", { ok: true });
+          closed = true;
+          try {
+            controller.close();
+          } catch {
+            /* already closed */
+          }
+        }
+      })();
+    },
+  });
+  return new Response(stream, { status: 200, headers: sseHeaders(extraHeaders) });
+}
