@@ -80,3 +80,18 @@ main, .cards { flex: 1 1 auto; }
 .card { margin: 10px 12px; padding: 13px 12px 12px; }
 .card-label { margin-bottom: 8px; }
 .hdr { padding: 11px 14px; }
+
+/* Live answer text while it is still being written. Read-only preview: no
+   actions are attached to it and it is replaced by the finished answer. */
+.answer-live {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--sub);
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  max-height: 260px;
+  overflow-y: auto;
+}
