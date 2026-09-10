@@ -9,8 +9,18 @@
 //   or { select: { answerId: string, variantId: "A" | "B" } }
 // Any framework, facts, resume text, inventory, voice card, mode, model,
 // prompt version or user id supplied by the client is ignored outright.
+//
+// STREAMING (opt-in, backward compatible): a request with `?stream=1` or
+// `Accept: text/event-stream` gets an SSE response instead of JSON. The SSE
+// stream carries:
+//   event: draft  -> UNVALIDATED live preview text of the Prompt A draft
+//   event: final  -> the same JSON payload the non-streaming response returns,
+//                    produced only after guards + Prompt J + repair + post-guard
+//   event: error  -> { code, error } using the existing safe error mapping
+// A `draft` chunk must never be treated as the final answer.
 import { createFileRoute } from "@tanstack/react-router";
-import { jsonWithCors, preflight } from "@/lib/cors";
+import { corsHeaders, jsonWithCors, preflight } from "@/lib/cors";
+import { sseFrame, sseHeaders } from "@/lib/ai/anthropic-stream.server";
 
 function statusFor(code: string): number {
   switch (code) {
