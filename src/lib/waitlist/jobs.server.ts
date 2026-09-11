@@ -66,7 +66,7 @@ export async function enqueueWaitlistJobs(input: {
         status: "pending",
         next_run_at: new Date().toISOString(),
       })),
-      // A job already queued/處ing for this address stays as-is: re-submitting
+      // A job already queued or in flight for this address stays as-is: re-submitting
       // the same email must never produce a second contact sync or email.
       { onConflict: "kind,email", ignoreDuplicates: true },
     );
