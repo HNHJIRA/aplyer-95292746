@@ -554,6 +554,51 @@ export type Database = {
         }
         Relationships: []
       }
+      waitlist_jobs: {
+        Row: {
+          attempts: number
+          created_at: string
+          email: string
+          id: string
+          kind: string
+          last_error: string | null
+          locked_at: string | null
+          max_attempts: number
+          next_run_at: string
+          payload: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          email: string
+          id?: string
+          kind: string
+          last_error?: string | null
+          locked_at?: string | null
+          max_attempts?: number
+          next_run_at?: string
+          payload?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          email?: string
+          id?: string
+          kind?: string
+          last_error?: string | null
+          locked_at?: string | null
+          max_attempts?: number
+          next_run_at?: string
+          payload?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       waitlist_subscribers: {
         Row: {
           created_at: string
@@ -664,12 +709,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_waitlist_jobs: {
+        Args: { _limit?: number }
+        Returns: {
+          attempts: number
+          created_at: string
+          email: string
+          id: string
+          kind: string
+          last_error: string | null
+          locked_at: string | null
+          max_attempts: number
+          next_run_at: string
+          payload: Json
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "waitlist_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       is_qualifying_prose: {
         Args: { _content: string; _type: string }
         Returns: boolean
       }
       prose_content_hash: { Args: { _content: string }; Returns: string }
       recalc_writedna: { Args: { _user_id: string }; Returns: undefined }
+      requeue_stale_waitlist_jobs: { Args: never; Returns: number }
     }
     Enums: {
       [_ in never]: never
