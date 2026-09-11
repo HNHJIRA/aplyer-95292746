@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { jsonWithCors, preflight } from "@/lib/cors";
+import { waitUntil } from "@/lib/runtime/wait-until.server";
+import { drainWaitlistJobs, enqueueWaitlistJobs } from "@/lib/waitlist/jobs.server";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
