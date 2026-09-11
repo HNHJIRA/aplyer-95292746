@@ -738,6 +738,10 @@ export type Database = {
       }
       prose_content_hash: { Args: { _content: string }; Returns: string }
       recalc_writedna: { Args: { _user_id: string }; Returns: undefined }
+      record_waitlist_signup: {
+        Args: { _email: string; _first_name?: string; _source?: string }
+        Returns: undefined
+      }
       requeue_stale_waitlist_jobs: { Args: never; Returns: number }
     }
     Enums: {

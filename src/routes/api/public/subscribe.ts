@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { jsonWithCors, preflight } from "@/lib/cors";
 import { waitUntil } from "@/lib/runtime/wait-until.server";
-import { drainWaitlistJobs, enqueueWaitlistJobs } from "@/lib/waitlist/jobs.server";
+import { drainWaitlistJobs, recordWaitlistSignup } from "@/lib/waitlist/jobs.server";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -113,24 +113,20 @@ export async function handleSubscribe(request: Request): Promise<Response> {
     mark("validate", tValidate);
 
     // Required operation — the only thing a success response depends on.
+    // Stores the signup AND queues its follow-up work in one transaction.
     const tDb = Date.now();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("waitlist_subscribers")
-      .upsert({ email, source }, { onConflict: "email,source", ignoreDuplicates: true });
-    mark("db_write", tDb);
-
-    if (error) {
-      console.error(`[subscribe] rid=${requestId} db_write_failed code=${error.code ?? "unknown"}`);
+    try {
+      await recordWaitlistSignup({ email, firstName, source });
+    } catch (e) {
+      console.error(
+        `[subscribe] rid=${requestId} db_write_failed code=${e instanceof Error ? e.message : "unknown"}`,
+      );
       return jsonWithCors({ error: "Something went wrong. Please try again." }, 500, request);
     }
+    mark("db_write", tDb);
 
-    // Secondary operations: persisted first (durable + idempotent), then
-    // attempted immediately in the background after this response is flushed.
-    const tQueue = Date.now();
-    await enqueueWaitlistJobs({ email, firstName, source });
-    mark("enqueue", tQueue);
-
+    // Secondary operations run after the response is flushed; anything that
+    // fails stays queued and is retried on a later request.
     waitUntil(() => drainWaitlistJobs(10), "waitlist-jobs-drain");
 
     console.log(`[subscribe] rid=${requestId} stage=total ms=${Date.now() - t0} ok=1`);

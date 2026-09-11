@@ -40,6 +40,27 @@ async function admin() {
 }
 
 /**
+ * Store the signup and queue its follow-up work in ONE database round trip.
+ *
+ * Both writes happen inside a single transaction, so a stored signup always
+ * has its jobs queued and a failed signup never leaves orphaned jobs behind.
+ * Throws on failure — the caller must return an honest error in that case.
+ */
+export async function recordWaitlistSignup(input: {
+  email: string;
+  firstName?: string | null;
+  source?: string | null;
+}): Promise<void> {
+  const db = await admin();
+  const { error } = await db.rpc("record_waitlist_signup", {
+    _email: input.email.toLowerCase(),
+    _source: input.source ?? undefined,
+    _first_name: input.firstName ?? undefined,
+  });
+  if (error) throw new Error(`waitlist_write_failed:${error.code ?? "unknown"}`);
+}
+
+/**
  * Persist the follow-up work for one signup. Never throws — a queue write
  * failure must not turn a stored signup into an error response.
  */
