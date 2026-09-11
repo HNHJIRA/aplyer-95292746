@@ -21,6 +21,8 @@ const state = {
   claimed: [] as unknown[],
   claimError: null as { code: string } | null,
   updates: [] as UpdateCall[],
+  signupCalls: [] as unknown[],
+  signupError: null as { code: string } | null,
 };
 
 const supabaseAdmin = {
@@ -36,7 +38,11 @@ const supabaseAdmin = {
       },
     }),
   }),
-  rpc: (name: string) => {
+  rpc: (name: string, args?: unknown) => {
+    if (name === "record_waitlist_signup") {
+      state.signupCalls.push(args);
+      return Promise.resolve({ data: null, error: state.signupError });
+    }
     if (name === "claim_waitlist_jobs") {
       return Promise.resolve({ data: state.claimed, error: state.claimError });
     }
@@ -46,7 +52,7 @@ const supabaseAdmin = {
 
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin }));
 
-import { drainWaitlistJobs, enqueueWaitlistJobs } from "../jobs.server";
+import { drainWaitlistJobs, enqueueWaitlistJobs, recordWaitlistSignup } from "../jobs.server";
 
 beforeEach(() => {
   state.upserts = [];
@@ -54,8 +60,27 @@ beforeEach(() => {
   state.claimed = [];
   state.claimError = null;
   state.updates = [];
+  state.signupCalls = [];
+  state.signupError = null;
   syncBrevoContact.mockReset();
   sendWelcomeEmailOnce.mockReset();
+});
+
+describe("recordWaitlistSignup", () => {
+  it("stores the signup and queues follow-ups in one transactional call", async () => {
+    await recordWaitlistSignup({ email: "Person@Example.com", firstName: "Sam", source: "hero" });
+
+    expect(state.signupCalls).toEqual([
+      { _email: "person@example.com", _source: "hero", _first_name: "Sam" },
+    ]);
+  });
+
+  it("throws when the required write fails so the caller returns an honest error", async () => {
+    state.signupError = { code: "23514" };
+    await expect(recordWaitlistSignup({ email: "a@b.com" })).rejects.toThrow(
+      "waitlist_write_failed:23514",
+    );
+  });
 });
 
 describe("enqueueWaitlistJobs", () => {
