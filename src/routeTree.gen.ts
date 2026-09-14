@@ -24,6 +24,7 @@ import { Route as ApiResumeAuditRouteImport } from './routes/api/resume-audit'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
 import { Route as ApiPublicWaitlistUploadRouteImport } from './routes/api/public/waitlist-upload'
+import { Route as ApiPublicWaitlistDrainRouteImport } from './routes/api/public/waitlist-drain'
 import { Route as ApiPublicSubscribeRouteImport } from './routes/api/public/subscribe'
 import { Route as ApiPublicJobSafetyCheckRouteImport } from './routes/api/public/job-safety-check'
 import { Route as ApiPublicGenerateAnswerRouteImport } from './routes/api/public/generate-answer'
@@ -113,6 +114,11 @@ const AuthenticatedDashboardIndexRoute =
 const ApiPublicWaitlistUploadRoute = ApiPublicWaitlistUploadRouteImport.update({
   id: '/api/public/waitlist-upload',
   path: '/api/public/waitlist-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicWaitlistDrainRoute = ApiPublicWaitlistDrainRouteImport.update({
+  id: '/api/public/waitlist-drain',
+  path: '/api/public/waitlist-drain',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicSubscribeRoute = ApiPublicSubscribeRouteImport.update({
@@ -225,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/api/public/generate-answer': typeof ApiPublicGenerateAnswerRoute
   '/api/public/job-safety-check': typeof ApiPublicJobSafetyCheckRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
+  '/api/public/waitlist-drain': typeof ApiPublicWaitlistDrainRoute
   '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/api/public/ai/classify-question': typeof ApiPublicAiClassifyQuestionRoute
@@ -255,6 +262,7 @@ export interface FileRoutesByTo {
   '/api/public/generate-answer': typeof ApiPublicGenerateAnswerRoute
   '/api/public/job-safety-check': typeof ApiPublicJobSafetyCheckRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
+  '/api/public/waitlist-drain': typeof ApiPublicWaitlistDrainRoute
   '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/api/public/ai/classify-question': typeof ApiPublicAiClassifyQuestionRoute
@@ -288,6 +296,7 @@ export interface FileRoutesById {
   '/api/public/generate-answer': typeof ApiPublicGenerateAnswerRoute
   '/api/public/job-safety-check': typeof ApiPublicJobSafetyCheckRoute
   '/api/public/subscribe': typeof ApiPublicSubscribeRoute
+  '/api/public/waitlist-drain': typeof ApiPublicWaitlistDrainRoute
   '/api/public/waitlist-upload': typeof ApiPublicWaitlistUploadRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/api/public/ai/classify-question': typeof ApiPublicAiClassifyQuestionRoute
@@ -321,6 +330,7 @@ export interface FileRouteTypes {
     | '/api/public/generate-answer'
     | '/api/public/job-safety-check'
     | '/api/public/subscribe'
+    | '/api/public/waitlist-drain'
     | '/api/public/waitlist-upload'
     | '/dashboard/'
     | '/api/public/ai/classify-question'
@@ -351,6 +361,7 @@ export interface FileRouteTypes {
     | '/api/public/generate-answer'
     | '/api/public/job-safety-check'
     | '/api/public/subscribe'
+    | '/api/public/waitlist-drain'
     | '/api/public/waitlist-upload'
     | '/dashboard'
     | '/api/public/ai/classify-question'
@@ -383,6 +394,7 @@ export interface FileRouteTypes {
     | '/api/public/generate-answer'
     | '/api/public/job-safety-check'
     | '/api/public/subscribe'
+    | '/api/public/waitlist-drain'
     | '/api/public/waitlist-upload'
     | '/_authenticated/dashboard/'
     | '/api/public/ai/classify-question'
@@ -408,6 +420,7 @@ export interface RootRouteChildren {
   ApiPublicGenerateAnswerRoute: typeof ApiPublicGenerateAnswerRoute
   ApiPublicJobSafetyCheckRoute: typeof ApiPublicJobSafetyCheckRoute
   ApiPublicSubscribeRoute: typeof ApiPublicSubscribeRoute
+  ApiPublicWaitlistDrainRoute: typeof ApiPublicWaitlistDrainRoute
   ApiPublicWaitlistUploadRoute: typeof ApiPublicWaitlistUploadRoute
   ApiPublicAiClassifyQuestionRoute: typeof ApiPublicAiClassifyQuestionRoute
   ApiPublicExtensionVoicecardRoute: typeof ApiPublicExtensionVoicecardRoute
@@ -518,6 +531,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/waitlist-upload'
       fullPath: '/api/public/waitlist-upload'
       preLoaderRoute: typeof ApiPublicWaitlistUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/waitlist-drain': {
+      id: '/api/public/waitlist-drain'
+      path: '/api/public/waitlist-drain'
+      fullPath: '/api/public/waitlist-drain'
+      preLoaderRoute: typeof ApiPublicWaitlistDrainRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/subscribe': {
@@ -695,6 +715,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicGenerateAnswerRoute: ApiPublicGenerateAnswerRoute,
   ApiPublicJobSafetyCheckRoute: ApiPublicJobSafetyCheckRoute,
   ApiPublicSubscribeRoute: ApiPublicSubscribeRoute,
+  ApiPublicWaitlistDrainRoute: ApiPublicWaitlistDrainRoute,
   ApiPublicWaitlistUploadRoute: ApiPublicWaitlistUploadRoute,
   ApiPublicAiClassifyQuestionRoute: ApiPublicAiClassifyQuestionRoute,
   ApiPublicExtensionVoicecardRoute: ApiPublicExtensionVoicecardRoute,
