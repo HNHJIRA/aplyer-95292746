@@ -1,0 +1,1 @@
+revoke all on function public.kick_waitlist_drain() from public, anon, authenticated;
