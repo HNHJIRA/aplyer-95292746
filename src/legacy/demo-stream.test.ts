@@ -4,7 +4,7 @@ import api from "./demo-stream.js";
 
 const { getAnswer, streamAnswer, GENERIC_ERROR } = api as any;
 
-const BASE = "https://aplyer.devssh.xyz";
+const BASE = "";
 
 function sseResponse(frames: string[], opts: { fail?: boolean } = {}) {
   const encoder = new TextEncoder();
