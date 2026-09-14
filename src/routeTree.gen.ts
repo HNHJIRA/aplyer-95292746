@@ -17,6 +17,7 @@ import { Route as ExtensionAuthRouteImport } from './routes/extension-auth'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthForgotRouteImport } from './routes/auth.forgot'
 import { Route as ApiResumeMatchRouteImport } from './routes/api/resume-match'
 import { Route as ApiResumeAuditRouteImport } from './routes/api/resume-audit'
@@ -76,6 +77,11 @@ const AuthRoute = AuthRouteImport.update({
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthForgotRoute = AuthForgotRouteImport.update({
@@ -194,7 +200,7 @@ const ApiPublicAiClassifyQuestionRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AuthenticatedRouteRouteWithChildren
+  '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/demo': typeof DemoRoute
   '/extension-auth': typeof ExtensionAuthRoute
@@ -225,7 +231,7 @@ export interface FileRoutesByFullPath {
   '/api/public/extension/voicecard': typeof ApiPublicExtensionVoicecardRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof AuthenticatedRouteRouteWithChildren
+  '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/demo': typeof DemoRoute
   '/extension-auth': typeof ExtensionAuthRoute
@@ -256,6 +262,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/demo': typeof DemoRoute
@@ -350,6 +357,7 @@ export interface FileRouteTypes {
     | '/api/public/extension/voicecard'
   id:
     | '__root__'
+    | '/'
     | '/_authenticated'
     | '/auth'
     | '/demo'
@@ -382,6 +390,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   DemoRoute: typeof DemoRoute
@@ -460,6 +469,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/forgot': {
@@ -661,6 +677,7 @@ const AuthRouteChildren: AuthRouteChildren = {
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   DemoRoute: DemoRoute,
