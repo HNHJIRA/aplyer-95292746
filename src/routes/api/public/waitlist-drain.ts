@@ -9,7 +9,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { drainWaitlistJobs } from "@/lib/waitlist/jobs.server";
 
 function authorized(request: Request): boolean {
-  const expected = process.env.WAITLIST_DRAIN_SECRET;
+  const expected = process.env.WAITLIST_DRAIN_KEY ?? process.env.WAITLIST_DRAIN_SECRET;
   if (!expected) return false;
   const url = new URL(request.url);
   const provided =
