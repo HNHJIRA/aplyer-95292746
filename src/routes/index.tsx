@@ -84,7 +84,6 @@ const navActionsCss = `
   .cover{padding-top:150px}
 }
 @media (max-width:520px){
-  #aplyer-nav-actions a.nav-link.tool-link{display:none}
   .cover{padding-top:170px}
 }
 `;
