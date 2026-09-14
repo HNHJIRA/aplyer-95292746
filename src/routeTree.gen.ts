@@ -9,8 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResumeMatchRouteImport } from './routes/resume-match'
+import { Route as ResumeAuditRouteImport } from './routes/resume-audit'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as LegacyLandingRouteImport } from './routes/legacy-landing'
 import { Route as ExtensionAuthRouteImport } from './routes/extension-auth'
+import { Route as DemoRouteImport } from './routes/demo'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -36,14 +40,34 @@ import { Route as AuthenticatedDashboardProfileRouteImport } from './routes/_aut
 import { Route as ApiPublicExtensionVoicecardRouteImport } from './routes/api/public/extension.voicecard'
 import { Route as ApiPublicAiClassifyQuestionRouteImport } from './routes/api/public/ai.classify-question'
 
+const ResumeMatchRoute = ResumeMatchRouteImport.update({
+  id: '/resume-match',
+  path: '/resume-match',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResumeAuditRoute = ResumeAuditRouteImport.update({
+  id: '/resume-audit',
+  path: '/resume-audit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LegacyLandingRoute = LegacyLandingRouteImport.update({
+  id: '/legacy-landing',
+  path: '/legacy-landing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ExtensionAuthRoute = ExtensionAuthRouteImport.update({
   id: '/extension-auth',
   path: '/extension-auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -178,8 +202,12 @@ const ApiPublicAiClassifyQuestionRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/demo': typeof DemoRoute
   '/extension-auth': typeof ExtensionAuthRoute
+  '/legacy-landing': typeof LegacyLandingRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/resume-audit': typeof ResumeAuditRoute
+  '/resume-match': typeof ResumeMatchRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/api/resume-audit': typeof ApiResumeAuditRoute
   '/api/resume-match': typeof ApiResumeMatchRoute
@@ -205,8 +233,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/demo': typeof DemoRoute
   '/extension-auth': typeof ExtensionAuthRoute
+  '/legacy-landing': typeof LegacyLandingRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/resume-audit': typeof ResumeAuditRoute
+  '/resume-match': typeof ResumeMatchRoute
   '/api/resume-audit': typeof ApiResumeAuditRoute
   '/api/resume-match': typeof ApiResumeMatchRoute
   '/auth/forgot': typeof AuthForgotRoute
@@ -233,8 +265,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
+  '/demo': typeof DemoRoute
   '/extension-auth': typeof ExtensionAuthRoute
+  '/legacy-landing': typeof LegacyLandingRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/resume-audit': typeof ResumeAuditRoute
+  '/resume-match': typeof ResumeMatchRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/api/resume-audit': typeof ApiResumeAuditRoute
   '/api/resume-match': typeof ApiResumeMatchRoute
@@ -262,8 +298,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/demo'
     | '/extension-auth'
+    | '/legacy-landing'
     | '/reset-password'
+    | '/resume-audit'
+    | '/resume-match'
     | '/dashboard'
     | '/api/resume-audit'
     | '/api/resume-match'
@@ -289,8 +329,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/demo'
     | '/extension-auth'
+    | '/legacy-landing'
     | '/reset-password'
+    | '/resume-audit'
+    | '/resume-match'
     | '/api/resume-audit'
     | '/api/resume-match'
     | '/auth/forgot'
@@ -316,8 +360,12 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/demo'
     | '/extension-auth'
+    | '/legacy-landing'
     | '/reset-password'
+    | '/resume-audit'
+    | '/resume-match'
     | '/_authenticated/dashboard'
     | '/api/resume-audit'
     | '/api/resume-match'
@@ -345,8 +393,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  DemoRoute: typeof DemoRoute
   ExtensionAuthRoute: typeof ExtensionAuthRoute
+  LegacyLandingRoute: typeof LegacyLandingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ResumeAuditRoute: typeof ResumeAuditRoute
+  ResumeMatchRoute: typeof ResumeMatchRoute
   ApiResumeAuditRoute: typeof ApiResumeAuditRoute
   ApiResumeMatchRoute: typeof ApiResumeMatchRoute
   ApiAiClassifyQuestionRoute: typeof ApiAiClassifyQuestionRoute
@@ -363,6 +415,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/resume-match': {
+      id: '/resume-match'
+      path: '/resume-match'
+      fullPath: '/resume-match'
+      preLoaderRoute: typeof ResumeMatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resume-audit': {
+      id: '/resume-audit'
+      path: '/resume-audit'
+      fullPath: '/resume-audit'
+      preLoaderRoute: typeof ResumeAuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -370,11 +436,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/legacy-landing': {
+      id: '/legacy-landing'
+      path: '/legacy-landing'
+      fullPath: '/legacy-landing'
+      preLoaderRoute: typeof LegacyLandingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/extension-auth': {
       id: '/extension-auth'
       path: '/extension-auth'
       fullPath: '/extension-auth'
       preLoaderRoute: typeof ExtensionAuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -600,8 +680,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  DemoRoute: DemoRoute,
   ExtensionAuthRoute: ExtensionAuthRoute,
+  LegacyLandingRoute: LegacyLandingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ResumeAuditRoute: ResumeAuditRoute,
+  ResumeMatchRoute: ResumeMatchRoute,
   ApiResumeAuditRoute: ApiResumeAuditRoute,
   ApiResumeMatchRoute: ApiResumeMatchRoute,
   ApiAiClassifyQuestionRoute: ApiAiClassifyQuestionRoute,

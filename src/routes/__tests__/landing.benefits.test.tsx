@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createRoot } from "react-dom/client";
 import { act } from "react";
-import { BenefitsRow } from "../index";
+import { BenefitsRow } from "../legacy-landing";
 
 function mountBenefits() {
   const container = document.createElement("div");
