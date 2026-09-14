@@ -18,7 +18,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { downloadExtension } from "@/lib/download-extension";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/legacy-landing")({
   head: () => ({
     meta: [
       { title: "Aplyer.ai — Stop Skipping Jobs" },

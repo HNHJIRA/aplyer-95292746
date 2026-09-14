@@ -4,7 +4,7 @@
  * treated as the real answer. Shared by the demo page and the unit tests.
  */
 (function (root) {
-  var DEFAULT_BASE = 'https://aplyer.devssh.xyz';
+  var DEFAULT_BASE = '';
   var GENERIC_ERROR = 'The demo is busy. Please try again in a moment.';
 
   function parsePayload(raw) {
