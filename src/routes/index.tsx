@@ -139,6 +139,17 @@ function HomeNavActions() {
         <>
           <Link className="nav-link" to="/auth">Sign In</Link>
           <Link className="nav-cta" to="/auth">Sign Up</Link>
+          <button
+            type="button"
+            className="nav-cta"
+            onClick={() =>
+              document
+                .getElementById("waitlist-form")
+                ?.scrollIntoView({ behavior: "smooth" })
+            }
+          >
+            Join the Waitlist →
+          </button>
         </>
       )}
     </>
