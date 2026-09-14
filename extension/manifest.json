@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Aplyer.ai",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "description": "Detect supported ATS application questions and prepare to generate tailored answers.",
   "permissions": [
     "storage",
@@ -87,6 +87,8 @@
   ],
   "externally_connectable": {
     "matches": [
+      "https://www.aplyer.ai/*",
+      "https://aplyer.ai/*",
       "https://aplyer.devssh.xyz/*",
       "https://*.lovable.app/*",
       "http://localhost/*",
