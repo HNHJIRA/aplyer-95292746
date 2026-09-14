@@ -56,7 +56,14 @@ export async function clearExtensionLocal(): Promise<void> {
 }
 
 
-export function openAuthInTab(webUrl: string) {
+// Public website origin used ONLY for user-facing browser navigation
+// (sign-in / sign-up / auth bridge). API calls must keep using the
+// configured backend origin (API_BASE in the extension), not this URL.
+export const AUTH_WEB_URL =
+  (import.meta.env?.VITE_AUTH_WEB_URL as string | undefined) ||
+  "https://www.aplyer.ai";
+
+export function openAuthInTab(webUrl: string = AUTH_WEB_URL) {
   const c = chromeApi();
   const id = c?.runtime?.id;
   const url = `${webUrl.replace(/\/$/, "")}/extension-auth?ext=${encodeURIComponent(id ?? "")}`;
