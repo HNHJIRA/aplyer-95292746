@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aplyer.ai, Live Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #FFFFFF;
+    --navy2: #F5F7FA;
+    --navy3: #ECEEF2;
+    --green: #1DB954;
+    --red: #E5373A;
+    --white: #111111;
+    --white2: #555555;
+    --border: rgba(0,0,0,0.10);
+    --field: rgba(0,0,0,0.04);
+    --field2: rgba(0,0,0,0.06);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #FFFFFF;
+    color: #111111;
+    font-family: 'Lato', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  nav {
+    border-bottom: 1px solid rgba(0,0,0,0.10);
+    background: rgba(255,255,255,0.97);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+
+  .nav-inner {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 24px;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .logo-name {
+    font-family: 'Lato', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: -0.01em;
+  }
+
+  .logo-tag {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Lato', sans-serif;
+    color: var(--red);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .nav-badge {
+    background: rgba(29,185,84,0.12);
+    border: 1px solid rgba(29,185,84,0.3);
+    color: var(--green);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    letter-spacing: .05em;
+  }
+
+  /* HERO */
+  .hero {
+    text-align: center;
+    padding: 60px 40px 40px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .hero-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .2em;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .hero h1 {
+    font-size: clamp(28px, 4vw, 46px);
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+  }
+
+  .hero h1 span { color: var(--green); }
+
+  .hero p {
+    font-size: 17px;
+    color: #555555;
+    line-height: 1.7;
+    max-width: 520px;
+    margin: 0 auto 32px;
+  }
+
+  /* API KEY SETUP */
+  .setup-bar {
+    background: rgba(229,55,58,0.08);
+    border: 1px solid rgba(229,55,58,0.25);
+    border-radius: 10px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 700px;
+    margin: 0 auto 32px;
+  }
+
+  .setup-bar.ok {
+    background: rgba(29,185,84,0.08);
+    border-color: rgba(29,185,84,0.25);
+  }
+
+  .setup-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+    flex-shrink: 0;
+  }
+
+  .setup-bar.ok .setup-dot { background: var(--green); }
+
+  .setup-bar input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--white);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+  }
+
+  .setup-bar input::placeholder { color: #555555; }
+
+  .setup-bar button {
+    background: var(--green);
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 16px;
+    font-family: 'Lato', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .setup-status {
+    font-size: 13px;
+    color: #555555;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .setup-bar.ok .setup-status { color: var(--green); }
+
+  /* MAIN LAYOUT */
+  .demo-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  @media(max-width:800px) {
+    .demo-wrap { grid-template-columns: 1fr; }
+  }
+
+  /* PANELS */
+  .panel {
+    background: var(--navy2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(0,0,0,0.10);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--green);
+    color: #000;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .panel-title {
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: .02em;
+  }
+
+  .panel-sub {
+    font-size: 12px;
+    color: #555555;
+    font-family: 'DM Mono', monospace;
+    margin-left: auto;
+  }
+
+  .panel-body { padding: 20px; }
+
+  textarea {
+    width: 100%;
+    background: #F5F7FA;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--white);
+    font-family: 'Lato', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 14px 16px;
+    resize: vertical;
+    outline: none;
+    transition: border-color .2s;
+  }
+
+  textarea:focus { border-color: rgba(29,185,84,0.4); }
+  textarea::placeholder { color: #555555; }
+
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    background: #F5F7FA;
+    position: relative;
+  }
+
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--green); background: rgba(29,185,84,0.05); }
+
+  .upload-zone input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon { font-size: 28px; margin-bottom: 10px; }
+
+  .upload-title {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  .upload-hint {
+    font-size: 12px;
+    color: #555555;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .upload-success {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    color: var(--green);
+    font-weight: 700;
+    font-size: 14px;
+    justify-content: center;
+  }
+
+  .q-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+
+  .q-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #F5F7FA;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+
+  .q-item:hover { border-color: rgba(29,185,84,0.3); background: rgba(29,185,84,0.05); }
+  .q-item.selected { border-color: var(--green); background: rgba(29,185,84,0.08); }
+
+  .q-radio {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--white2);
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: all .15s;
+  }
+
+  .q-item.selected .q-radio {
+    border-color: var(--green);
+    background: var(--green);
+    box-shadow: 0 0 0 3px rgba(29,185,84,0.15);
+  }
+
+  .q-text-item { font-size: 13px; line-height: 1.5; }
+
+  .custom-q { margin-top: 8px; }
+
+  /* GENERATE BUTTON */
+  .gen-wrap {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    padding: 8px 0 4px;
+  }
+
+  .gen-btn {
+    background: var(--green);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    padding: 16px 48px;
+    font-family: 'Lato', sans-serif;
+    font-weight: 900;
+    font-size: 16px;
+    letter-spacing: .02em;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gen-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(29,185,84,0.3); }
+  .gen-btn:active { transform: translateY(0); }
+  .gen-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .gen-btn .spinner {
+    display: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+
+  .gen-btn.loading .spinner { display: block; }
+  .gen-btn.loading .btn-text { opacity: .7; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* OUTPUT */
+  .output-wrap {
+    grid-column: 1 / -1;
+    display: none;
+  }
+
+  .output-wrap.show { display: block; }
+
+  .output-panel {
+    background: var(--navy2);
+    border: 1px solid rgba(29,185,84,0.25);
+    border-radius: 12px;
+    overflow: hidden;
+    animation: fadeUp .4s ease forwards;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .output-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(0,0,0,0.10);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .output-left { display: flex; align-items: center; gap: 10px; }
+
+  .output-badge {
+    background: rgba(29,185,84,0.15);
+    border: 1px solid rgba(29,185,84,0.3);
+    color: var(--green);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: .08em;
+  }
+
+  .output-title { font-weight: 700; font-size: 14px; }
+
+  .output-actions { display: flex; gap: 8px; }
+
+  .copy-btn {
+    background: #ECEEF2;
+    border: 1px solid var(--border);
+    color: var(--white);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-family: 'Lato', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .15s;
+  }
+
+  .copy-btn:hover { border-color: var(--green); color: var(--green); }
+  .copy-btn.copied { border-color: var(--green); color: var(--green); background: rgba(29,185,84,0.1); }
+
+  .output-body { padding: 24px; }
+
+  .output-q {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: #555555;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.10);
+    line-height: 1.6;
+  }
+
+  .output-q strong { color: var(--white); display: block; margin-bottom: 4px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+
+  .output-text {
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--white);
+  }
+
+  .output-text p { margin-bottom: 14px; }
+  .output-text p:last-child { margin-bottom: 0; }
+  .output-text { overflow-wrap: anywhere; word-break: break-word; }
+
+  /* In-progress answer: hide completed-state affordances until final */
+  .output-wrap.writing .output-badge,
+  .output-wrap.writing .output-actions,
+  .output-wrap.writing .indicators { visibility: hidden; }
+  .output-wrap.writing .output-text p:last-child::after {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 15px;
+    margin-left: 2px;
+    vertical-align: -2px;
+    background: var(--green);
+    animation: aplyerCaret 1s steps(2, start) infinite;
+  }
+  @keyframes aplyerCaret { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* INDICATORS */
+  .indicators {
+    display: flex;
+    gap: 8px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .ind {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #F5F7FA;
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+  }
+
+  .ind-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  /* ERROR */
+  .error-msg {
+    display: none;
+    background: rgba(229,55,58,0.1);
+    border: 1px solid rgba(229,55,58,0.3);
+    border-radius: 8px;
+    padding: 14px 18px;
+    color: var(--red);
+    font-size: 14px;
+    grid-column: 1 / -1;
+    margin-top: -8px;
+  }
+
+  .error-msg.show { display: block; }
+
+  /* LOADING STATE */
+  .loading-overlay {
+    display: none;
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 32px;
+  }
+
+  .loading-overlay.show { display: block; }
+
+  .loading-bar {
+    width: 100%;
+    max-width: 400px;
+    height: 3px;
+    background: var(--border);
+    border-radius: 3px;
+    margin: 0 auto 16px;
+    overflow: hidden;
+  }
+
+  .loading-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 3px;
+    animation: loadAnim 2s ease-in-out infinite;
+  }
+
+  @keyframes loadAnim {
+    0% { width: 0%; margin-left: 0; }
+    50% { width: 70%; margin-left: 0; }
+    100% { width: 0%; margin-left: 100%; }
+  }
+
+  .loading-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: #555555;
+  }
+
+  .loading-text span { color: var(--green); }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+    color: #555555;
+    font-family: 'DM Mono', monospace;
+  }
+
+  footer a { color: var(--green); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+  <a class="logo" href="/">
+    <svg class="logo-icon" width="32" height="32" viewBox="0 0 88 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="navG" x1="0" y1="44" x2="88" y2="44" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#E5373A"/>
+          <stop offset="45%" stop-color="#E5373A"/>
+          <stop offset="55%" stop-color="#1DB954"/>
+          <stop offset="100%" stop-color="#1DB954"/>
+        </linearGradient>
+      </defs>
+      <circle cx="44" cy="44" r="40" fill="#0D1829" stroke="url(#navG)" stroke-width="2"/>
+      <line x1="22" y1="28" x2="44" y2="44" stroke="#E5373A" stroke-width="5" stroke-linecap="round"/>
+      <line x1="22" y1="60" x2="44" y2="44" stroke="#E5373A" stroke-width="5" stroke-linecap="round"/>
+      <line x1="44" y1="44" x2="56" y2="56" stroke="#1DB954" stroke-width="5" stroke-linecap="round"/>
+      <line x1="56" y1="56" x2="72" y2="28" stroke="#1DB954" stroke-width="5" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <div class="logo-name">Aplyer.ai</div>
+      <div class="logo-tag">Stop Skipping Jobs</div>
+    </div>
+  </a>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <div style="font-family:'Lato',sans-serif;font-size:13px;font-weight:700;color:#1DB954;">Powered by WriteDNA Technology™</div>
+    <div class="nav-badge">Live Demo</div>
+  </div>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-label">● See it work in real time</div>
+  <h1>Your resume. Your voice.<br><span>Your application questions, answered.</span></h1>
+  <p>Drag your resume, drop in a job description, pick an application question. Watch Aplyer complete it in your voice in seconds.</p>
+  <div style="margin-top:12px;font-family:'Lato',sans-serif;font-size:14px;font-weight:700;color:#1DB954;">Powered by WriteDNA Technology™</div>
+  <div style="max-width:520px;margin:18px auto 0;background:#FFFFFF;border:1px solid var(--border);border-radius:14px;padding:18px 20px;display:flex;align-items:center;gap:18px;text-align:left;box-shadow:0 2px 12px rgba(13,24,41,0.06);">
+    <div class="ms-ring" style="flex-shrink:0;width:84px;height:84px;border-radius:50%;background:conic-gradient(#1DB954 0% 92%,#E6EAF0 92% 100%);display:flex;align-items:center;justify-content:center;">
+      <div style="width:64px;height:64px;border-radius:50%;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <span id="ms-score" style="font-family:'Lato',sans-serif;font-size:22px;font-weight:900;color:#0D1829;line-height:1;">92%</span>
+        <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;color:#888888;text-transform:uppercase;">match</span>
+      </div>
+    </div>
+    <div style="flex:1;">
+      <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#1DB954;margin-bottom:5px;">Gap Analysis</div>
+      <div id="ms-jobtitle" style="font-family:'Lato',sans-serif;font-size:14px;font-weight:700;color:#0D1829;line-height:1.35;margin-bottom:6px;">Senior Product Manager &middot; Stripe</div>
+      <div id="ms-strong" style="font-family:'Lato',sans-serif;font-size:13px;color:#16893E;line-height:1.5;">&check; Strong on product strategy, analytics, leadership</div>
+      <div id="ms-strengthen" style="font-family:'Lato',sans-serif;font-size:13px;color:#B45309;line-height:1.5;">&#9888; Strengthen by adding a result with a number</div>
+    </div>
+  </div>
+</div>
+
+<!-- Backend-powered demo: no API key required -->
+
+<div class="demo-wrap">
+
+  <!-- RESUME -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-num">1</div>
+      <div class="panel-title">Your Resume</div>
+      <div class="panel-sub">paste or upload .pdf / .txt</div>
+    </div>
+    <div class="panel-body">
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" accept=".txt,.pdf" onchange="handleFile(event)" id="fileInput"/>
+        <div class="upload-icon">📄</div>
+        <div class="upload-title">Drop your resume here</div>
+        <div class="upload-hint">.pdf or .txt file · or paste below</div>
+      </div>
+      <div class="upload-success" id="uploadSuccess">
+        <span style="color:var(--green);font-size:18px">✓</span>
+        <span id="uploadName">resume.txt loaded</span>
+        <button onclick="clearResume()" style="background:none;border:none;color:#555555;cursor:pointer;font-size:12px;margin-left:auto;">clear</button>
+      </div>
+      <textarea id="resumeText" placeholder="Or paste your resume text here..." rows="10" style="margin-top:12px;" oninput="syncResumeState()"></textarea>
+    </div>
+  </div>
+
+  <!-- JOB DESCRIPTION -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-num">2</div>
+      <div class="panel-title">Job Description</div>
+      <div class="panel-sub">paste from the job posting</div>
+    </div>
+    <div class="panel-body">
+      <textarea id="jobDesc" placeholder="Paste the full job description here, title, responsibilities, requirements, company info..." rows="14"></textarea>
+    </div>
+  </div>
+
+  <!-- ESSAY QUESTION -->
+  <div class="panel" style="grid-column: 1 / -1;">
+    <div class="panel-head">
+      <div class="panel-num">3</div>
+      <div class="panel-title">Essay Question</div>
+      <div class="panel-sub">pick one or write your own</div>
+    </div>
+    <div class="panel-body">
+      <div class="q-list" id="qList">
+        <div class="q-item selected" onclick="selectQ(this, 0)">
+          <div class="q-radio"></div>
+          <div class="q-text-item">Why do you feel you are the right fit for this role?</div>
+        </div>
+        <div class="q-item" onclick="selectQ(this, 1)">
+          <div class="q-radio"></div>
+          <div class="q-text-item">Describe a specific problem you had to address and how you resolved it.</div>
+        </div>
+        <div class="q-item" onclick="selectQ(this, 2)">
+          <div class="q-radio"></div>
+          <div class="q-text-item">Tell us about a time you demonstrated leadership.</div>
+        </div>
+        <div class="q-item" onclick="selectQ(this, 3)">
+          <div class="q-radio"></div>
+          <div class="q-text-item">What motivates you and why are you interested in working at our company?</div>
+        </div>
+        <div class="q-item" onclick="selectQ(this, 4)">
+          <div class="q-radio"></div>
+          <div class="q-text-item">Describe your greatest professional achievement.</div>
+        </div>
+        <div class="q-item" onclick="selectQ(this, 5)">
+          <div class="q-radio"></div>
+          <div class="q-text-item">✏️ Write my own question...</div>
+        </div>
+      </div>
+      <textarea id="customQ" class="custom-q" placeholder="Type your application question here..." rows="3" style="display:none;"></textarea>
+    </div>
+  </div>
+
+  <!-- GENERATE -->
+  <div class="gen-wrap">
+    <button class="gen-btn" id="genBtn" onclick="generate()">
+      <div class="spinner"></div>
+      <span class="btn-text">Generate My Answer →</span>
+    </button>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-bar"><div class="loading-fill"></div></div>
+    <div class="loading-text">Reading your resume and the job description... <span>matching your voice</span></div>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- OUTPUT -->
+  <div class="output-wrap" id="outputWrap">
+    <div class="output-panel">
+      <div class="output-head">
+        <div class="output-left">
+          <div class="output-badge">✓ GENERATED</div>
+          <div class="output-title">Your Answer</div>
+        </div>
+        <div class="output-actions">
+          <button class="copy-btn" id="copyBtn" onclick="copyAnswer()">Copy Answer</button>
+        </div>
+      </div>
+      <div class="output-body">
+        <div class="output-q">
+          <strong>Essay Question</strong>
+          <span id="outputQ"></span>
+        </div>
+        <div class="output-text" id="outputText"></div>
+      </div>
+      <div class="indicators">
+        <div class="ind"><div class="ind-dot" style="background:var(--green)"></div><span style="color:var(--green)">✓ Voice Matched</span></div>
+        <div class="ind"><div class="ind-dot" style="background:var(--green)"></div><span style="color:var(--green)">✓ Low AI Signature</span></div>
+        <div class="ind"><div class="ind-dot" style="background:var(--green)"></div><span style="color:var(--green)">✓ Real Experience Used</span></div>
+        <div class="ind" style="margin-left:auto;color:#555555;font-size:11px;">ATS keywords from job description embedded</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <a href="https://aplyer.ai">aplyer.ai</a> · Founding member waitlist open · Stop Skipping Jobs
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>/*__APLYER_ANSWER_MODULE__*/</script>
+<script>
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+
+  let resumeContent = '';
+  let selectedQIndex = 0;
+
+  const presetQuestions = [
+    'Why do you feel you are the right fit for this role?',
+    'Describe a specific problem you had to address and how you resolved it.',
+    'Tell us about a time you demonstrated leadership.',
+    'Why do you want to work for this company?',
+    'Describe your greatest professional achievement.',
+  ];
+
+  function showLoaded(name) {
+    document.getElementById('uploadZone').style.display = 'none';
+    const succ = document.getElementById('uploadSuccess');
+    succ.style.display = 'flex';
+    document.getElementById('uploadName').textContent = name;
+  }
+
+  async function extractPdfText(file) {
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    let out = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      let lastY = null, line = '';
+      const lines = [];
+      for (const item of content.items) {
+        const y = item.transform[5];
+        if (lastY !== null && Math.abs(y - lastY) > 2) { lines.push(line.trim()); line = ''; }
+        line += item.str + (item.hasEOL ? '' : ' ');
+        lastY = y;
+      }
+      if (line.trim()) lines.push(line.trim());
+      out += lines.filter(Boolean).join('\n') + '\n\n';
+    }
+    return out.replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  async function loadFile(file) {
+    if (!file) return;
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+    showLoaded(file.name + (isPdf ? ' — reading…' : ' loaded'));
+    try {
+      let text;
+      if (isPdf) {
+        if (!window.pdfjsLib) throw new Error('PDF reader unavailable');
+        text = await extractPdfText(file);
+        if (!text) throw new Error('No selectable text found in this PDF');
+      } else {
+        text = await file.text();
+      }
+      resumeContent = text;
+      document.getElementById('resumeText').value = text;
+      document.getElementById('uploadName').textContent = file.name + ' loaded';
+    } catch (err) {
+      clearResume();
+      alert('Could not read ' + file.name + ': ' + err.message + '. Please paste your resume text instead.');
+    }
+  }
+
+  function handleFile(e) {
+    loadFile(e.target.files[0]);
+  }
+
+  function clearResume() {
+    resumeContent = '';
+    document.getElementById('resumeText').value = '';
+    document.getElementById('uploadZone').style.display = 'block';
+    document.getElementById('uploadSuccess').style.display = 'none';
+    document.getElementById('fileInput').value = '';
+  }
+
+  function syncResumeState() {
+    resumeContent = document.getElementById('resumeText').value;
+  }
+
+  function selectQ(el, idx) {
+    document.querySelectorAll('.q-item').forEach(q => q.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedQIndex = idx;
+    const customQ = document.getElementById('customQ');
+    if (idx === 5) {
+      customQ.style.display = 'block';
+      customQ.focus();
+    } else {
+      customQ.style.display = 'none';
+    }
+  }
+
+  function getQuestion() {
+    if (selectedQIndex === 5) {
+      return document.getElementById('customQ').value.trim();
+    }
+    return presetQuestions[selectedQIndex];
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+
+  function hideError() {
+    document.getElementById('errorMsg').classList.remove('show');
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function renderAnswer(text) {
+    const value = String(text || '');
+    const formatted = value.split('\n\n').map(para =>
+      para.trim() ? `<p>${escapeHtml(para.trim())}</p>` : ''
+    ).join('');
+    document.getElementById('outputText').innerHTML = formatted || `<p>${escapeHtml(value)}</p>`;
+  }
+
+  async function generate() {
+    hideError();
+
+    const resume = document.getElementById('resumeText').value.trim();
+    const jobDesc = document.getElementById('jobDesc').value.trim();
+    const question = getQuestion();
+
+    if (!resume) { showError('Please paste your resume or upload a .txt file.'); return; }
+    if (!jobDesc) { showError('Please paste the job description.'); return; }
+    if (!question) { showError('Please select or type an application question.'); return; }
+
+    const btn = document.getElementById('genBtn');
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    const outputWrap = document.getElementById('outputWrap');
+    document.getElementById('loadingOverlay').classList.add('show');
+    outputWrap.classList.remove('show');
+    outputWrap.classList.remove('writing');
+    document.getElementById('outputText').innerHTML = '';
+
+    let scrolled = false;
+
+    try {
+      const answer = (await window.AplyerAnswer.getAnswer({
+        resume: resume,
+        jobDescription: jobDesc,
+        question: question,
+        onDelta: function (preview) {
+          document.getElementById('outputQ').textContent = question;
+          renderAnswer(preview);
+          if (preview) {
+            outputWrap.classList.add('show');
+            outputWrap.classList.add('writing');
+            if (!scrolled) {
+              scrolled = true;
+              outputWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }
+        }
+      }) || '').trim();
+
+      document.getElementById('outputQ').textContent = question;
+      renderAnswer(answer);
+
+      outputWrap.classList.remove('writing');
+      outputWrap.classList.add('show');
+      if (!scrolled) outputWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    } catch (err) {
+      // Never keep an unvalidated preview on screen.
+      outputWrap.classList.remove('writing');
+      outputWrap.classList.remove('show');
+      document.getElementById('outputText').innerHTML = '';
+      showError(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+      document.getElementById('loadingOverlay').classList.remove('show');
+    }
+  }
+
+  function copyAnswer() {
+    const text = document.getElementById('outputText').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy Answer';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  // Drag and drop
+  const zone = document.getElementById('uploadZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag');
+    loadFile(e.dataTransfer.files[0]);
+  });
+</script>
+</body>
+</html>

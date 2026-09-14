@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta property="og:title" content="Tired of Long Job Application Questions? Stop Skipping Jobs.">
+<meta property="og:description" content="57% of candidates have abandoned an application because it was too long or complicated. Aplyer answers the hard questions in your voice, using your resume, so you can apply for the jobs everyone else skips.">
+<meta property="og:image" content="https://aplyer.ai/aplyer_og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://aplyer.ai">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://aplyer.ai/aplyer_og.jpg">
+<title>Tired of Long Job Application Questions? Stop Skipping Jobs.</title>
+<link rel="icon" type="image/png" sizes="32x32" href="icon%2032.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icon%2016.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon%20180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,400;1,700&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FFFFFF;
+  --paper:#F5F7FA;
+  --field:#ECEEF2;
+  --field2:#F0F2F6;
+  --green:#1DB954;
+  --green2:#22C55E;
+  --green-dim:rgba(29,185,84,0.10);
+  --green-border:rgba(29,185,84,0.25);
+  --red:#E5373A;
+  --red-dim:rgba(229,55,58,0.08);
+  --red-border:rgba(229,55,58,0.25);
+  --white:#111111;
+  --white2:#222222;
+  --sub:#222222;
+  --muted:#333333;
+  --dim:#555555;
+  --border:rgba(0,0,0,0.08);
+  --border2:rgba(0,0,0,0.10);
+  --r:8px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Lato',sans-serif;color:#111111;background:#FFFFFF;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,0.97);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,0.10)}
+.nav-inner{max-width:1080px;margin:0 auto;padding:0 24px;height:68px;display:flex;align-items:center;justify-content:space-between}
+.logo-wrap{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-name{font-family:'Lato',sans-serif;font-size:26px;font-weight:700;color:var(--green);letter-spacing:-.01em}
+.logo-tag{font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--red);font-family:'Lato',sans-serif}
+.logo-texts{display:flex;flex-direction:column;gap:1px}
+.nav-btn{background:var(--green);color:#000;padding:15px 36px;border-radius:8px;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:'Lato',sans-serif;letter-spacing:.02em;transition:all .15s}
+.nav-btn:hover{background:var(--green2)}
+
+.cover{padding:104px 24px 24px;background:var(--bg)}
+.cover-inner{max-width:1100px;margin:0 auto}
+
+.form-header{background:var(--paper);border:1px solid var(--border2);border-radius:12px;padding:36px 40px;margin-bottom:0;position:relative;overflow:hidden}
+.form-header::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--red),var(--green))}
+.app-type{font-family:'DM Mono',monospace;font-size:14px;color:var(--green);letter-spacing:.16em;text-transform:uppercase;margin-bottom:12px}
+.form-title{font-family:'Lato',sans-serif;font-size:clamp(28px,4.5vw,52px);font-weight:700;letter-spacing:-.03em;line-height:1.05;color:#111111}
+.form-title .red{color:var(--red)}
+.form-title .grn{color:var(--green)}
+.form-ref{font-family:'DM Mono',monospace;font-size:14px;color:#222222;margin-top:10px}
+
+.applicant-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding-top:20px;border-top:1px solid var(--border);margin-top:24px;align-items:start}
+.field-mini label{color:#555555;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#222222;font-family:'Lato',sans-serif;font-weight:700;display:block;margin-bottom:6px}
+.field-mini .val{font-size:15px;color:#111111;font-weight:400;font-family:'Lato',sans-serif}
+.field-mini .val.green{color:var(--green);font-weight:600}
+
+.q-section{padding:0 24px;max-width:1100px;margin:0 auto}
+.q-block{background:var(--paper);border:1px solid var(--border);border-radius:12px;margin-top:16px;overflow:hidden;transition:border-color .2s}
+.q-block:hover{border-color:var(--border2)}
+.q-label{padding:20px 32px 0;display:flex;align-items:flex-start;gap:14px}
+.q-num{font-family:'DM Mono',monospace;font-weight:500;font-size:17px;color:var(--green);letter-spacing:.1em;flex-shrink:0;margin-top:4px}
+.q-text{font-family:'Lato',sans-serif;font-size:clamp(24px,3vw,32px);font-weight:700;color:#111111;line-height:1.3;letter-spacing:-.01em}
+.q-text .red{color:var(--red)}
+.q-text .grn{color:var(--green)}
+
+.q-answer{margin:16px 32px 0;background:var(--field);border:1px solid var(--border2);border-radius:8px;padding:24px;position:relative;min-height:80px}
+.q-answer::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;background:var(--green);border-radius:3px 0 0 3px;opacity:.6}
+
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.cur{display:inline-block;width:2px;height:1em;background:var(--green);vertical-align:text-bottom;margin-left:2px;animation:blink 1.1s infinite}
+
+/* ANSWER TEXT - NOW CLEARLY VISIBLE */
+.ans-body{font-size:clamp(15px,1.8vw,17px);color:#222222;line-height:1.85;font-weight:400}
+.ans-body strong{color:#111111;font-weight:700}
+.ans-body .highlight{color:var(--green);font-weight:600}
+.ans-body .problem{color:var(--red);font-weight:600}
+
+/* STATS - ALL TEXT CLEARLY VISIBLE */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin:20px 0;background:var(--border2);border-radius:8px;overflow:hidden}
+.stat-box{background:var(--field2);padding:20px 16px}
+.stat-n{font-family:'DM Mono',monospace;font-size:34px;color:var(--green);line-height:1;margin-bottom:6px}
+.stat-l{font-size:14px;color:#222222;line-height:1.55;margin-bottom:10px;font-weight:400}
+/* SOURCE LINKS - NOW CLEARLY VISIBLE */
+.stat-s{font-size:10px;font-family:'DM Mono',monospace;color:#222222}
+.stat-s a{color:#222222;text-decoration:none;border-bottom:1px solid var(--muted);padding-bottom:1px;transition:color .15s,border-color .15s}
+.stat-s a:hover{color:var(--green);border-color:var(--green)}
+
+/* BEFORE/AFTER */
+.ba-mini{display:grid;grid-template-columns:1fr auto 1fr;gap:20px;align-items:stretch;margin:24px 0}
+.ba-screen{border-radius:6px;overflow:hidden;border:1px solid}
+.ba-s-bad{border-color:#E5373A;background:rgba(229,55,58,0.22)}
+.ba-s-good{border-color:#1DB954;background:rgba(29,185,84,0.22)}
+.ba-sbar{padding:10px 14px;display:flex;align-items:center;gap:6px}
+.ba-sbar-bad{background:rgba(229,55,58,0.1)}
+.ba-sbar-good{background:rgba(29,185,84,0.08)}
+.ba-dot{width:8px;height:8px;border-radius:50%}
+.ba-body{padding:16px 18px;min-height:130px;display:flex;flex-direction:column;justify-content:space-between}
+.ba-q{font-size:16px;font-family:'Lato',sans-serif;color:#000000;margin-bottom:10px;letter-spacing:.01em;font-weight:700}
+.ba-box{border-radius:5px;padding:14px;min-height:60px}
+.ba-box-bad{background:rgba(229,55,58,0.18);border:2px dashed #E5373A}
+.ba-box-good{background:rgba(29,185,84,0.18);border:2px solid #1DB954}
+.ba-ph{color:#333333;font-size:13px;font-style:italic}
+.ba-ans{font-size:15px;color:#000000;line-height:1.6}
+.ba-stat{margin-top:10px;padding:8px 12px;border-radius:4px;font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;text-align:center;font-family:'Lato',sans-serif}
+.ba-stat-bad{background:rgba(229,55,58,0.25);color:#000000}
+.ba-stat-good{background:rgba(29,185,84,0.25);color:#000000}
+.ba-arrow{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex-shrink:0}
+.ba-lbl{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--green);font-family:'DM Mono',monospace}
+
+/* STEPS */
+.steps-row{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin:16px 0;background:var(--border2);border-radius:8px;overflow:hidden}
+.step-box{background:var(--field2);padding:20px 16px}
+.step-n{font-family:'Lato',sans-serif;font-size:22px;font-weight:900;color:var(--green);letter-spacing:.02em;margin-bottom:10px}
+.step-t{font-size:17px;font-weight:700;color:#111111;margin-bottom:6px}
+.step-b{font-size:16px;color:#222222;line-height:1.7;font-weight:400}
+
+/* CONFIDENCE BADGES */
+.confidence-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.conf-inner{display:flex;gap:8px;align-items:center;width:100%;flex-wrap:wrap}
+.conf-badge{display:flex;align-items:center;gap:5px;background:var(--field2);border:1px solid var(--green-border);border-radius:20px;padding:5px 12px;flex:1;justify-content:center;min-width:120px}
+.conf-red{border-color:rgba(229,55,58,.35);min-width:180px}
+.conf-yellow{border-color:rgba(234,179,8,.35)}
+.conf-green{border-color:rgba(29,185,84,.35)}
+.conf-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;background:var(--green)}
+.conf-badge span{font-size:13px;font-family:'DM Mono',monospace;color:var(--green)}
+
+/* TRACKER */
+.tracker-mini{background:var(--field2);border:1px solid var(--border2);border-radius:8px;overflow:hidden;margin:16px 0}
+.t-head{background:var(--field);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,0,0,0.10)}
+.t-title{font-family:'Lato',sans-serif;font-size:15px;font-weight:700;color:#F0F0F0;letter-spacing:.02em}
+.t-badges{display:flex;gap:6px}
+.tbadge{font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;font-family:'Lato',sans-serif}
+.tbadge-g{background:var(--green-dim);color:var(--green)}
+.tbadge-r{background:var(--red-dim);color:var(--red)}
+.t-row{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid rgba(0,0,0,0.10);transition:background .15s}
+.t-row:hover{background:var(--field)}
+.t-row:last-child{border-bottom:none}
+.t-ico{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;font-family:'Lato',sans-serif}
+.t-ico-g{background:var(--green-dim);color:var(--green)}
+.t-ico-r{background:var(--red-dim);color:var(--red)}
+.t-name{font-size:14px;font-weight:700;color:#111111;flex:1}
+.t-role{font-size:13px;color:#222222}
+.t-date{font-size:12px;color:#222222;font-family:'DM Mono',monospace;flex-shrink:0}
+
+.q-block-foot{padding:20px 32px}
+
+/* SUBMIT */
+.submit-section{max-width:1100px;margin:0 auto;padding:0 24px 80px}
+.submit-block{background:var(--paper);border:1px solid var(--border2);border-radius:12px;margin-top:16px;overflow:hidden;position:relative}
+.submit-block::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--green)}
+.submit-inner{padding:36px 40px}
+.submit-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--green);letter-spacing:.16em;text-transform:uppercase;margin-bottom:12px}
+.submit-h{font-size:clamp(22px,3.5vw,36px);font-weight:700;letter-spacing:-.03em;line-height:1.1;margin-bottom:10px;color:#111111}
+.submit-h .grn{color:var(--green)}
+.submit-sub{font-size:16px;color:#222222;line-height:1.75;font-weight:400;margin-bottom:28px;max-width:480px}
+.submit-form{display:flex;max-width:420px;background:var(--bg);border:2px solid rgba(0,0,0,0.15);border-radius:8px;overflow:hidden;transition:border-color .2s}
+.submit-form:focus-within{border-color:var(--green)}
+.submit-form input{flex:1;padding:13px 16px;font-size:15px;font-family:'Lato',sans-serif;background:transparent;border:none;outline:none;color:#111111}
+.submit-form input::placeholder{color:rgba(0,0,0,0.40)}
+.submit-form button{padding:13px 22px;background:var(--green);color:#000;border:none;font-family:'Lato',sans-serif;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s;letter-spacing:.02em}
+.submit-form button:hover{background:var(--green2)}
+.submit-ok{display:none;margin-top:16px;font-size:16px;color:var(--green);font-weight:700;font-family:'DM Mono',monospace}
+.submit-note{font-size:13px;color:#111111;margin-top:10px;font-family:'Lato',sans-serif;font-weight:700}
+
+footer{border-top:1px solid var(--border);padding:20px 24px}
+.foot-inner{max-width:1080px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.foot-p{font-size:13px;color:#333333;font-family:'Lato',sans-serif;font-weight:400}
+.foot-links{display:flex;gap:16px}
+.foot-links a{font-size:13px;color:#333333;text-decoration:none;font-family:'Lato',sans-serif;font-weight:400;transition:color .15s}
+.foot-links a:hover{color:#222222}
+
+
+/* ── FOUNDER SECTION ── */
+.founder-section{padding:0 24px;max-width:1100px;margin:0 auto}
+.founder-block{background:var(--paper);border:1px solid var(--border2);border-radius:12px;margin-top:16px;overflow:hidden}
+.founder-inner{padding:28px 32px;display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center}
+.founder-photo{width:88px;height:88px;border-radius:50%;object-fit:cover;object-position:center top;border:2.5px solid var(--green);flex-shrink:0}
+.founder-label{font-family:'Lato',sans-serif;font-size:16px;font-weight:400;color:var(--green);margin-bottom:6px}
+.founder-name{font-size:17px;font-weight:700;color:#111111;margin-bottom:2px}
+.founder-title{font-size:16px;font-family:'Lato',sans-serif;font-weight:400;color:#222222;margin-bottom:12px}
+.founder-story{font-size:16px;color:#222222;line-height:1.8;font-weight:400}
+.founder-story strong{color:#111111;font-weight:700}
+.founder-story em{color:var(--green);font-style:normal;font-weight:600}
+@media(max-width:600px){.founder-inner{grid-template-columns:1fr}.founder-photo{width:72px;height:72px}}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.f1{opacity:0;animation:fadeUp .5s ease .05s forwards}
+.f2{opacity:0;animation:fadeUp .5s ease .2s forwards}
+.f3{opacity:0;animation:fadeUp .5s ease .35s forwards}
+.f4{opacity:0;animation:fadeUp .5s ease .5s forwards}
+.f5{opacity:0;animation:fadeUp .5s ease .65s forwards}
+
+.specs-row{display:grid;grid-template-columns:1fr 2fr 1fr 1fr;gap:12px;align-items:start;text-align:center}
+.gap-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+
+@media(max-width:700px){
+  .form-header{padding:28px 22px}
+  .applicant-row{grid-template-columns:1fr 1fr}
+  .specs-row{grid-template-columns:1fr 1fr}
+  .gap-grid{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .steps-row{grid-template-columns:1fr}
+  .ba-mini{grid-template-columns:1fr;gap:8px}.ba-arrow{flex-direction:row;justify-content:center}
+  .submit-inner{padding:28px 24px}
+  .submit-form{flex-direction:column}.submit-form button{border-top:1px solid var(--border);border-radius:0 0 6px 6px;padding:14px;font-size:15px}
+  .cover{padding:90px 16px 0}
+  .q-label{padding:18px 20px 0}
+  .q-answer{margin:14px 20px 0;padding:18px}
+  .q-block-foot{padding:16px 20px}
+}
+
+@media(max-width:480px){
+  .logo-tag{display:none}
+  .nav-btn{padding:11px 14px;font-size:13px;letter-spacing:0;white-space:nowrap}
+  .logo-name{font-size:22px}
+  .applicant-row{grid-template-columns:1fr}
+  .specs-row{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .q-section{padding:0 12px}
+  .q-label{padding:16px 16px 0}
+  .q-answer{margin:12px 16px 0;padding:16px}
+  .q-block-foot{padding:12px 16px}
+  .form-header{padding:24px 18px}
+  .submit-inner{padding:24px 18px}
+  .submit-form{max-width:100%}
+  .submit-form input{font-size:16px}
+  .submit-h{font-size:clamp(20px,6vw,28px)}
+  .cover{padding:80px 12px 0}
+  .ba-mini{gap:6px}
+  .step-box{padding:16px 14px}
+  .stat-box{padding:16px 12px}
+  .stat-n{font-size:28px}
+  .q-text{font-size:clamp(20px,5.5vw,28px)}
+  .form-title{font-size:clamp(26px,7vw,42px)}
+  .founder-inner{padding:20px 18px;gap:16px}
+  .t-head{flex-wrap:wrap;gap:6px}
+  .t-badges{flex-wrap:wrap}
+  .t-name{font-size:13px}
+  .t-role{font-size:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .t-date{font-size:11px}
+  .conf-inner{flex-direction:column}
+  .conf-badge{flex:none;width:100%;justify-content:flex-start;min-width:unset;padding:8px 14px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="logo-wrap" href="#">
+      <svg width="32" height="32" viewBox="0 0 88 88" fill="none">
+        <defs>
+          <linearGradient id="navG" x1="0" y1="44" x2="88" y2="44" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#E5373A"/>
+            <stop offset="45%" stop-color="#E5373A"/>
+            <stop offset="55%" stop-color="#1DB954"/>
+            <stop offset="100%" stop-color="#1DB954"/>
+          </linearGradient>
+        </defs>
+        <circle cx="44" cy="44" r="40" fill="#0D1829" stroke="url(#navG)" stroke-width="2"/>
+        <line x1="22" y1="28" x2="44" y2="44" stroke="#E5373A" stroke-width="5" stroke-linecap="round"/>
+        <line x1="22" y1="60" x2="44" y2="44" stroke="#E5373A" stroke-width="5" stroke-linecap="round"/>
+        <line x1="44" y1="44" x2="56" y2="56" stroke="#1DB954" stroke-width="5" stroke-linecap="round"/>
+        <line x1="56" y1="56" x2="72" y2="28" stroke="#1DB954" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+      <div class="logo-texts">
+        <span class="logo-name">Aplyer.ai</span>
+        <span class="logo-tag">Stop Skipping Jobs</span>
+      </div>
+    </a>
+    <button class="nav-btn" onclick="document.getElementById('waitlist-form').scrollIntoView({behavior:'smooth'})">Join the Waitlist →</button>
+  </div>
+</nav>
+
+<section class="cover">
+  <div class="cover-inner">
+    <div class="form-header f1" style="text-align:center;">
+      <h1 class="form-title" style="text-align:center;font-size:clamp(32px,5vw,52px);">Tired of Long Job Application Questions?<br><span class="red" style="white-space:nowrap;">Stop Skipping Jobs.</span></h1>
+
+      <div style="max-width:760px;margin:20px auto 0;font-family:'Lato',sans-serif;font-size:18px;font-weight:400;color:#222222;line-height:1.65;text-align:center;"><a href="https://www.hrdive.com/news/candidates-have-quit-job-applications-before-finishing/758796/" target="_blank" rel="noopener" style="color:#0D1829;font-weight:700;text-decoration:none;border-bottom:2px solid #3B82F6;padding-bottom:1px;">57% of candidates</a> have abandoned an application because it was too long or complicated.<br>LinkedIn sends <a href="https://www.eweek.com/news/ai-job-applications-linkedin/" target="_blank" rel="noopener" style="color:#0D1829;font-weight:700;text-decoration:none;border-bottom:2px solid #3B82F6;padding-bottom:1px;">roughly 11,000 applications a minute</a>, most of them one-click Easy Apply.<br>Aplyer answers the hard questions in your voice, using your resume, so you can apply for the jobs everyone else skips.</div>
+
+      <div style="margin:20px auto 0;font-family:'Lato',sans-serif;font-size:18px;font-weight:700;color:#555555;text-align:center;">Built by a recruiter who spent 8 years deciding who got the interview.</div>
+
+      <div style="text-align:center;margin-top:28px;">
+        <a href="/demo" style="font-family:'Lato',sans-serif;font-size:15px;font-weight:700;color:#000;background:#1DB954;text-decoration:none;border-radius:8px;padding:15px 36px;letter-spacing:.02em;display:inline-block;transition:background .15s;" onmouseover="this.style.background='#22C55E'" onmouseout="this.style.background='#1DB954'">Try the free demo</a>
+      </div>
+
+      <div style="text-align:center;margin-top:14px;"><a href="#free-tools" style="font-family:'Lato',sans-serif;font-size:14px;font-weight:700;color:#1DB954;text-decoration:none;border-bottom:2px solid rgba(29,185,84,0.35);padding-bottom:2px;">Plus free recruiter tools: Resume Red Flag Audit and Job Match Score</a></div>
+
+
+    </div>
+
+  </div>
+</section>
+
+<!-- DEMO PREVIEW: Below the fold -->
+<section style="padding:0 24px 24px;max-width:1100px;margin:0 auto;">
+    <div style="background:var(--paper);border:1px solid var(--border2);border-radius:12px;margin-top:20px;position:relative;">
+      <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--red),var(--green));border-radius:12px 12px 0 0;"></div>
+      <div style="padding:32px 40px;">
+
+        <!-- LABELS ROW: both on the same line -->
+        <div style="display:flex;gap:32px;margin-bottom:10px;">
+          <div style="flex:1;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#1DB954;font-weight:500;">How Aplyer writes your answer</div>
+          <div style="flex:1;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#1DB954;font-weight:500;">How Aplyer reads the job</div>
+        </div>
+
+        <!-- CONTENT ROW: answer on left, circles + info on right -->
+        <div style="display:flex;gap:32px;align-items:flex-start;">
+
+          <!-- LEFT: Question + Answer -->
+          <div style="flex:1;">
+            <div style="font-family:'Lato',sans-serif;font-size:16px;font-weight:700;color:#555555;margin-bottom:8px;line-height:1.5;">Q: Describe a time you demonstrated leadership under pressure.</div>
+            <div style="background:#FFFFFF;border:2px solid rgba(29,185,84,0.35);border-radius:8px;padding:16px;position:relative;">
+              <div style="position:absolute;top:0;left:0;bottom:0;width:3px;background:#1DB954;border-radius:3px 0 0 3px;"></div>
+              <div style="font-family:'Lato',sans-serif;font-size:16px;color:#222222;line-height:1.75;padding-left:6px;">When our team lost a $2.4M account three days before a product launch, I pushed to ship on schedule rather than delay. We launched, landed two new accounts within the quarter, and the original client returned six months later after seeing the results.<span style="display:inline-block;width:2px;height:1em;background:#1DB954;vertical-align:text-bottom;margin-left:2px;animation:blink 1.1s infinite;"></span></div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Circles + Stripe info -->
+          <div style="flex:1;">
+            <div style="display:flex;align-items:flex-start;gap:20px;">
+              <div style="flex-shrink:0;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <!-- BEFORE: 79% -->
+                  <div style="text-align:center;">
+                    <div style="width:100px;height:100px;border-radius:50%;background:conic-gradient(#E5373A 0% 79%,#E0E4EA 79% 100%);display:inline-flex;align-items:center;justify-content:center;">
+                      <div style="width:76px;height:76px;border-radius:50%;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                        <span style="font-family:'Lato',sans-serif;font-size:26px;font-weight:900;color:#E5373A;line-height:1;">79%</span>
+                        <span style="font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.06em;color:#999;text-transform:uppercase;">before</span>
+                      </div>
+                    </div>
+                    <div style="font-family:'Lato',sans-serif;font-size:14px;color:#E5373A;font-weight:600;margin-top:3px;">&#9888; Needs a number</div>
+                  </div>
+                  <!-- ARROW -->
+                  <div style="font-family:'DM Mono',monospace;font-size:20px;color:#1DB954;font-weight:700;">&#8594;</div>
+                  <!-- AFTER: 92% -->
+                  <div style="text-align:center;">
+                    <div style="width:100px;height:100px;border-radius:50%;background:conic-gradient(#1DB954 0% 92%,#E0E4EA 92% 100%);display:inline-flex;align-items:center;justify-content:center;">
+                      <div style="width:76px;height:76px;border-radius:50%;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                        <span style="font-family:'Lato',sans-serif;font-size:26px;font-weight:900;color:#1DB954;line-height:1;">92%</span>
+                        <span style="font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.06em;color:#666;text-transform:uppercase;">after aplyer</span>
+                      </div>
+                    </div>
+                    <div style="font-family:'Lato',sans-serif;font-size:14px;color:#1DB954;font-weight:600;margin-top:3px;">&check; Number added</div>
+                  </div>
+                </div>
+              </div>
+              <div style="flex:1;padding-top:4px;">
+                <div style="font-family:'Lato',sans-serif;font-size:18px;font-weight:700;color:#0D1829;line-height:1.35;margin-bottom:8px;">Senior Product Manager &middot; Stripe</div>
+                <div style="font-family:'Lato',sans-serif;font-size:16px;color:#0F7A2E;font-weight:600;line-height:1.8;">&check; 12 of 15 skills matched</div>
+                <div style="font-family:'Lato',sans-serif;font-size:16px;color:#0F7A2E;font-weight:600;line-height:1.8;">&check; Found: product strategy, analytics, leadership</div>
+                <div style="font-family:'Lato',sans-serif;font-size:16px;color:#E5373A;font-weight:600;line-height:1.8;">&#9888; Missing: Add a number</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding:44px 24px 8px;max-width:760px;margin:0 auto;text-align:center;">
+  <h2 style="font-family:'Lato',sans-serif;font-size:clamp(32px,5vw,52px);font-weight:700;letter-spacing:-.03em;line-height:1.05;color:#111111;margin-bottom:16px;">Stop sounding like <span style="color:#E5373A;">ChatGPT.</span><br>Start sounding like <span style="color:#1DB954;">you.</span></h2>
+  <p style="font-family:'Lato',sans-serif;font-size:17px;font-weight:400;color:#333333;line-height:1.7;max-width:600px;margin:0 auto;">Powered by WriteDNA Technology, Aplyer learns how you write and gets sharper every time so every answer sounds like you, not a chatbot a recruiter spots in two&nbsp;seconds.</p>
+</section>
+
+<div class="q-section f2">
+  <div class="q-block">
+    <div class="q-label"><span class="q-num">Q.1</span><h2 class="q-text">Why are you <span class="red">skipping</span> so many jobs and can Aplyer help?</h2></div>
+    <div style="padding:0 32px">
+      <div class="q-answer">
+        <div class="ans-body">How many times have you skipped job applications because you didn't want to take the time to answer long open-ended questions like <strong>"Describe a time you demonstrated leadership"</strong> or <strong>"Why do you want to work here?"</strong> It's not because you aren't qualified. It's because you are exhausted after completing 20 other applications that day.<br><br><span class="highlight">Aplyer was built specifically for these moments.</span> The extension activates automatically the second you land on any company careers page. It reads the question, generates an answer in your voice using your resume and writing samples, and fills the field. You review it. You hit submit. The job you would have skipped becomes an application you actually sent.</div>
+      </div>
+    </div>
+    <div class="q-block-foot"></div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- FOUNDER STORY -->
+<div class="founder-section">
+  <div class="founder-block">
+    <div class="founder-inner">
+      <img class="founder-photo" src="data:image/jpeg;base64,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" alt="Dustin Palay, Founder of Aplyer.ai"/>
+      <div>
+        <div class="founder-label">A note from the founder</div>
+        <div class="founder-name">Dustin Palay</div>
+        <div class="founder-title">Former Recruiter, Founder of Aplyer.ai at 50</div>
+        <p class="founder-story" style="font-size:18px;line-height:1.7;color:#222222;">
+          I spent my first three years out of college going to every staffing agency in New York City as a candidate, just like you. Then I crossed over to the other side of the table and spent <strong>8 years as a recruiter deciding who got the interview.</strong> Now at the age of 50, I am back in the job market as a candidate and the long questions on the application are still driving me crazy resulting in just skipping the job. I assume they are for you as well. <strong>That is why I stopped searching and built Aplyer. For you, me and all of us.</strong>
+        </p>
+        <button onclick="var s=document.getElementById('full-story');var b=this;if(s.style.display==='none'){s.style.display='block';b.innerHTML='Close &uarr;';}else{s.style.display='none';b.innerHTML='Read my full story &darr;';}" style="font-family:'Lato',sans-serif;font-size:14px;font-weight:700;color:#1DB954;cursor:pointer;border:none;background:none;padding:0;border-bottom:2px solid rgba(29,185,84,0.35);margin-top:4px;">Read my full story &darr;</button>
+        <div id="full-story" style="display:none;font-family:'Lato',sans-serif;font-size:16px;color:#333333;line-height:1.75;margin-top:16px;">
+          <p style="margin-bottom:14px;">My first three years after graduating from an Ivy League university I had three jobs and must have been to every staffing agency in New York City, constantly going to recruiters as a candidate just like you. I know what it feels like to stare at a job application and skip it for being too long after spending hours sending out resumes.</p>
+          <p style="margin-bottom:14px;">A recruiter encouraged me to join their side of the table so I did. Now I was the one deciding who got the interview. I learned what makes a recruiter actually stop and read a resume instead of scanning it for a few seconds, how to attack the ATS, and how to answer application questions the way an employer wants to read them. I spent 8 years as a recruiter and left to start my own business.</p>
+          <p style="margin-bottom:14px;">Since Covid it has been a struggle and I find myself at the age of 50 back in the job market. The market is more challenging than ever but one thing has not changed: the long application questions that take 15 minutes to answer and review before submitting. One night lying in bed, frustrated by this process, it finally came to me. There has to be a faster way to complete these questions so I can send out more applications every day. That is how Aplyer was born.</p>
+          <p style="margin-bottom:14px;">Everyone is using ChatGPT for these answers but recruiters, employers, and the ATS can spot it in two seconds because it sounds too generic. We need AI that learns how we write and think, comes across like you as much as humanly possible, and gets through all the filters put in place to reject us.</p>
+          <p>Most tools in this space are built by software engineers. This one was built by someone who has been both the candidate and the recruiter, so I completely feel your pain. That is why I stopped my job search to solve this problem full time. <strong>This is why I built Aplyer. For you, and me, and all of us.</strong></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="q-section f3">
+  <div class="q-block">
+    <div class="q-label"><span class="q-num">Q.2</span><h2 class="q-text">Give us an example of how you and Aplyer overcame a <span class="red">significant problem.</span></h2></div>
+    <div style="padding:0 32px">
+      <div class="q-answer">
+        <div class="ans-body">The problem is not that job seekers are lazy or unqualified. The problem is that the online application process is <span class="problem">statistically broken</span>, and the industry data proves it:</div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-n">57%</div><div class="stat-l">of job seekers have abandoned an application midway because it was too long or complicated</div><div class="stat-s">Source: <a href="https://www.hrdive.com/news/candidates-have-quit-job-applications-before-finishing/758796/" target="_blank" rel="noopener">LiveCareer 2025 &#8599;</a></div></div>
+          <div class="stat-box"><div class="stat-n">24%</div><div class="stat-l">One in four employers, 24%, say they can almost always tell when a candidate is using AI in their application, and another 60% say they can sometimes tell, often based on wording and formatting</div><div class="stat-s">Source: <a href="https://www.ziprecruiter-research.org/economic-insights-research/ai-employer-report-2026" target="_blank" rel="noopener">ZipRecruiter 2026 &#8599;</a></div></div>
+          <div class="stat-box"><div class="stat-n">21%</div><div class="stat-l">Only 21% of recruiters are very confident their systems are not rejecting qualified candidates. More than half have handed most screening over to AI or applicant tracking systems</div><div class="stat-s">Source: <a href="https://www.hrdive.com/news/the-ai-race-has-fostered-better-hiring-decisions-and-mistrust/805994/" target="_blank" rel="noopener">Greenhouse 2025 AI in Hiring Report, 665 US recruiters and hiring managers, via HR Dive &#8599;</a></div></div>
+          <div class="stat-box"><div class="stat-n">62%</div><div class="stat-l">of hiring managers say AI-generated resumes without personalization are more likely to be rejected, while 78% say personalized details signal genuine interest and fit</div><div class="stat-s">Source: <a href="https://www.resume-now.com/job-resources/careers/ai-applicant-report" target="_blank" rel="noopener">Resume Now 2025, 925 HR workers &#8599;</a></div></div>
+        </div>
+        <div class="ans-body">The problem Aplyer overcame: <span class="highlight">turning the moment of abandonment into the moment of submission.</span></div>
+        <div style="text-align:center;padding:24px 0 8px;"><span style="font-family:'Lato',sans-serif;font-size:26px;font-weight:900;color:#111111;letter-spacing:.01em;">More applications. <span style="color:#1DB954;">In your voice.</span></span></div>
+        <div style="margin-top:16px;padding:14px 18px;background:var(--field2);border-left:3px solid var(--red);border-radius:0 6px 6px 0;">
+          <div style="font-size:15px;font-family:'Lato',sans-serif;color:#111111;line-height:1.7;margin-bottom:8px;">"I always try to put a good amount of time and thought into the application questions, and I try to give honest examples especially in the "explain how you've used xyz in a work setting". The applications that have application questions usually take me about 20 minutes depending on how long I have to think about my answer."</div>
+          <div style="font-size:10px;font-family:'DM Mono',monospace;color:#222222;">,  r/jobsearch · verified comment · this week · 5 upvotes</div>
+        </div>
+      </div>
+    </div>
+    <div class="q-block-foot"></div>
+  </div>
+</div>
+
+<div class="q-section f4">
+  <div class="q-block">
+    <div class="q-label"><span class="q-num">Q.3</span><h2 class="q-text">Why are <span class="grn">Aplyer</span> and you different?</h2></div>
+    <div style="padding:0 32px">
+      <div class="q-answer">
+        <div style="text-align:center;padding:20px 0 8px;"><span style="font-family:'Lato',sans-serif;font-size:22px;font-weight:900;color:var(--green);letter-spacing:.01em;">We work inside job applications where you apply.</span></div>
+        <div style="text-align:center;padding:4px 0 16px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;color:#222222;">WORKDAY · GREENHOUSE · LEVER · EMPLOYER CAREERS PAGES FROM LINKEDIN, INDEED OR ANY JOB BOARD</div>
+        <div class="ans-body">Every other tool assumes you have already decided to apply. They help you fill a form faster, but they make you leave the page, open another app, paste in job descriptions, and bring the work to them. <span class="highlight">Aplyer activates where the problem actually happens.</span> You never leave the page. You never open another app. The moment you land on a careers page, Aplyer is already there.<br><br>And unlike every competitor, Aplyer answers application questions in <strong>your voice</strong>, not generic AI output that every recruiter recognizes instantly. Every time you edit an answer, Aplyer learns. Your voice profile gets sharper with every application. <span class="highlight">The 10th answer sounds more like you than the 1st.</span> No other tool does this inside the application itself.</div>
+        <div class="steps-row">
+          <div class="step-box"><div class="step-n">1 / SETUP</div><div class="step-t">Upload your resume once</div><div class="step-b">Drag and drop on install. Aplyer learns your tone, achievements, and writing style. Add writing samples for even better accuracy. Never upload again. Your voice memory starts building immediately.</div></div>
+          <div class="step-box"><div class="step-n">2 / DETECT</div><div class="step-t">Activates automatically, you never leave the page</div><div class="step-b">The extension wakes up the moment you land on any employer careers page, Workday, Greenhouse, Lever, and more. It also activates on employer careers pages you reach from LinkedIn, Indeed, or any other job board. No switching to another app. No opening a new window. No copying and pasting. You stay on the job page the entire time. Aplyer works inside it.</div></div>
+          <div class="step-box"><div class="step-n">3 / APPLY</div><div class="step-t">Every question answered. Every field filled.</div><div class="step-b">Application questions get answers in your voice using your resume. Standard fields like name, address, and work history fill automatically. Review everything, edit anything, hit submit.</div></div>
+        </div>
+        <div class="ans-body" style="margin-bottom:10px;">After generating each answer, Aplyer checks it against multiple AI detectors and shows you a Human Score. The higher the score, the more your answer reads like you wrote it. You review everything before it submits. You are always in control.</div>
+      </div>
+    </div>
+    <div class="q-block-foot"></div>
+  </div>
+</div>
+
+<div class="q-section f5">
+  <div class="q-block">
+    <div class="q-label"><span class="q-num">Q.4</span><h2 class="q-text">Why should we <span class="grn">hire</span> Aplyer and you?</h2></div>
+    <div style="padding:0 32px">
+      <div class="q-answer">
+        <div class="ans-body">Aplyer reads the job description alongside your resume and writing samples when generating answers. It pulls the specific keywords, required skills, and language the employer used in the job posting and weaves them into your answers. This is how you get through ATS screening. The system is looking for exact keyword matches from the job description. A generic answer about leadership that does not use the employer's specific language scores poorly. An answer that mirrors their terminology scores highly. <span class="highlight">Aplyer does both simultaneously, it sounds like you and it speaks the language of that specific job.</span><br><br>Every application is logged automatically so you always know what was sent, can review every answer, and build a library of your strongest responses over time, as shown below.</div>
+        <div class="tracker-mini">
+          <div class="t-head"><span class="t-title">My Applications</span><div class="t-badges"><span class="tbadge tbadge-g">3 Submitted</span><span class="tbadge tbadge-r">1 Skipped</span></div></div>
+          <div class="t-row"><div class="t-ico t-ico-g">✓</div><div style="flex:1;min-width:0"><div class="t-name">Stripe</div><div class="t-role">Senior Product Manager · 3 application questions filled by Aplyer</div></div><div class="t-date">Today</div></div>
+          <div class="t-row"><div class="t-ico t-ico-g">✓</div><div style="flex:1;min-width:0"><div class="t-name">HubSpot</div><div class="t-role">Marketing Director · 2 application questions filled by Aplyer</div></div><div class="t-date">Yesterday</div></div>
+          <div class="t-row"><div class="t-ico t-ico-g">✓</div><div style="flex:1;min-width:0"><div class="t-name">Salesforce</div><div class="t-role">VP Sales Operations · 2 application questions filled by Aplyer</div></div><div class="t-date">May 22</div></div>
+          <div class="t-row"><div class="t-ico t-ico-r">✕</div><div style="flex:1;min-width:0"><div class="t-name">Meta</div><div class="t-role" style="color:var(--red)">Product Lead · Skipped by candidate before opening Aplyer, 3 application questions left blank</div></div><div class="t-date">May 21</div></div>
+        </div>
+        <div class="ans-body" style="margin-top:12px;"><span class="highlight">Don't just apply. Apply like an A‑player.</span> Aplyer solves your application questions problem and autofills the easy fields too. Every answer in your voice, in the language a recruiter would use. A full application in under two minutes. Send more applications, every one sounding like you.</div>
+      </div>
+    </div>
+    <div class="q-block-foot"></div>
+  </div>
+
+
+</div>
+</div>
+</div>
+
+<!-- Comparison Section -->
+<div style="padding:0 24px;max-width:1100px;margin:0 auto;">
+  <div style="background:#F5F7FA;border:1px solid rgba(0,0,0,0.10);border-radius:12px;margin-top:16px;overflow:hidden;position:relative;">
+    <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#E5373A,#1DB954);"></div>
+    <div style="padding:36px 40px;">
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:#1DB954;letter-spacing:.16em;text-transform:uppercase;margin-bottom:12px;">Why Aplyer</div>
+      <h2 style="font-family:'Lato',sans-serif;font-size:clamp(22px,3.5vw,34px);font-weight:700;letter-spacing:-.02em;color:#111111;margin-bottom:8px;">Every other tool skips the hard parts.</h2>
+      <p style="font-size:16px;color:#333333;line-height:1.7;margin-bottom:28px;max-width:640px;">Other Chrome extensions autofill your name and address. That saves 30 seconds. The written questions, the ones that make you close the page, they leave completely blank or fill with generic AI text that no recruiter believes you wrote.</p>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-family:'Lato',sans-serif;font-size:15px;">
+          <thead>
+            <tr style="background:#ECEEF2;">
+              <th style="padding:14px 18px;text-align:left;font-weight:700;color:#111111;border-radius:8px 0 0 0;">Feature</th>
+              <th style="padding:14px 18px;text-align:center;font-weight:700;color:#333333;">Other Tools</th>
+              <th style="padding:14px 18px;text-align:center;font-weight:700;color:#1DB954;border-radius:0 8px 0 0;">Aplyer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid rgba(0,0,0,0.07);">
+              <td style="padding:14px 18px;color:#111111;font-weight:600;">Completes basic fields<br><span style="font-size:13px;font-weight:400;color:#555555;">Name, address, work history</span></td>
+              <td style="padding:14px 18px;text-align:center;color:#1DB954;font-size:18px;">✓</td>
+              <td style="padding:14px 18px;text-align:center;background:rgba(29,185,84,0.06);color:#1DB954;font-size:18px;font-weight:700;">✓</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(0,0,0,0.07);">
+              <td style="padding:14px 18px;color:#111111;font-weight:600;">Completes written application questions<br><span style="font-size:13px;font-weight:400;color:#555555;">"Describe a time you demonstrated leadership..."</span></td>
+              <td style="padding:14px 18px;text-align:center;color:#E5373A;font-size:18px;">✗</td>
+              <td style="padding:14px 18px;text-align:center;background:rgba(29,185,84,0.06);color:#1DB954;font-size:18px;font-weight:700;">✓</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(0,0,0,0.07);">
+              <td style="padding:14px 18px;color:#111111;font-weight:600;">Answers written in your voice<br><span style="font-size:13px;font-weight:400;color:#555555;">Not generic AI text every recruiter recognizes</span></td>
+              <td style="padding:14px 18px;text-align:center;color:#E5373A;font-size:18px;">✗</td>
+              <td style="padding:14px 18px;text-align:center;background:rgba(29,185,84,0.06);color:#1DB954;font-size:18px;font-weight:700;">✓</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(0,0,0,0.07);">
+              <td style="padding:14px 18px;color:#111111;font-weight:600;">Written the way a recruiter wants<br><span style="font-size:13px;font-weight:400;color:#555555;">Checked against the rules recruiters actually use</span></td>
+              <td style="padding:14px 18px;text-align:center;color:#E5373A;font-size:18px;">✗</td>
+              <td style="padding:14px 18px;text-align:center;background:rgba(29,185,84,0.06);color:#1DB954;font-size:18px;font-weight:700;">✓</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(0,0,0,0.07);">
+              <td style="padding:14px 18px;color:#111111;font-weight:600;">Works in under 2 minutes<br><span style="font-size:13px;font-weight:400;color:#555555;">Entire application, every field, every question</span></td>
+              <td style="padding:14px 18px;text-align:center;color:#E5373A;font-size:18px;">✗</td>
+              <td style="padding:14px 18px;text-align:center;background:rgba(29,185,84,0.06);color:#1DB954;font-size:18px;font-weight:700;">✓</td>
+            </tr>
+            <tr>
+              <td style="padding:14px 18px;color:#111111;font-weight:600;">Stays inside the application<br><span style="font-size:13px;font-weight:400;color:#555555;">No tab switching, no copy-pasting</span></td>
+              <td style="padding:14px 18px;text-align:center;color:#E5373A;font-size:18px;">✗</td>
+              <td style="padding:14px 18px;text-align:center;background:rgba(29,185,84,0.06);color:#1DB954;font-size:18px;font-weight:700;">✓</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:20px;padding:16px 20px;background:rgba(229,55,58,0.06);border:1px solid rgba(229,55,58,0.20);border-radius:8px;font-family:'Lato',sans-serif;font-size:15px;color:#333333;line-height:1.7;">
+        <strong style="color:#E5373A;">The real problem no other tool solves:</strong> You see 3 written questions on an application and you close the page. You tell yourself you'll come back. You don't. That job is gone. Aplyer is the only tool built specifically for this moment, powered by <span style="color:#1DB954;font-weight:700;">WriteDNA Technology™</span>.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Free Tools Section -->
+<div id="free-tools" style="padding:0 24px;max-width:1100px;margin:48px auto 0;scroll-margin-top:80px;">
+  <div style="background:#F5F7FA;border:1px solid rgba(0,0,0,0.10);border-radius:12px;overflow:hidden;position:relative;">
+    <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#E5373A,#1DB954);"></div>
+    <div style="padding:36px 40px;">
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:#1DB954;letter-spacing:.16em;text-transform:uppercase;margin-bottom:12px;">Free Tools</div>
+      <h2 style="font-family:'Lato',sans-serif;font-size:clamp(22px,3.5vw,34px);font-weight:700;letter-spacing:-.02em;color:#111111;margin-bottom:8px;">Free tools you can use right now.</h2>
+      <p style="font-size:16px;color:#333333;line-height:1.7;margin-bottom:28px;max-width:860px;">Built by a former recruiter. No account, no catch. Run them on any resume today while Aplyer is on the way.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:16px;">
+
+        <a href="/resume-audit" style="text-decoration:none;display:block;background:#FFFFFF;border:1px solid rgba(0,0,0,0.10);border-radius:10px;padding:22px;transition:border-color .15s,transform .15s;" onmouseover="this.style.borderColor='rgba(29,185,84,0.7)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='rgba(0,0,0,0.10)';this.style.transform='none'">
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:#1DB954;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;">Live now</div>
+          <div style="font-family:'Lato',sans-serif;font-weight:700;font-size:18px;color:#0D1829;margin-bottom:6px;">Resume Red Flag Audit</div>
+          <div style="font-size:14px;color:#555555;line-height:1.6;">See what a recruiter spots in the first seven seconds, and how to fix it.<br><span style="font-size:12px;color:#888888;">Recruiters scan a resume for about 7 seconds. Source: Ladders eye-tracking study.</span></div>
+          <div style="margin-top:14px;font-family:'Lato',sans-serif;font-weight:700;font-size:14px;color:#1DB954;">Run my audit &rarr;</div>
+        </a>
+
+        <a href="/resume-match" style="text-decoration:none;display:block;background:#FFFFFF;border:1px solid rgba(0,0,0,0.10);border-radius:10px;padding:22px;transition:border-color .15s,transform .15s;" onmouseover="this.style.borderColor='rgba(29,185,84,0.7)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='rgba(0,0,0,0.10)';this.style.transform='none'">
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:#1DB954;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;">Live now</div>
+          <div style="font-family:'Lato',sans-serif;font-weight:700;font-size:18px;color:#0D1829;margin-bottom:6px;">Resume Score vs the Job</div>
+          <div style="font-size:14px;color:#555555;line-height:1.6;">See how your resume matches a job description, the way an ATS reads it.</div>
+          <div style="margin-top:14px;font-family:'Lato',sans-serif;font-weight:700;font-size:14px;color:#1DB954;">Score my resume &rarr;</div>
+        </a>
+
+        <div style="background:#FFFFFF;border:1px dashed rgba(0,0,0,0.16);border-radius:10px;padding:22px;opacity:.75;">
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:#555555;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;">Coming soon</div>
+          <div style="font-family:'Lato',sans-serif;font-weight:700;font-size:18px;color:#0D1829;margin-bottom:6px;">Interview Answer Grader</div>
+          <div style="font-size:14px;color:#555555;line-height:1.6;">Grades a practice answer against the question and tells you what to tighten.</div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px dashed rgba(0,0,0,0.16);border-radius:10px;padding:22px;opacity:.75;">
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:#555555;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;">Coming soon</div>
+          <div style="font-family:'Lato',sans-serif;font-weight:700;font-size:18px;color:#0D1829;margin-bottom:6px;">Question Translator</div>
+          <div style="font-size:14px;color:#555555;line-height:1.6;">Explains what an application question is really asking before you answer it.</div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px dashed rgba(0,0,0,0.16);border-radius:10px;padding:22px;opacity:.75;">
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:#555555;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;">Coming soon</div>
+          <div style="font-family:'Lato',sans-serif;font-weight:700;font-size:18px;color:#0D1829;margin-bottom:6px;">60 Second Cover Letter</div>
+          <div style="font-size:14px;color:#555555;line-height:1.6;">One short, honest cover letter from your resume and the job, in your voice.</div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px dashed rgba(0,0,0,0.16);border-radius:10px;padding:22px;opacity:.75;">
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:#555555;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;">Coming soon</div>
+          <div style="font-family:'Lato',sans-serif;font-weight:700;font-size:18px;color:#0D1829;margin-bottom:6px;">Salary Negotiation Script</div>
+          <div style="font-size:14px;color:#555555;line-height:1.6;">A script for the offer call, built from the role, your level, and the market.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ Section -->
+<div class="q-section" style="margin-top:48px;margin-bottom:48px;">
+  <div style="background:#F5F7FA;border-radius:16px;border:1px solid rgba(0,0,0,0.08);overflow:hidden;">
+    <div onclick="toggleFAQ()" style="display:flex;align-items:center;justify-content:space-between;padding:24px 32px;cursor:pointer;user-select:none;">
+      <span style="font-family:'Lato',sans-serif;font-weight:700;font-size:18px;color:#0D1829;">Frequently Asked Questions</span>
+      <span id="faq-icon" style="font-size:24px;color:#1DB954;font-weight:700;line-height:1;">+</span>
+    </div>
+    <div id="faq-body" style="display:none;padding:0 32px 24px;">
+
+      <!-- Q1 -->
+      <div style="border-top:1px solid rgba(0,0,0,0.08);padding:20px 0;">
+        <div onclick="toggleFAQItem(this)" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">
+          <span style="font-family:'Lato',sans-serif;font-weight:700;font-size:16px;color:#0D1829;">Is this AI?</span>
+          <span style="font-size:20px;color:#1DB954;font-weight:700;min-width:20px;text-align:center;">+</span>
+        </div>
+        <div class="faq-answer" style="display:none;padding-top:12px;font-family:'Lato',sans-serif;font-size:15px;color:#333333;line-height:1.7;">Yes, Aplyer is powered by AI. But it is not generic AI. Aplyer uses WriteDNA Technology to learn how you specifically write from your resume and your own words. Every answer is unique to you because it is built from your voice, your experience, and your writing style. The result is an answer that reads like you sat down and wrote it yourself.</div>
+      </div>
+
+      <!-- Q2 -->
+      <div style="border-top:1px solid rgba(0,0,0,0.08);padding:20px 0;">
+        <div onclick="toggleFAQItem(this)" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">
+          <span style="font-family:'Lato',sans-serif;font-weight:700;font-size:16px;color:#0D1829;">Is this like ChatGPT?</span>
+          <span style="font-size:20px;color:#1DB954;font-weight:700;min-width:20px;text-align:center;">+</span>
+        </div>
+        <div class="faq-answer" style="display:none;padding-top:12px;font-family:'Lato',sans-serif;font-size:15px;color:#333333;line-height:1.7;">No. ChatGPT gives everyone the same generic output from the same prompt. Aplyer uses WriteDNA Technology, our own proprietary system built specifically for job applications. It learns how you specifically write from your resume and your own words, which means every answer is different for every candidate. You cannot replicate this by opening ChatGPT and typing a prompt.</div>
+      </div>
+
+      <!-- Q3 -->
+      <div style="border-top:1px solid rgba(0,0,0,0.08);padding:20px 0;">
+        <div onclick="toggleFAQItem(this)" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">
+          <span style="font-family:'Lato',sans-serif;font-weight:700;font-size:16px;color:#0D1829;">Will it get flagged?</span>
+          <span style="font-size:20px;color:#1DB954;font-weight:700;min-width:20px;text-align:center;">+</span>
+        </div>
+        <div class="faq-answer" style="display:none;padding-top:12px;font-family:'Lato',sans-serif;font-size:15px;color:#333333;line-height:1.7;">No. WriteDNA Technology writes each answer the way you would naturally type it, not copied and pasted from a chatbot. Every answer is verified against AI detectors before you see it. You review everything and can edit anything before submitting. Every application is in your hands.</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleFAQ() {
+  var body = document.getElementById('faq-body');
+  var icon = document.getElementById('faq-icon');
+  var open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  icon.textContent = open ? '+' : '−';
+}
+function toggleFAQItem(header) {
+  var answer = header.nextElementSibling;
+  var icon = header.querySelector('span:last-child');
+  var open = answer.style.display !== 'none';
+  answer.style.display = open ? 'none' : 'block';
+  icon.textContent = open ? '+' : '−';
+}
+</script>
+
+
+
+<div style="padding:0 24px;max-width:1100px;margin:0 auto;">
+  <div class="specs-row">
+    <div class="field-mini" style="text-align:center;"><label>Status</label><div class="val green">&#9679; Early Access Open</div></div>
+    <div class="field-mini" style="text-align:center;"><label>Works on</label><div class="val">Workday · Greenhouse · Lever · Any employer careers page you reach from LinkedIn, Indeed, or any job board</div></div>
+    <div class="field-mini" style="text-align:center;"><label>Requires</label><div class="val">Google Chrome</div></div>
+    <div class="field-mini" style="text-align:center;"><label>Pricing</label><div class="val">Free to join · Founding member pricing at launch</div></div>
+  </div>
+</div>
+
+<div class="submit-section" id="waitlist-form">
+  <div class="submit-block">
+    <div class="submit-inner">
+      <div class="submit-label" style="font-size:12px;letter-spacing:.18em;">SUBMIT YOUR APPLICATION</div>
+      <h2 class="submit-h">Ready to stop skipping?<br>Join the <span class="grn">Aplyer</span> waitlist.</h2>
+      <div style="max-width:480px;margin:0 auto;" id="aplyer-form-wrap">
+        <div id="aplyer-success-msg" style="display:none;color:#1DB954;font-family:'Lato',sans-serif;font-size:16px;font-weight:700;text-align:center;padding:20px 0;">✓ You're in. Check your inbox, including your Promotions folder.</div>
+        <div id="aplyer-error-msg" style="display:none;color:#E5373A;font-family:'Lato',sans-serif;font-size:14px;text-align:center;margin-bottom:8px;"></div>
+        <input type="email" id="aplyer-email" placeholder="your@email.com" required
+          style="display:block;width:100%;background:rgba(240,242,246,0.90);border:2px solid rgba(0,0,0,0.20);border-radius:8px;color:#111111;font-family:'Lato',sans-serif;font-size:15px;font-weight:700;padding:13px 16px;margin-bottom:8px;box-sizing:border-box;outline:none;">
+        <input type="text" id="aplyer-name" placeholder="First name, so I can say hi (optional)"
+          style="display:block;width:100%;background:rgba(240,242,246,0.90);border:2px solid rgba(0,0,0,0.20);border-radius:8px;color:#111111;font-family:'Lato',sans-serif;font-size:15px;font-weight:700;padding:13px 16px;margin-bottom:8px;box-sizing:border-box;outline:none;">
+
+        <div id="optional-toggle" onclick="toggleOptional()" style="display:flex;align-items:center;justify-content:space-between;width:100%;background:#F5F7FA;border:2px solid rgba(0,0,0,0.15);border-radius:8px;color:#111111;font-family:'Lato',sans-serif;font-size:14px;font-weight:700;padding:12px 16px;margin-bottom:8px;box-sizing:border-box;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='rgba(29,185,84,0.7)'" onmouseout="this.style.borderColor=document.getElementById('optional-body').style.display==='none'?'rgba(0,0,0,0.12)':'rgba(29,185,84,0.7)'">
+          <span>Want Aplyer to sound even more like you? <span style="font-weight:400;color:#666666;font-size:13px;">(optional)</span></span>
+          <span id="optional-chevron" style="color:#1DB954;font-size:18px;transition:transform .2s;">＋</span>
+        </div>
+
+        <!-- OPTIONAL BODY -->
+        <div id="optional-body" style="display:none;background:#F5F7FA;border:2px solid rgba(29,185,84,0.4);border-radius:8px;padding:16px;margin-bottom:8px;box-sizing:border-box;">
+
+          <!-- RESUME -->
+          <div style="margin-bottom:12px;">
+            <div style="font-family:'Lato',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#111111;margin-bottom:6px;">Resume <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#666666;font-size:11px;">,  PDF or Word doc</span></div>
+            <label style="display:flex;align-items:center;gap:10px;width:100%;background:#FFFFFF;border:2px solid rgba(0,0,0,0.15);border-radius:8px;color:#111111;font-family:'Lato',sans-serif;font-size:14px;font-weight:600;padding:11px 16px;box-sizing:border-box;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='rgba(29,185,84,0.8)'" onmouseout="this.style.borderColor='rgba(0,0,0,0.15)'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span id="resume-name" style="color:#111111;">Get a head start, upload your resume</span>
+              <input type="file" id="aplyer-resume" accept=".pdf,.doc,.docx" style="display:none;" onchange="document.getElementById('resume-name').textContent=this.files[0]?this.files[0].name:'Get a head start, upload your resume'">
+            </label>
+            <div style="margin-top:5px;font-size:11px;font-family:'DM Mono',monospace;color:#666666;">Your resume will be ready to go the moment we launch, no setup needed on day one.</div>
+          </div>
+
+          <!-- COVER LETTER -->
+          <div style="margin-bottom:12px;">
+            <div style="font-family:'Lato',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#111111;margin-bottom:6px;">Cover Letter <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#666666;font-size:11px;">,  PDF or Word doc</span></div>
+            <label style="display:flex;align-items:center;gap:10px;width:100%;background:#FFFFFF;border:2px solid rgba(0,0,0,0.15);border-radius:8px;color:#111111;font-family:'Lato',sans-serif;font-size:14px;font-weight:600;padding:11px 16px;box-sizing:border-box;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='rgba(29,185,84,0.8)'" onmouseout="this.style.borderColor='rgba(0,0,0,0.15)'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span id="cover-name" style="color:#111111;">Get a head start, upload your cover letter</span>
+              <input type="file" id="aplyer-cover" accept=".pdf,.doc,.docx" style="display:none;" onchange="document.getElementById('cover-name').textContent=this.files[0]?this.files[0].name:'Get a head start, upload your cover letter'">
+            </label>
+          </div>
+
+          <!-- PASTE A WRITING SAMPLE -->
+          <div>
+            <div style="font-family:'Lato',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#111111;margin-bottom:6px;">Paste a writing sample <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#666666;font-size:11px;">(optional) helps Aplyer learn your voice</span></div>
+            <textarea id="aplyer-sample" placeholder="Paste your LinkedIn About section here and/or share an accomplishment you are proud of. This lets Aplyer get to know you." style="width:100%;min-height:110px;background:#FFFFFF;border:2px solid rgba(0,0,0,0.15);border-radius:8px;color:#111111;font-family:'Lato',sans-serif;font-size:14px;padding:11px 12px;outline:none;box-sizing:border-box;resize:vertical;line-height:1.55;transition:border-color .15s;" onfocus="this.style.borderColor='#1DB954'" onblur="this.style.borderColor='rgba(0,0,0,0.15)'"></textarea>
+            <div style="margin-top:8px;font-size:13px;font-family:'DM Mono',monospace;color:#333333;line-height:1.7;">Aplyer learns from writing you have already done, in your own words, so every answer sounds like you, not a template. Your writing stays private and is used only to match your voice.</div>
+          </div>
+
+        </div>
+        <!-- END OPTIONAL BODY -->
+
+        <button id="aplyer-btn" onclick="aplerSubmit()"
+          style="display:block;width:100%;background:#1DB954;color:#000;border:none;border-radius:8px;font-family:'Lato',sans-serif;font-size:15px;font-weight:700;padding:13px 22px;cursor:pointer;letter-spacing:.02em;">Join the Waitlist →</button>
+      </div>
+      <style>
+        #aplyer-email::placeholder,#aplyer-name::placeholder{color:rgba(0,0,0,0.60);font-family:'Lato',sans-serif;font-weight:700;}
+        #aplyer-email:focus,#aplyer-name:focus{border-color:rgba(0,0,0,0.80);}
+      </style>
+      <script>
+      function toggleOptional() {
+        var body = document.getElementById('optional-body');
+        var chevron = document.getElementById('optional-chevron');
+        var toggle = document.getElementById('optional-toggle');
+        if (body.style.display === 'none') {
+          body.style.display = 'block';
+          chevron.textContent = '−';
+          toggle.style.borderColor = 'rgba(29,185,84,0.7)';
+        } else {
+          body.style.display = 'none';
+          chevron.textContent = '＋';
+          toggle.style.borderColor = 'rgba(0,0,0,0.12)';
+        }
+      }
+      async function aplerSubmit() {
+        var email = document.getElementById('aplyer-email').value.trim();
+        var name = document.getElementById('aplyer-name').value.trim();
+        var errEl = document.getElementById('aplyer-error-msg');
+        var btn = document.getElementById('aplyer-btn');
+        var sample = document.getElementById('aplyer-sample') ? document.getElementById('aplyer-sample').value.trim() : '';
+        var resumeFile = document.getElementById('aplyer-resume') ? document.getElementById('aplyer-resume').files[0] : null;
+        var coverFile = document.getElementById('aplyer-cover') ? document.getElementById('aplyer-cover').files[0] : null;
+        errEl.style.display = 'none';
+        if (!email) { errEl.textContent = 'Please enter your email address.'; errEl.style.display = 'block'; return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = 'block'; return; }
+        btn.textContent = 'Submitting...'; btn.disabled = true;
+        try {
+          var formData = new FormData();
+          formData.append('email', email);
+          if (name) formData.append('firstName', name);
+          if (resumeFile) formData.append('resume', resumeFile);
+          if (coverFile) formData.append('coverLetter', coverFile);
+          if (sample) formData.append('writingSample', sample);
+          var res = await fetch('https://aplyer-api.vercel.app/api/subscribe', {
+            method: 'POST',
+            body: formData
+          });
+          var data = await res.json();
+          if (res.ok) {
+            document.getElementById('aplyer-email').style.display = 'none';
+            document.getElementById('aplyer-name').style.display = 'none';
+            document.getElementById('optional-toggle').style.display = 'none';
+            document.getElementById('optional-body').style.display = 'none';
+            btn.style.display = 'none';
+            document.getElementById('aplyer-success-msg').style.display = 'block';
+          } else {
+            errEl.textContent = data.error || 'Something went wrong. Please try again.';
+            errEl.style.display = 'block';
+            btn.textContent = 'Join the Waitlist →'; btn.disabled = false;
+          }
+        } catch(e) {
+          errEl.textContent = 'Something went wrong. Please try again.';
+          errEl.style.display = 'block';
+          btn.textContent = 'Join the Waitlist →'; btn.disabled = false;
+        }
+      }
+      </script>
+
+      <div class="submit-note" style="font-size:13px;color:#111111;line-height:1.7;margin-top:16px;font-family:'Lato',sans-serif;font-weight:700;">Early access is open. Founding members get priority access and special pricing when we launch.</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="foot-inner">
+    <a class="logo-wrap" href="#" style="text-decoration:none;gap:10px;align-items:center;">
+      <svg width="32" height="32" viewBox="0 0 88 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="fg" x1="0" y1="44" x2="88" y2="44" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#E5373A"/><stop offset="45%" stop-color="#E5373A"/><stop offset="55%" stop-color="#1DB954"/><stop offset="100%" stop-color="#1DB954"/></linearGradient></defs>
+        <circle cx="44" cy="44" r="40" fill="#0D1829" stroke="url(#fg)" stroke-width="2"/>
+        <line x1="22" y1="28" x2="44" y2="44" stroke="#E5373A" stroke-width="5" stroke-linecap="round"/>
+        <line x1="22" y1="60" x2="44" y2="44" stroke="#E5373A" stroke-width="5" stroke-linecap="round"/>
+        <line x1="44" y1="44" x2="56" y2="56" stroke="#1DB954" stroke-width="5" stroke-linecap="round"/>
+        <line x1="56" y1="56" x2="72" y2="28" stroke="#1DB954" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <span class="logo-name" style="font-size:22px;">Aplyer.ai</span>
+        <span class="logo-tag" style="font-size:10px;">Stop Skipping Jobs</span>
+      </div>
+    </a>
+    <div class="foot-links"><a href="#">Privacy Policy</a><a href="#">Terms of Service</a></div>
+    <p class="foot-p">In development · Waitlist open · Founding member pricing</p>
+  </div>
+</footer>
+
+
+</body>
+</html>
