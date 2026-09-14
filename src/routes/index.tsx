@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import rawHtml from "@/legacy/index.html?raw";
 import { subscribe } from "@/services/subscribeService";
 import { useAuth } from "@/hooks/useAuth";
+import { downloadExtension } from "@/lib/download-extension";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
@@ -69,7 +70,11 @@ const navActionsCss = `
 #aplyer-nav-actions a.nav-cta{background:#1DB954;color:#04140A;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;white-space:nowrap}
 #aplyer-nav-actions a.nav-cta:hover{background:#22C55E}
 #aplyer-nav-actions button.nav-link{background:none;border:none;cursor:pointer;font-family:'Lato',sans-serif;font-size:15px;font-weight:700;color:#0D1829}
-#aplyer-nav-actions .nav-sep{width:1px;height:20px;background:rgba(0,0,0,.14)}
+#aplyer-download-ext{display:inline-block;margin-left:12px}
+#aplyer-download-ext button{font-family:'Lato',sans-serif;font-size:15px;font-weight:700;color:#000;background:#1DB954;border:none;border-radius:8px;padding:15px 36px;letter-spacing:.02em;cursor:pointer;transition:background .15s}
+#aplyer-download-ext button:hover{background:#22C55E}
+#aplyer-download-ext button:disabled{opacity:.7;cursor:default}
+@media (max-width:520px){#aplyer-download-ext{display:block;margin:12px 0 0}#aplyer-download-ext button{width:100%}}
 @media (max-width:900px){
   .nav-inner{flex-wrap:wrap;height:auto;padding-top:12px;padding-bottom:12px;gap:10px}
   #aplyer-nav-actions{gap:12px}
@@ -83,6 +88,31 @@ const navActionsCss = `
   .cover{padding-top:170px}
 }
 `;
+
+/** Green call to action that downloads the Chrome extension package. */
+function DownloadExtensionButton() {
+  const [state, setState] = useState<"idle" | "working" | "error">("idle");
+
+  async function handleClick() {
+    setState("working");
+    try {
+      await downloadExtension();
+      setState("idle");
+    } catch {
+      setState("error");
+    }
+  }
+
+  return (
+    <button type="button" onClick={handleClick} disabled={state === "working"}>
+      {state === "working"
+        ? "Preparing download…"
+        : state === "error"
+          ? "Download failed — try again"
+          : "Download Extension"}
+    </button>
+  );
+}
 
 /** Session-aware navigation — Foundation auth is the only source of truth. */
 function HomeNavActions() {
@@ -99,10 +129,6 @@ function HomeNavActions() {
 
   return (
     <>
-      <Link className="nav-link tool-link" to="/resume-audit">Resume Audit</Link>
-      <Link className="nav-link tool-link" to="/resume-match">Resume Match</Link>
-      <a className="nav-link tool-link" href="/demo">Demo</a>
-      <span className="nav-sep" aria-hidden="true" />
       {loading ? null : user ? (
         <>
           <Link className="nav-cta" to="/dashboard">Dashboard</Link>
@@ -134,6 +160,7 @@ function Index() {
   const rootRef = useRef<HTMLDivElement>(null);
   const submittingRef = useRef(false);
   const [navHost, setNavHost] = useState<HTMLElement | null>(null);
+  const [downloadHost, setDownloadHost] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     // Inject the legacy markup client-side to avoid SSR hydration mismatches
@@ -150,6 +177,15 @@ function Index() {
         host.id = "aplyer-nav-actions";
         navInner.appendChild(host);
         setNavHost(host);
+      }
+
+      // Extension download button, right after the demo call to action.
+      const demoCta = rootRef.current.querySelector('a[href="/demo"]');
+      if (demoCta?.parentElement) {
+        const host = document.createElement("span");
+        host.id = "aplyer-download-ext";
+        demoCta.insertAdjacentElement("afterend", host);
+        setDownloadHost(host);
       }
     }
 
@@ -280,6 +316,7 @@ function Index() {
       <style dangerouslySetInnerHTML={{ __html: legacyStyle + navActionsCss }} />
       <div ref={rootRef} suppressHydrationWarning />
       {navHost ? createPortal(<HomeNavActions />, navHost) : null}
+      {downloadHost ? createPortal(<DownloadExtensionButton />, downloadHost) : null}
     </>
   );
 }
