@@ -67,7 +67,7 @@ const navActionsCss = `
 #aplyer-nav-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:flex-end}
 #aplyer-nav-actions a.nav-link{font-family:'Lato',sans-serif;font-size:15px;font-weight:700;color:#0D1829;text-decoration:none;white-space:nowrap}
 #aplyer-nav-actions a.nav-link:hover{color:#1DB954}
-#aplyer-nav-actions a.nav-cta{background:#1DB954;color:#04140A;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;white-space:nowrap}
+#aplyer-nav-actions a.nav-cta,#aplyer-nav-actions button.nav-cta{background:#1DB954;color:#04140A;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;white-space:nowrap;border:none;cursor:pointer;font-family:'Lato',sans-serif}
 #aplyer-nav-actions a.nav-cta:hover{background:#22C55E}
 #aplyer-nav-actions button.nav-link{background:none;border:none;cursor:pointer;font-family:'Lato',sans-serif;font-size:15px;font-weight:700;color:#0D1829}
 #aplyer-download-ext{display:inline-block;margin-left:12px}
