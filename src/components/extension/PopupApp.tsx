@@ -178,7 +178,7 @@ export function PopupApp({ preview = false }: { preview?: boolean } = {}) {
   if (!session) {
     return (
       <SignIn
-        onSignIn={() => (inExtension ? openAuthInTab(APP_WEB_URL) : (window.location.href = "/auth"))}
+        onSignIn={() => (inExtension ? openAuthInTab() : (window.location.href = "/auth"))}
         onRefresh={refreshSession}
         checking={checking}
         preview={preview}
