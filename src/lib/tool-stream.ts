@@ -113,7 +113,7 @@ async function readStream<T>(
           // `final` is already validated by the backend. Resolve immediately
           // instead of waiting for `done` or for the connection to close.
           // Some hosts keep the SSE response open briefly after this frame.
-          void reader.cancel().catch(() => {});
+          void reader.cancel?.().catch(() => {});
           return payload as T;
         }
       } else if (event === "error") {
