@@ -78,7 +78,7 @@ export async function generateResumeAudit(
     now,
   });
 
-  if (violations.length > 0) {
+  if (needsModelCorrection(violations)) {
     console.warn(
       JSON.stringify({
         evt: "resume_audit_guard_failed",
