@@ -91,12 +91,26 @@ export async function generateResumeAudit(
     const correction = `${baseUser}\n\n---\n\n${buildResumeAuditCorrection(
       Array.from(new Set(violations.map((v) => v.detail))),
     )}`;
+    // The corrective pass streams too, so the reader keeps seeing progress
+    // instead of a frozen preview. Each frame replaces the earlier text.
+    let retryText = "";
+    const retryDelta = opts.onPreviewReplace
+      ? makeJsonFieldPreview({
+          key: "overallTakePoints",
+          array: true,
+          onText: (d) => {
+            retryText += d;
+            opts.onPreviewReplace!(retryText);
+          },
+        })
+      : undefined;
     try {
       const second = await runPromptValidated(
         PROMPT_C_RESUME_AUDIT,
         correction,
         validateResumeAudit,
         RESUME_AUDIT_RETRY_INSTRUCTION,
+        retryDelta ? { onDelta: retryDelta } : {},
       );
       const secondViolations = runResumeAuditGuards(guardable(second.value), {
         resumeText: resume,
