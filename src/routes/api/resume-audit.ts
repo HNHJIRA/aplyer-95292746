@@ -26,11 +26,34 @@ function guardable(audit: ResumeAudit) {
   };
 }
 
+/**
+ * Style violations that `sanitizeAudit` already repairs deterministically, or
+ * that are cosmetic. They are recorded, but they never justify a second full
+ * model call: that call doubled audit latency and changed the overall take
+ * after it had already been streamed to the user.
+ */
+const STYLE_ONLY_CODES = new Set([
+  "em_dash",
+  "en_dash",
+  "prohibited_hyphen",
+  "rule_of_three",
+  "duplicate_strength_opening",
+  "strength_too_long",
+]);
+
+function needsModelCorrection(violations: ResumeAuditGuardViolation[]): boolean {
+  return violations.some((v) => !STYLE_ONLY_CODES.has(v.code));
+}
+
 /** Prompt C -> structure -> guards -> one corrective retry -> ordering. */
 export async function generateResumeAudit(
   resume: string,
   now: Date,
-  opts: { onPreviewDelta?: (text: string) => void } = {},
+  opts: {
+    onPreviewDelta?: (text: string) => void;
+    /** Replaces the streamed preview with the text of the validated result. */
+    onPreviewReplace?: (text: string) => void;
+  } = {},
 ): Promise<ResumeAudit> {
   const baseUser = buildResumeAuditUser(resume, now);
 
