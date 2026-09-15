@@ -81,7 +81,6 @@ async function readStream<T>(
   const decoder = new TextDecoder();
   let buffer = "";
   let preview = "";
-  let final: T | null = null;
   let streamError: string | null = null;
 
   for (;;) {
@@ -111,7 +110,11 @@ async function readStream<T>(
         }
       } else if (event === "final") {
         if (payload && typeof payload === "object" && Object.keys(payload as Json).length) {
-          final = payload as T;
+          // `final` is already validated by the backend. Resolve immediately
+          // instead of waiting for `done` or for the connection to close.
+          // Some hosts keep the SSE response open briefly after this frame.
+          void reader.cancel().catch(() => {});
+          return payload as T;
         }
       } else if (event === "error") {
         streamError = safeMessage(payload);
@@ -121,8 +124,7 @@ async function readStream<T>(
 
   if (streamError) throw new ToolRequestError(streamError);
   // An interrupted or empty stream never promotes the preview to a result.
-  if (!final) throw new ToolRequestError(GENERIC_TOOL_ERROR);
-  return final;
+  throw new ToolRequestError(GENERIC_TOOL_ERROR);
 }
 
 async function readJson<T>(response: Response): Promise<T> {
