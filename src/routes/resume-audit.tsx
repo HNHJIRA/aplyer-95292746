@@ -163,13 +163,20 @@ function ResumeAuditPage() {
       if (text.length > 20000) text = text.slice(0, 20000);
 
       setPreview("");
+      let streamed = "";
       try {
         const data = await requestToolResult<Audit>({
           url: apiUrl("/api/resume-audit"),
           body: { resume: text },
-          onPreview: setPreview,
+          onPreview: (p) => {
+            streamed = p;
+            setPreview(p);
+          },
         });
-        setAudit(data);
+        // The validated result owns the overall take; the streamed text is
+        // only used when the final payload carries none, so the text the user
+        // watched is never lost on the completed page.
+        setAudit(mergeStreamedOverallTake(data, streamed));
       } catch (e) {
         setPreview("");
         setError(e instanceof ToolRequestError ? e.message : GENERIC_TOOL_ERROR);
@@ -178,6 +185,7 @@ function ResumeAuditPage() {
       setPreview("");
       setError("Network error. Please try again.");
     } finally {
+      runningRef.current = false;
       setLoading(false);
     }
   }
