@@ -135,11 +135,15 @@ function ResumeAuditPage() {
   }
 
   async function runAudit() {
+    // One Run action, one request: a second click while a run is in flight is
+    // ignored so a stale response can never overwrite the final result.
+    if (runningRef.current) return;
     setError(null);
     if (!file) {
       setError("Please upload your resume to continue.");
       return;
     }
+    runningRef.current = true;
     setAudit(null);
     setLoading(true);
     try {
