@@ -229,6 +229,7 @@ export async function handleResumeAudit(request: Request): Promise<Response> {
               try {
                 const audit = await generateResumeAudit(capped, new Date(), {
                   onPreviewDelta: (text) => send("draft", { text }),
+                  onPreviewReplace: (text) => send("draft", { text, replace: true }),
                 });
                 send("final", buildAuditPayload(audit));
               } catch (err) {
