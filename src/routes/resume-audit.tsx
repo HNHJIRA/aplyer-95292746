@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { apiUrl } from "@/lib/api-base";
 import AuditResult from "@/components/audit/AuditResult";
-import type { Audit } from "@/components/audit/types";
+import { mergeStreamedOverallTake, type Audit } from "@/components/audit/types";
 import { requestToolResult, ToolRequestError, GENERIC_TOOL_ERROR } from "@/lib/tool-stream";
 
 
@@ -99,6 +99,7 @@ function ResumeAuditPage() {
   const [audit, setAudit] = useState<Audit | null>(null);
   const [preview, setPreview] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const runningRef = useRef(false);
 
   const [email, setEmail] = useState("");
   const [waitState, setWaitState] = useState<"idle" | "submitting" | "done" | "error">("idle");
