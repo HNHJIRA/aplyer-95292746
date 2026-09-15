@@ -149,7 +149,9 @@ describe("resume audit streaming", () => {
     for (const e of draftEvents) {
       preview = e.data.replace ? String(e.data.text) : preview + String(e.data.text);
     }
-    expect(preview.startsWith("Strong payments background.")).toBe(true);
+    // The preview builds the whole audit, not just the overall take.
+    expect(preview).toContain("Strong payments background.");
+    expect(preview).toContain("Red flags");
     // The last frame must equal the overall take of the final result.
     expect(draftEvents[draftEvents.length - 1]!.data.replace).toBe(true);
 
