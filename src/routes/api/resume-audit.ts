@@ -131,6 +131,9 @@ export async function generateResumeAudit(
   }
 
   audit = sanitizeAudit(audit);
+  // The preview the user has been reading must end up identical to the overall
+  // take in the validated result, even when a corrective pass replaced it.
+  opts.onPreviewReplace?.(audit.overallTakePoints.join(" "));
   return { ...audit, redFlags: orderRedFlags(audit.redFlags, resume) };
 }
 
