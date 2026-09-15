@@ -220,7 +220,7 @@ export async function handleResumeAudit(request: Request): Promise<Response> {
             return sseResponse(async (send) => {
               try {
                 const audit = await generateResumeAudit(capped, new Date(), {
-                  onPreviewDelta: (text) => send("draft", { text }),
+                  // Full preview text each time: the client replaces, never appends.
                   onPreviewReplace: (text) => send("draft", { text, replace: true }),
                 });
                 send("final", buildAuditPayload(audit));
