@@ -98,7 +98,14 @@ async function readStream<T>(
       if (event === "open") continue;
       if (event === "draft" || event === "delta") {
         const piece = draftText(payload);
-        if (piece) {
+        const replace =
+          !!payload && typeof payload === "object" && (payload as Json)["replace"] === true;
+        if (replace) {
+          // Authoritative preview: the backend is correcting the shown text so
+          // it matches the validated final result.
+          preview = piece;
+          onPreview(preview);
+        } else if (piece) {
           preview += piece;
           onPreview(preview);
         }

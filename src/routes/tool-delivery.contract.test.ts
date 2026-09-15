@@ -25,12 +25,16 @@ describe("/resume-audit delivery contract", () => {
 
   it("requests progressive delivery through the shared helper", () => {
     expect(audit).toContain("requestToolResult<Audit>");
-    expect(audit).toContain("onPreview: setPreview");
+    expect(audit).toContain("setPreview(p)");
   });
 
   it("only sets the audit from the final result", () => {
-    expect(audit).toContain("setAudit(data)");
+    expect(audit).toContain("mergeStreamedOverallTake(data, streamed)");
     expect(audit).not.toContain("setAudit(preview");
+  });
+
+  it("guards against a duplicate run creating a second request", () => {
+    expect(audit).toContain("if (runningRef.current) return;");
   });
 
   it("keeps a safe error path and always stops loading", () => {

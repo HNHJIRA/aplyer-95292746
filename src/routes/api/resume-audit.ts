@@ -26,11 +26,34 @@ function guardable(audit: ResumeAudit) {
   };
 }
 
+/**
+ * Style violations that `sanitizeAudit` already repairs deterministically, or
+ * that are cosmetic. They are recorded, but they never justify a second full
+ * model call: that call doubled audit latency and changed the overall take
+ * after it had already been streamed to the user.
+ */
+const STYLE_ONLY_CODES = new Set([
+  "em_dash",
+  "en_dash",
+  "prohibited_hyphen",
+  "rule_of_three",
+  "duplicate_strength_opening",
+  "strength_too_long",
+]);
+
+function needsModelCorrection(violations: ResumeAuditGuardViolation[]): boolean {
+  return violations.some((v) => !STYLE_ONLY_CODES.has(v.code));
+}
+
 /** Prompt C -> structure -> guards -> one corrective retry -> ordering. */
 export async function generateResumeAudit(
   resume: string,
   now: Date,
-  opts: { onPreviewDelta?: (text: string) => void } = {},
+  opts: {
+    onPreviewDelta?: (text: string) => void;
+    /** Replaces the streamed preview with the text of the validated result. */
+    onPreviewReplace?: (text: string) => void;
+  } = {},
 ): Promise<ResumeAudit> {
   const baseUser = buildResumeAuditUser(resume, now);
 
@@ -55,7 +78,7 @@ export async function generateResumeAudit(
     now,
   });
 
-  if (violations.length > 0) {
+  if (needsModelCorrection(violations)) {
     console.warn(
       JSON.stringify({
         evt: "resume_audit_guard_failed",
@@ -68,12 +91,26 @@ export async function generateResumeAudit(
     const correction = `${baseUser}\n\n---\n\n${buildResumeAuditCorrection(
       Array.from(new Set(violations.map((v) => v.detail))),
     )}`;
+    // The corrective pass streams too, so the reader keeps seeing progress
+    // instead of a frozen preview. Each frame replaces the earlier text.
+    let retryText = "";
+    const retryDelta = opts.onPreviewReplace
+      ? makeJsonFieldPreview({
+          key: "overallTakePoints",
+          array: true,
+          onText: (d) => {
+            retryText += d;
+            opts.onPreviewReplace!(retryText);
+          },
+        })
+      : undefined;
     try {
       const second = await runPromptValidated(
         PROMPT_C_RESUME_AUDIT,
         correction,
         validateResumeAudit,
         RESUME_AUDIT_RETRY_INSTRUCTION,
+        retryDelta ? { onDelta: retryDelta } : {},
       );
       const secondViolations = runResumeAuditGuards(guardable(second.value), {
         resumeText: resume,
@@ -108,6 +145,9 @@ export async function generateResumeAudit(
   }
 
   audit = sanitizeAudit(audit);
+  // The preview the user has been reading must end up identical to the overall
+  // take in the validated result, even when a corrective pass replaced it.
+  opts.onPreviewReplace?.(audit.overallTakePoints.join(" "));
   return { ...audit, redFlags: orderRedFlags(audit.redFlags, resume) };
 }
 
@@ -203,6 +243,7 @@ export async function handleResumeAudit(request: Request): Promise<Response> {
               try {
                 const audit = await generateResumeAudit(capped, new Date(), {
                   onPreviewDelta: (text) => send("draft", { text }),
+                  onPreviewReplace: (text) => send("draft", { text, replace: true }),
                 });
                 send("final", buildAuditPayload(audit));
               } catch (err) {

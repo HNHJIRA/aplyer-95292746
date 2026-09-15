@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { apiUrl } from "@/lib/api-base";
 import AuditResult from "@/components/audit/AuditResult";
-import type { Audit } from "@/components/audit/types";
+import { mergeStreamedOverallTake, type Audit } from "@/components/audit/types";
 import { requestToolResult, ToolRequestError, GENERIC_TOOL_ERROR } from "@/lib/tool-stream";
 
 
@@ -99,6 +99,7 @@ function ResumeAuditPage() {
   const [audit, setAudit] = useState<Audit | null>(null);
   const [preview, setPreview] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const runningRef = useRef(false);
 
   const [email, setEmail] = useState("");
   const [waitState, setWaitState] = useState<"idle" | "submitting" | "done" | "error">("idle");
@@ -135,11 +136,15 @@ function ResumeAuditPage() {
   }
 
   async function runAudit() {
+    // One Run action, one request: a second click while a run is in flight is
+    // ignored so a stale response can never overwrite the final result.
+    if (runningRef.current) return;
     setError(null);
     if (!file) {
       setError("Please upload your resume to continue.");
       return;
     }
+    runningRef.current = true;
     setAudit(null);
     setLoading(true);
     try {
@@ -159,13 +164,20 @@ function ResumeAuditPage() {
       if (text.length > 20000) text = text.slice(0, 20000);
 
       setPreview("");
+      let streamed = "";
       try {
         const data = await requestToolResult<Audit>({
           url: apiUrl("/api/resume-audit"),
           body: { resume: text },
-          onPreview: setPreview,
+          onPreview: (p) => {
+            streamed = p;
+            setPreview(p);
+          },
         });
-        setAudit(data);
+        // The validated result owns the overall take; the streamed text is
+        // only used when the final payload carries none, so the text the user
+        // watched is never lost on the completed page.
+        setAudit(mergeStreamedOverallTake(data, streamed));
       } catch (e) {
         setPreview("");
         setError(e instanceof ToolRequestError ? e.message : GENERIC_TOOL_ERROR);
@@ -174,6 +186,7 @@ function ResumeAuditPage() {
       setPreview("");
       setError("Network error. Please try again.");
     } finally {
+      runningRef.current = false;
       setLoading(false);
     }
   }
