@@ -3,7 +3,6 @@ import { CORS_HEADERS, corsHeaders, jsonWithCors, preflight } from "@/lib/cors";
 import { makeJsonFieldPreview, sseResponse, wantsStream } from "@/lib/ai/anthropic-stream.server";
 import {
   PROMPT_C_RESUME_AUDIT,
-  buildResumeAuditCorrection,
   buildResumeAuditUser,
   validateResumeAudit,
   RESUME_AUDIT_RETRY_INSTRUCTION,
@@ -26,26 +25,7 @@ function guardable(audit: ResumeAudit) {
   };
 }
 
-/**
- * Style violations that `sanitizeAudit` already repairs deterministically, or
- * that are cosmetic. They are recorded, but they never justify a second full
- * model call: that call doubled audit latency and changed the overall take
- * after it had already been streamed to the user.
- */
-const STYLE_ONLY_CODES = new Set([
-  "em_dash",
-  "en_dash",
-  "prohibited_hyphen",
-  "rule_of_three",
-  "duplicate_strength_opening",
-  "strength_too_long",
-]);
-
-function needsModelCorrection(violations: ResumeAuditGuardViolation[]): boolean {
-  return violations.some((v) => !STYLE_ONLY_CODES.has(v.code));
-}
-
-/** Prompt C -> structure -> guards -> one corrective retry -> ordering. */
+/** Prompt C -> structural validation -> deterministic guards/cleanup -> ordering. */
 export async function generateResumeAudit(
   resume: string,
   now: Date,
@@ -73,75 +53,25 @@ export async function generateResumeAudit(
   );
 
   let audit = first.value;
-  let violations: ResumeAuditGuardViolation[] = runResumeAuditGuards(guardable(audit), {
+  const violations: ResumeAuditGuardViolation[] = runResumeAuditGuards(guardable(audit), {
     resumeText: resume,
     now,
   });
 
-  if (needsModelCorrection(violations)) {
+  // Prompt output has already passed strict JSON/shape validation. Guard
+  // findings are retained as quality telemetry and deterministic cleanup runs
+  // below. Do not launch a second full model generation here: in production it
+  // routinely added 20-50 seconds after the visible preview had finished, and
+  // it often returned an equal or larger set of heuristic findings anyway.
+  if (violations.length > 0) {
     console.warn(
       JSON.stringify({
-        evt: "resume_audit_guard_failed",
+        evt: "resume_audit_guard_findings",
         prompt: PROMPT_C_RESUME_AUDIT.id,
         promptVersion: PROMPT_C_RESUME_AUDIT.version,
-        attempt: 1,
         violations: guardSummary(violations),
       }),
     );
-    const correction = `${baseUser}\n\n---\n\n${buildResumeAuditCorrection(
-      Array.from(new Set(violations.map((v) => v.detail))),
-    )}`;
-    // The corrective pass streams too, so the reader keeps seeing progress
-    // instead of a frozen preview. Each frame replaces the earlier text.
-    let retryText = "";
-    const retryDelta = opts.onPreviewReplace
-      ? makeJsonFieldPreview({
-          key: "overallTakePoints",
-          array: true,
-          onText: (d) => {
-            retryText += d;
-            opts.onPreviewReplace!(retryText);
-          },
-        })
-      : undefined;
-    try {
-      const second = await runPromptValidated(
-        PROMPT_C_RESUME_AUDIT,
-        correction,
-        validateResumeAudit,
-        RESUME_AUDIT_RETRY_INSTRUCTION,
-        retryDelta ? { onDelta: retryDelta } : {},
-      );
-      const secondViolations = runResumeAuditGuards(guardable(second.value), {
-        resumeText: resume,
-        now,
-      });
-      // Keep whichever pass is cleaner; style guards are quality signals, not
-      // a reason to deny the candidate an audit.
-      if (secondViolations.length <= violations.length) {
-        audit = second.value;
-        violations = secondViolations;
-      }
-    } catch (e) {
-      console.warn(
-        JSON.stringify({
-          evt: "resume_audit_retry_failed",
-          prompt: PROMPT_C_RESUME_AUDIT.id,
-          reason: e instanceof Error ? e.message.slice(0, 160) : "unknown",
-        }),
-      );
-    }
-
-    if (violations.length > 0) {
-      console.warn(
-        JSON.stringify({
-          evt: "resume_audit_guard_residual",
-          prompt: PROMPT_C_RESUME_AUDIT.id,
-          promptVersion: PROMPT_C_RESUME_AUDIT.version,
-          violations: guardSummary(violations),
-        }),
-      );
-    }
   }
 
   audit = sanitizeAudit(audit);
