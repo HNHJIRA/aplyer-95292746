@@ -103,6 +103,44 @@ describe("resume audit streaming regression", () => {
     expect(audit.topPriority).toBe("Quantify your impact.");
   });
 
+  it("resolves immediately on final without waiting for done or stream closure", async () => {
+    const encoder = new TextEncoder();
+    let reads = 0;
+    let cancelled = false;
+    const response = {
+      ok: true,
+      status: 200,
+      headers: { get: () => "text/event-stream" },
+      body: {
+        getReader: () => ({
+          read: async () => {
+            reads += 1;
+            if (reads === 1) {
+              return {
+                done: false,
+                value: encoder.encode(`event: final\ndata: ${JSON.stringify(FINAL)}\n\n`),
+              };
+            }
+            return await new Promise<never>(() => {});
+          },
+          cancel: async () => {
+            cancelled = true;
+          },
+        }),
+      },
+    } as unknown as Response;
+
+    const audit = await requestToolResult<typeof FINAL>({
+      url: "/api/resume-audit",
+      body: {},
+      fetchImpl: (async () => response) as never,
+    });
+
+    expect(audit).toEqual(FINAL);
+    expect(reads).toBe(1);
+    expect(cancelled).toBe(true);
+  });
+
   it("discards the draft when the stream fails before final", async () => {
     await expect(
       requestToolResult({
