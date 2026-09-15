@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CORS_HEADERS, corsHeaders, jsonWithCors, preflight } from "@/lib/cors";
-import { makeJsonFieldPreview, sseResponse, wantsStream } from "@/lib/ai/anthropic-stream.server";
+import { makeJsonProgressPreview, sseResponse, wantsStream } from "@/lib/ai/anthropic-stream.server";
 import {
   PROMPT_C_RESUME_AUDIT,
   buildResumeAuditUser,
