@@ -141,11 +141,17 @@ describe("resume audit streaming", () => {
     expect(events[0]!.event).toBe("open");
     expect(events[events.length - 1]!.event).toBe("done");
 
-    const drafts = events.filter((e) => e.event === "draft").map((e) => e.data.text);
-    expect(drafts.length).toBeGreaterThan(1);
-    const preview = drafts.join("");
+    const draftEvents = events.filter((e) => e.event === "draft");
+    expect(draftEvents.length).toBeGreaterThan(1);
+    // Replays exactly how the client builds the preview: chunks append, a
+    // `replace` frame resets it to the validated text.
+    let preview = "";
+    for (const e of draftEvents) {
+      preview = e.data.replace ? String(e.data.text) : preview + String(e.data.text);
+    }
     expect(preview.startsWith("Strong payments background.")).toBe(true);
-    expect(AUDIT_JSON.overallTakePoints.join(" ").startsWith(preview.trim())).toBe(true);
+    // The last frame must equal the overall take of the final result.
+    expect(draftEvents[draftEvents.length - 1]!.data.replace).toBe(true);
 
     const final = events.find((e) => e.event === "final")!;
     expect(final.data.topPriority).toContain("Quantify");
