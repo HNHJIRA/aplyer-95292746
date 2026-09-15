@@ -77,10 +77,56 @@ export async function generateResumeAudit(
   }
 
   audit = sanitizeAudit(audit);
-  // The preview the user has been reading must end up identical to the overall
-  // take in the validated result, even when a corrective pass replaced it.
-  opts.onPreviewReplace?.(audit.overallTakePoints.join(" "));
+  // The preview the user has been reading must end up identical to the
+  // validated result.
+  opts.onPreviewReplace?.(renderAuditProgress(audit));
   return { ...audit, redFlags: orderRedFlags(audit.redFlags, resume) };
+}
+
+function previewText(v: unknown): string {
+  return typeof v === "string" ? v.trim() : "";
+}
+
+function previewList(v: unknown): string[] {
+  return Array.isArray(v) ? v.map(previewText).filter(Boolean) : [];
+}
+
+/** Renders a (possibly partial) audit document into readable preview text. */
+export function renderAuditProgress(value: unknown): string {
+  if (!value || typeof value !== "object") return "";
+  const o = value as Record<string, unknown>;
+  const sections: string[] = [];
+
+  const take = previewList(o["overallTakePoints"]).join(" ") || previewText(o["overallTake"]);
+  if (take) sections.push(`Overall take\n${take}`);
+
+  const flags = (Array.isArray(o["redFlags"]) ? o["redFlags"] : [])
+    .map((f, i) => {
+      if (!f || typeof f !== "object") return "";
+      const g = f as Record<string, unknown>;
+      const flag = previewText(g["flag"]);
+      const why = previewList(g["whyPoints"]).join(" ") || previewText(g["why"]);
+      const fix = previewList(g["fixPoints"]).join(" ") || previewText(g["fix"]);
+      const lines: string[] = [];
+      if (flag) lines.push(`${i + 1}. ${flag}`);
+      if (why) lines.push(`Why it matters: ${why}`);
+      if (fix) lines.push(`Fix: ${fix}`);
+      return lines.join("\n");
+    })
+    .filter(Boolean);
+  if (flags.length) sections.push(`Red flags\n${flags.join("\n\n")}`);
+
+  const strengths = (Array.isArray(o["strengths"]) ? o["strengths"] : [])
+    .map((s) =>
+      typeof s === "string" ? s.trim() : previewText((s as Record<string, unknown> | null)?.["point"]),
+    )
+    .filter(Boolean);
+  if (strengths.length) sections.push(`Strengths\n${strengths.map((s) => `- ${s}`).join("\n")}`);
+
+  const top = previewText(o["topPriority"]);
+  if (top) sections.push(`Do this first\n${top}`);
+
+  return sections.join("\n\n");
 }
 
 /** Deterministic cleanup of style rules that can be fixed without the model. */
