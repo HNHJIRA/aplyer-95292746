@@ -37,11 +37,13 @@ export async function generateResumeAudit(
 ): Promise<ResumeAudit> {
   const baseUser = buildResumeAuditUser(resume, now);
 
-  // Live preview shows ONLY the model's "overall take" sentences as they are
-  // written. It is unvalidated text: the audit itself is still produced by the
-  // unchanged structure -> guards -> retry pipeline below.
-  const onDelta = opts.onPreviewDelta
-    ? makeJsonFieldPreview({ key: "overallTakePoints", array: true, onText: opts.onPreviewDelta })
+  // Live preview renders the whole audit as the model writes it (overall take,
+  // red flags, strengths, priority) so the page keeps filling in until the
+  // result is ready. It is unvalidated text: the audit itself is still produced
+  // by the unchanged structure -> guards -> retry pipeline below.
+  const preview = opts.onPreviewReplace ?? opts.onPreviewDelta;
+  const onDelta = preview
+    ? makeJsonProgressPreview({ render: renderAuditProgress, onText: preview })
     : undefined;
 
   const first = await runPromptValidated(
