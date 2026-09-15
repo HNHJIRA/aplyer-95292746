@@ -52,7 +52,7 @@ describe("resume audit streaming regression", () => {
     const fetchImpl = vi.fn(async () => sseResponse(stream()));
     await requestToolResult({ url: "/api/resume-audit", body: {}, fetchImpl: fetchImpl as never });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
-    expect(String(fetchImpl.mock.calls[0][0])).toContain("stream=1");
+    expect(String((fetchImpl.mock.calls as unknown as unknown[][])[0]![0])).toContain("stream=1");
   });
 
   it("appends draft chunks in order without duplication", async () => {
