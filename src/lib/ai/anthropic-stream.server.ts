@@ -333,3 +333,82 @@ export function sseResponse(
   });
   return new Response(stream, { status: 200, headers: sseHeaders(extraHeaders) });
 }
+
+/* ------------------------------------------------------------------ */
+/* Partial JSON preview                                                */
+/* ------------------------------------------------------------------ */
+
+/** Closes any open string/brackets in `raw` and parses it; undefined on failure. */
+function closeAndParse(raw: string): unknown | undefined {
+  let inStr = false;
+  let esc = false;
+  const stack: string[] = [];
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i]!;
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === "\\") esc = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    else if (ch === "{") stack.push("}");
+    else if (ch === "[") stack.push("]");
+    else if (ch === "}" || ch === "]") stack.pop();
+  }
+  let out = raw;
+  if (esc) out = out.slice(0, -1);
+  if (inStr) out += '"';
+  out = out.replace(/\s*,\s*$/, "");
+  out = out.replace(/:\s*$/, ": null");
+  for (let i = stack.length - 1; i >= 0; i--) out += stack[i];
+  try {
+    return JSON.parse(out);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Best-effort parse of a JSON object that is still being streamed. Returns the
+ * largest prefix that parses once open strings/brackets are closed, or null.
+ */
+export function parsePartialJson(buffer: string): unknown {
+  const start = buffer.indexOf("{");
+  if (start < 0) return null;
+  let s = buffer.slice(start);
+  for (let attempt = 0; attempt < 8 && s.length > 1; attempt++) {
+    const value = closeAndParse(s);
+    if (value !== undefined) return value;
+    const cut = s.lastIndexOf(",");
+    if (cut <= 0) break;
+    s = s.slice(0, cut);
+  }
+  return null;
+}
+
+/**
+ * Builds a delta consumer that renders the partially received JSON document
+ * into human-readable preview text and emits it whenever it changes. The full
+ * text is emitted each time (the client replaces, never appends).
+ */
+export function makeJsonProgressPreview(opts: {
+  render: (value: unknown) => string;
+  onText: (fullText: string) => void;
+}): (chunk: string) => void {
+  let buffer = "";
+  let emitted = "";
+  return (chunk: string) => {
+    buffer += chunk;
+    let text = "";
+    try {
+      text = opts.render(parsePartialJson(buffer));
+    } catch {
+      return;
+    }
+    if (text && text !== emitted) {
+      emitted = text;
+      opts.onText(text);
+    }
+  };
+}
