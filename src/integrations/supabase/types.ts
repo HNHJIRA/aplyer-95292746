@@ -68,6 +68,194 @@ export type Database = {
         }
         Relationships: []
       }
+      demo_cost_events: {
+        Row: {
+          created_at: string
+          demo_request_id: string
+          estimated_cost_usd: number | null
+          id: string
+          input_tokens: number | null
+          model: string
+          operation: string
+          output_tokens: number | null
+          priced: boolean
+          provider: string
+          side: string
+        }
+        Insert: {
+          created_at?: string
+          demo_request_id: string
+          estimated_cost_usd?: number | null
+          id?: string
+          input_tokens?: number | null
+          model: string
+          operation: string
+          output_tokens?: number | null
+          priced?: boolean
+          provider: string
+          side: string
+        }
+        Update: {
+          created_at?: string
+          demo_request_id?: string
+          estimated_cost_usd?: number | null
+          id?: string
+          input_tokens?: number | null
+          model?: string
+          operation?: string
+          output_tokens?: number | null
+          priced?: boolean
+          provider?: string
+          side?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_cost_events_demo_request_id_fkey"
+            columns: ["demo_request_id"]
+            isOneToOne: false
+            referencedRelation: "demo_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demo_model_pricing: {
+        Row: {
+          input_usd_per_mtok: number
+          model: string
+          output_usd_per_mtok: number
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          input_usd_per_mtok: number
+          model: string
+          output_usd_per_mtok: number
+          provider: string
+          updated_at?: string
+        }
+        Update: {
+          input_usd_per_mtok?: number
+          model?: string
+          output_usd_per_mtok?: number
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      demo_requests: {
+        Row: {
+          answer: string | null
+          attempts: number
+          completed_at: string | null
+          content_hash: string
+          cost_status: string
+          created_at: string
+          delivered_at: string | null
+          email: string
+          estimated_cost_usd: number | null
+          id: string
+          idempotency_key: string
+          ip_hash: string
+          last_error: string | null
+          locked_at: string | null
+          max_attempts: number
+          next_run_at: string
+          payload: Json | null
+          queue_reason: string | null
+          reject_reason: string | null
+          session_hash: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          answer?: string | null
+          attempts?: number
+          completed_at?: string | null
+          content_hash: string
+          cost_status?: string
+          created_at?: string
+          delivered_at?: string | null
+          email: string
+          estimated_cost_usd?: number | null
+          id?: string
+          idempotency_key: string
+          ip_hash: string
+          last_error?: string | null
+          locked_at?: string | null
+          max_attempts?: number
+          next_run_at?: string
+          payload?: Json | null
+          queue_reason?: string | null
+          reject_reason?: string | null
+          session_hash: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string | null
+          attempts?: number
+          completed_at?: string | null
+          content_hash?: string
+          cost_status?: string
+          created_at?: string
+          delivered_at?: string | null
+          email?: string
+          estimated_cost_usd?: number | null
+          id?: string
+          idempotency_key?: string
+          ip_hash?: string
+          last_error?: string | null
+          locked_at?: string | null
+          max_attempts?: number
+          next_run_at?: string
+          payload?: Json | null
+          queue_reason?: string | null
+          reject_reason?: string | null
+          session_hash?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      demo_settings: {
+        Row: {
+          daily_cap_usd: number | null
+          id: boolean
+          ip_limit: number | null
+          ip_window_seconds: number | null
+          max_runs_per_email: number | null
+          reserve_per_demo_usd: number | null
+          reset_timezone: string | null
+          session_limit: number | null
+          session_window_seconds: number | null
+          updated_at: string
+        }
+        Insert: {
+          daily_cap_usd?: number | null
+          id?: boolean
+          ip_limit?: number | null
+          ip_window_seconds?: number | null
+          max_runs_per_email?: number | null
+          reserve_per_demo_usd?: number | null
+          reset_timezone?: string | null
+          session_limit?: number | null
+          session_window_seconds?: number | null
+          updated_at?: string
+        }
+        Update: {
+          daily_cap_usd?: number | null
+          id?: boolean
+          ip_limit?: number | null
+          ip_window_seconds?: number | null
+          max_runs_per_email?: number | null
+          reserve_per_demo_usd?: number | null
+          reset_timezone?: string | null
+          session_limit?: number | null
+          session_window_seconds?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       generated_answers: {
         Row: {
           answer_rule_audit: Json | null
@@ -709,6 +897,39 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_demo_requests: {
+        Args: { _limit?: number }
+        Returns: {
+          answer: string | null
+          attempts: number
+          completed_at: string | null
+          content_hash: string
+          cost_status: string
+          created_at: string
+          delivered_at: string | null
+          email: string
+          estimated_cost_usd: number | null
+          id: string
+          idempotency_key: string
+          ip_hash: string
+          last_error: string | null
+          locked_at: string | null
+          max_attempts: number
+          next_run_at: string
+          payload: Json | null
+          queue_reason: string | null
+          reject_reason: string | null
+          session_hash: string
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "demo_requests"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       claim_waitlist_jobs: {
         Args: { _limit?: number }
         Returns: {
@@ -732,6 +953,18 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      demo_admit: {
+        Args: {
+          _content_hash: string
+          _email: string
+          _idempotency_key: string
+          _ip_hash: string
+          _payload: Json
+          _session_hash: string
+        }
+        Returns: Json
+      }
+      demo_spend_snapshot: { Args: never; Returns: Json }
       is_qualifying_prose: {
         Args: { _content: string; _type: string }
         Returns: boolean
@@ -742,6 +975,7 @@ export type Database = {
         Args: { _email: string; _first_name?: string; _source?: string }
         Returns: undefined
       }
+      requeue_stale_demo_requests: { Args: never; Returns: number }
       requeue_stale_waitlist_jobs: { Args: never; Returns: number }
     }
     Enums: {

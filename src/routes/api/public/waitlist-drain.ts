@@ -7,6 +7,10 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { drainWaitlistJobs } from "@/lib/waitlist/jobs.server";
+import { drainDemoQueue } from "@/lib/demo/queue.server";
+import { dbDemoStore } from "@/lib/demo/store.server";
+import { generateLegacyDemoAnswer } from "@/lib/demo/generate.server";
+import { sendDemoResultEmail } from "@/lib/demo/result-email.server";
 
 function authorized(request: Request): boolean {
   const expected = process.env.WAITLIST_DRAIN_KEY ?? process.env.WAITLIST_DRAIN_SECRET;
@@ -27,7 +31,13 @@ async function handle(request: Request): Promise<Response> {
     return new Response("Unauthorized", { status: 401 });
   }
   const result = await drainWaitlistJobs(25);
-  return new Response(JSON.stringify({ ok: true, ...result }), {
+  // Same schedule also drains held demo requests (cap/limit/unconfigured).
+  const demo = await drainDemoQueue({
+    store: dbDemoStore,
+    generate: generateLegacyDemoAnswer,
+    sendResult: sendDemoResultEmail,
+  });
+  return new Response(JSON.stringify({ ok: true, ...result, demo }), {
     status: 200,
     headers: { "content-type": "application/json" },
   });
