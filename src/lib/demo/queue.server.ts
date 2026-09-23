@@ -56,10 +56,12 @@ async function runOne(
 
   // Cap / configuration gate — checked with this job counted as in flight.
   const { settings, spend } = await store.spendSnapshot();
-  if (!settings || missingSettings(settings).length > 0 || !spendAllows(settings, spend)) {
-    const next = spend?.next_reset && missingSettings(settings ?? null as never).length === 0
-      ? spend.next_reset
-      : new Date(now() + 60 * 60_000).toISOString();
+  const configured = !!settings && missingSettings(settings).length === 0;
+  if (!configured || !spendAllows(settings!, spend)) {
+    const next =
+      configured && spend?.next_reset
+        ? spend.next_reset
+        : new Date(now() + 60 * 60_000).toISOString();
     await store.update(job.id, {
       status: "queued",
       locked_at: null,
