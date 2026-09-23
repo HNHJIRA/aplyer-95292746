@@ -48,7 +48,7 @@ describe("demo answer streaming", () => {
     );
     await getAnswer({ ...input, fetch: fetchMock });
     expect(fetchMock.mock.calls[0][0]).toBe(
-      `${BASE}/api/public/generate-answer?stream=1`,
+      `${BASE}/api/public/demo?stream=1`,
     );
   });
 
@@ -165,30 +165,40 @@ describe("demo answer streaming", () => {
     expect(onDelta.mock.calls.map((c) => c[0])).toEqual(["ok"]);
   });
 
-  it("falls back to the existing JSON request once when streaming is unavailable", async () => {
+  it("falls back to the JSON request once when the stream has no body", async () => {
     fetchMock
-      .mockResolvedValueOnce(jsonResponse({ error: "nope" }, false))
+      .mockResolvedValueOnce({ ok: false, headers: { get: () => "text/html" } })
       .mockResolvedValueOnce(jsonResponse({ answer: "json answer" }));
-    const answer = await getAnswer({ ...input, fetch: fetchMock });
+    const answer = await getAnswer({ ...input, email: "a@b.co", idempotencyKey: "k".repeat(20), fetch: fetchMock });
     expect(answer).toBe("json answer");
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[1][0]).toBe(`${BASE}/api/public/demo`);
-    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual(input);
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({
+      ...input,
+      email: "a@b.co",
+      idempotencyKey: "k".repeat(20),
+    });
   });
 
-  it("keeps existing JSON error behaviour", async () => {
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({}, false))
-      .mockResolvedValueOnce(jsonResponse({ error: "Rate limited" }, false));
-    await expect(getAnswer({ ...input, fetch: fetchMock })).rejects.toThrow(
-      "Rate limited",
-    );
+  it("a JSON reply from the demo endpoint is handled without a second request", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "Rate limited" }, false));
+    await expect(getAnswer({ ...input, fetch: fetchMock })).rejects.toThrow("Rate limited");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("streamAnswer flags an unavailable stream instead of falling back itself", async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ answer: "x" }));
-    await expect(
-      streamAnswer({ ...input, fetch: fetchMock }),
-    ).rejects.toMatchObject({ streamUnavailable: true });
+  it("returns a queued notice instead of an answer", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ status: "queued", message: "received" }));
+    await expect(getAnswer({ ...input, fetch: fetchMock })).resolves.toEqual({
+      status: "queued",
+      message: "received",
+    });
+  });
+
+  it("sends email and idempotency key with the stream request", async () => {
+    fetchMock.mockResolvedValue(sseResponse(["event: final\ndata: {\"answer\":\"A\"}\n\n"]));
+    await getAnswer({ ...input, email: "a@b.co", idempotencyKey: "abcdefghijklmnop", fetch: fetchMock });
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.email).toBe("a@b.co");
+    expect(body.idempotencyKey).toBe("abcdefghijklmnop");
   });
 });
