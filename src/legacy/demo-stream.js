@@ -56,21 +56,22 @@
     var base = opts.baseUrl || DEFAULT_BASE;
     var onDelta = opts.onDelta || function () {};
 
-    var response = await fetchImpl(base + '/api/public/generate-answer?stream=1', {
+    var response = await fetchImpl(base + '/api/public/demo?stream=1', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
       },
-      body: JSON.stringify({
-        resume: opts.resume,
-        jobDescription: opts.jobDescription,
-        question: opts.question,
-      }),
+      credentials: 'same-origin',
+      body: requestBody(opts),
       signal: opts.signal,
     });
 
     var ctype = (response.headers && response.headers.get && response.headers.get('content-type')) || '';
+    // Server-side controls (email gate, limits, queue, duplicates) answer in JSON.
+    if (ctype.indexOf('application/json') !== -1 && response.json) {
+      return handleJson(response);
+    }
     if (!response.ok || ctype.indexOf('text/event-stream') === -1 || !response.body || !response.body.getReader) {
       var err = new Error('stream-unavailable');
       err.streamUnavailable = true;
@@ -123,29 +124,45 @@
     return final;
   }
 
-  /** Existing non-streaming JSON request — unchanged behaviour. */
-  async function fetchAnswerJson(opts) {
-    var fetchImpl = opts.fetch || root.fetch;
-    var base = opts.baseUrl || DEFAULT_BASE;
-    var response = await fetchImpl(base + '/api/public/demo', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        resume: opts.resume,
-        jobDescription: opts.jobDescription,
-        question: opts.question,
-      }),
+  function requestBody(opts) {
+    return JSON.stringify({
+      email: opts.email,
+      idempotencyKey: opts.idempotencyKey,
+      resume: opts.resume,
+      jobDescription: opts.jobDescription,
+      question: opts.question,
     });
+  }
+
+  /**
+   * Interprets a JSON reply. Returns the answer string, or a
+   * { status: 'queued' | 'processing', message } notice. Throws on errors.
+   */
+  async function handleJson(response) {
     var data = {};
     try {
       data = await response.json();
     } catch (e) {
       data = {};
     }
-    if (!response.ok || !data.answer) {
-      throw new Error(data.error || GENERIC_ERROR);
+    if (response.ok && data && data.answer) return String(data.answer);
+    if (data && (data.status === 'queued' || data.status === 'processing') && data.message) {
+      return { status: data.status, message: String(data.message) };
     }
-    return String(data.answer);
+    throw new Error((data && data.error) || GENERIC_ERROR);
+  }
+
+  /** Non-streaming JSON request. */
+  async function fetchAnswerJson(opts) {
+    var fetchImpl = opts.fetch || root.fetch;
+    var base = opts.baseUrl || DEFAULT_BASE;
+    var response = await fetchImpl(base + '/api/public/demo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: requestBody(opts),
+    });
+    return handleJson(response);
   }
 
   /**

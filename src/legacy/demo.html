@@ -717,6 +717,17 @@
     </div>
   </div>
 
+  <!-- EMAIL (required by the server before a demo runs) -->
+  <div class="panel" style="grid-column: 1 / -1;">
+    <div class="panel-head">
+      <div class="panel-title">Your Email</div>
+      <div class="panel-sub">required to run the demo</div>
+    </div>
+    <div class="panel-body">
+      <input type="email" id="demoEmail" required autocomplete="email" placeholder="you@example.com" aria-label="Your email address" style="width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:inherit;font:inherit;"/>
+    </div>
+  </div>
+
   <!-- GENERATE -->
   <div class="gen-wrap">
     <button class="gen-btn" id="genBtn" onclick="generate()">
@@ -902,6 +913,9 @@
     const jobDesc = document.getElementById('jobDesc').value.trim();
     const question = getQuestion();
 
+    const email = (document.getElementById('demoEmail').value || '').trim();
+    if (!email) { showError('Please enter your email address to run the demo.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { showError('Please enter a valid email address.'); return; }
     if (!resume) { showError('Please paste your resume or upload a .txt file.'); return; }
     if (!jobDesc) { showError('Please paste the job description.'); return; }
     if (!question) { showError('Please select or type an application question.'); return; }
@@ -919,7 +933,10 @@
     let scrolled = false;
 
     try {
-      const answer = (await window.AplyerAnswer.getAnswer({
+      const idempotencyKey = (window.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2)).replace(/[^A-Za-z0-9_-]/g, '');
+      const result = await window.AplyerAnswer.getAnswer({
+        email: email,
+        idempotencyKey: idempotencyKey,
         resume: resume,
         jobDescription: jobDesc,
         question: question,
@@ -935,7 +952,17 @@
             }
           }
         }
-      }) || '').trim();
+      });
+
+      if (result && typeof result === 'object') {
+        // Received but held server-side (e.g. delivered later by email).
+        outputWrap.classList.remove('writing');
+        outputWrap.classList.remove('show');
+        document.getElementById('outputText').innerHTML = '';
+        showError(result.message);
+        return;
+      }
+      const answer = String(result || '').trim();
 
       document.getElementById('outputQ').textContent = question;
       renderAnswer(answer);
