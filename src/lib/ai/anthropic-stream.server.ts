@@ -47,7 +47,11 @@ export function parseSseBlock(block: string): AnthropicSseEvent | null {
  * Feeds raw stream chunks through an incremental SSE parser.
  * Returns the events completed by this chunk and the leftover buffer.
  */
-export function feedSse(buffer: string, chunk: string): { buffer: string; events: AnthropicSseEvent[] } {
+export function feedSse(
+  buffer: string,
+  chunk: string,
+  usage?: AnthropicUsage,
+): { buffer: string; events: AnthropicSseEvent[] } {
   const merged = (buffer + chunk).replace(/\r\n/g, "\n");
   const parts = merged.split("\n\n");
   const rest = parts.pop() ?? "";
@@ -55,8 +59,38 @@ export function feedSse(buffer: string, chunk: string): { buffer: string; events
   for (const part of parts) {
     const evt = parseSseBlock(part);
     if (evt) events.push(evt);
+    if (usage) readUsageBlock(part, usage);
   }
   return { buffer: rest, events };
+}
+
+/** Server-side token usage (for cost accounting only; never sent to clients). */
+export interface AnthropicUsage {
+  inputTokens?: number;
+  outputTokens?: number;
+}
+
+/** Reads token usage from `message_start` / `message_delta` blocks. */
+export function readUsageBlock(block: string, usage: AnthropicUsage): void {
+  const raw = block
+    .split("\n")
+    .filter((l) => l.startsWith("data:"))
+    .map((l) => l.slice(5).trim())
+    .join("");
+  if (!raw || raw.indexOf("usage") === -1) return;
+  try {
+    const p = JSON.parse(raw) as {
+      type?: string;
+      message?: { usage?: { input_tokens?: number; output_tokens?: number } };
+      usage?: { input_tokens?: number; output_tokens?: number };
+    };
+    const u = p.type === "message_start" ? p.message?.usage : p.usage;
+    if (!u) return;
+    if (typeof u.input_tokens === "number") usage.inputTokens = u.input_tokens;
+    if (typeof u.output_tokens === "number") usage.outputTokens = u.output_tokens;
+  } catch {
+    /* ignore malformed */
+  }
 }
 
 /**
@@ -66,7 +100,8 @@ export function feedSse(buffer: string, chunk: string): { buffer: string; events
 export async function consumeAnthropicStream(
   body: ReadableStream<Uint8Array>,
   onText?: (text: string) => void,
-): Promise<{ text: string; sawStop: boolean; sawError: boolean }> {
+): Promise<{ text: string; sawStop: boolean; sawError: boolean; usage: AnthropicUsage }> {
+  const usage: AnthropicUsage = {};
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
@@ -77,7 +112,7 @@ export async function consumeAnthropicStream(
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
-    const fed = feedSse(buffer, decoder.decode(value, { stream: true }));
+    const fed = feedSse(buffer, decoder.decode(value, { stream: true }), usage);
     buffer = fed.buffer;
     for (const evt of fed.events) {
       if (evt.error) sawError = true;
@@ -104,8 +139,9 @@ export async function consumeAnthropicStream(
   }
   if (tail?.stop) sawStop = true;
   if (tail?.error) sawError = true;
+  readUsageBlock(buffer, usage);
 
-  return { text, sawStop, sawError };
+  return { text, sawStop, sawError, usage };
 }
 
 /* ------------------------------------------------------------------ */
