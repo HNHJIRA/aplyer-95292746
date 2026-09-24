@@ -166,6 +166,8 @@ export type Database = {
           payload: Json | null
           queue_reason: string | null
           reject_reason: string | null
+          scoreboard: Json | null
+          scoreboard_status: string | null
           session_hash: string
           status: string
           updated_at: string
@@ -193,6 +195,8 @@ export type Database = {
           payload?: Json | null
           queue_reason?: string | null
           reject_reason?: string | null
+          scoreboard?: Json | null
+          scoreboard_status?: string | null
           session_hash: string
           status?: string
           updated_at?: string
@@ -220,6 +224,8 @@ export type Database = {
           payload?: Json | null
           queue_reason?: string | null
           reject_reason?: string | null
+          scoreboard?: Json | null
+          scoreboard_status?: string | null
           session_hash?: string
           status?: string
           updated_at?: string
@@ -235,6 +241,8 @@ export type Database = {
           max_runs_per_email: number | null
           reserve_per_demo_usd: number | null
           reset_timezone: string | null
+          scoreboard_references: Json | null
+          scoreboard_threshold: number | null
           session_limit: number | null
           session_window_seconds: number | null
           updated_at: string
@@ -247,6 +255,8 @@ export type Database = {
           max_runs_per_email?: number | null
           reserve_per_demo_usd?: number | null
           reset_timezone?: string | null
+          scoreboard_references?: Json | null
+          scoreboard_threshold?: number | null
           session_limit?: number | null
           session_window_seconds?: number | null
           updated_at?: string
@@ -259,6 +269,8 @@ export type Database = {
           max_runs_per_email?: number | null
           reserve_per_demo_usd?: number | null
           reset_timezone?: string | null
+          scoreboard_references?: Json | null
+          scoreboard_threshold?: number | null
           session_limit?: number | null
           session_window_seconds?: number | null
           updated_at?: string
@@ -931,6 +943,8 @@ export type Database = {
           payload: Json | null
           queue_reason: string | null
           reject_reason: string | null
+          scoreboard: Json | null
+          scoreboard_status: string | null
           session_hash: string
           status: string
           updated_at: string

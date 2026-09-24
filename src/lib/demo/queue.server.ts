@@ -11,7 +11,14 @@ import { countWords, missingSettings, spendAllows } from "./policy";
 import type { DemoStore, DemoRequestRow } from "./store";
 import type { DemoGenerator, DemoInput } from "./generate.server";
 import { DemoGenerationError } from "./generate.server";
-import { recordFailedCalls, recordGenerationCost, runChatgptSide, type ChatgptView } from "./handler.server";
+import {
+  loadScoreboardSelection,
+  recordFailedCalls,
+  recordGenerationCost,
+  runChatgptSide,
+  scoreAndMaybeRegenerate,
+  type ChatgptView,
+} from "./handler.server";
 import type { ChatgptGenerator } from "./openai.server";
 
 const BACKOFF_MINUTES = [5, 15, 60, 180, 720];
@@ -100,7 +107,10 @@ async function runOne(
   try {
     // Each side runs at most once per successful result: an answer already
     // persisted (e.g. an earlier attempt whose email failed) is never regenerated.
+    // Markers fixed from the writing sample before any generation in this run.
+    const selection = job.scoreboard_status ? null : await loadScoreboardSelection(store, input.writingSample);
     let answer = job.answer;
+    let total: number | null | undefined = undefined;
     let chatgpt: ChatgptView | null =
       job.chatgpt_status === "completed" && job.chatgpt_answer
         ? { status: "completed", answer: job.chatgpt_answer, prompt: job.chatgpt_prompt ?? undefined }
@@ -121,13 +131,25 @@ async function runOne(
       const result = aplyerRes.r;
       const { cost } = await recordGenerationCost(store, job.id, result.side, result.calls);
       answer = result.text;
-      const total = cost === null || gptRes?.cost === null ? null : Math.round((cost + (gptRes?.cost ?? 0)) * 1e6) / 1e6;
+      total = cost === null || gptRes?.cost === null ? null : Math.round((cost + (gptRes?.cost ?? 0)) * 1e6) / 1e6;
       // Persist before emailing so a send retry never pays for a second generation.
       await store.update(job.id, {
         answer,
         estimated_cost_usd: total,
         cost_status: total === null ? "unpriced" : "priced",
       });
+    }
+    // Scoreboard (and at most one Aplyer regeneration) runs once; a stored
+    // status means an earlier attempt already did it, so an email retry never regenerates.
+    if (!job.scoreboard_status && answer) {
+      const gptText = chatgpt?.status === "completed" ? chatgpt.answer ?? null : null;
+      const sb = await scoreAndMaybeRegenerate(deps, job.id, input, selection, answer, gptText);
+      answer = sb.aplyerText;
+      if (sb.extraCalls) {
+        const known = total !== undefined ? total : (job as { estimated_cost_usd?: number | null }).estimated_cost_usd ?? null;
+        const next = known === null || sb.extraCost === null ? null : Math.round((known + sb.extraCost) * 1e6) / 1e6;
+        await store.update(job.id, { estimated_cost_usd: next, cost_status: next === null ? "unpriced" : "priced" });
+      }
     }
     const sent = await deps.sendResult(job.email, input, answer!, chatgpt);
     if (!sent.ok) throw new DemoGenerationError(`email_${sent.errorCode ?? "failed"}`);

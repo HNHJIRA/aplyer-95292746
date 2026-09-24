@@ -90,6 +90,20 @@ export const dbDemoStore: DemoStore = {
     if (error) return [];
     return (data ?? []) as DemoRequestRow[];
   },
+  async getScoreboardConfig() {
+    const db = await admin();
+    const { data, error } = await db
+      .from("demo_settings")
+      .select("scoreboard_threshold, scoreboard_references")
+      .eq("id", true)
+      .maybeSingle();
+    if (error || !data) return null;
+    const t = data.scoreboard_threshold;
+    return {
+      threshold: t === null || t === undefined || t === "" ? null : Number(t),
+      references: Array.isArray(data.scoreboard_references) ? data.scoreboard_references : [],
+    };
+  },
   async requeueStale() {
     const db = await admin();
     await db.rpc("requeue_stale_demo_requests");
