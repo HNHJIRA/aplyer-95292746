@@ -168,8 +168,8 @@ export function computeFingerprint(writingSample: string): Fingerprint {
   const capsMid = t.words.filter((w) => !sentenceInitial.has(w) && /^\p{Lu}/u.test(w.text) && w.norm !== "i" && !/^\p{Lu}+$/u.test(w.text)).length;
   const allCaps = t.words.filter((w) => letters(w) >= 2 && /^[\p{Lu}'’-]+$/u.test(w.text)).length;
   const hyphenated = t.words.filter((w) => w.text.includes("-")).length;
-  const apostrophes = countChar(t.text, /['’‘ʼ]/gu) - countChar(t.tokens.filter((x) => x.type !== "word").map((x) => x.text).join(" "), /['’‘ʼ]/gu);
-  const quoteMarks = countChar(P, /["“”«»„]/gu) + countChar(P, /(?<![\p{L}\p{N}])['‘’]|['‘’](?![\p{L}\p{N}])/gu) - 0;
+  const apostrophes = countChar(P, /(?<=\p{L})['’ʼ](?=\p{L})/gu);
+  const quoteMarks = countChar(P, /["“”«»„]/gu) + countChar(P, /(?<![\p{L}\p{N}])['‘’]|['‘’](?![\p{L}\p{N}])/gu);
   const punctAll = countChar(P, /[.,;:!?…"“”«»„()[\]{}—–]/gu) + countChar(P, /(?:^|\s)-(?=\s|$)/gu) + apostrophes;
   const paraLens = t.paragraphs.map((p) => p.words);
   const nonEmptyLines = t.lines.length;
@@ -213,7 +213,7 @@ export function computeFingerprint(writingSample: string): Fingerprint {
     { name: "sentence_opening_diversity", label: "Sentence-opening diversity", category: "discourse", unit: "ratio", definition: "Distinct first words ÷ sentences. Length-dependent, never headline.", compute: () => ({ observed: S ? new Set(firstWords).size / S : null, numerator: new Set(firstWords).size, denominator: S }) },
 
     // VOICE / PERSON
-    { name: "first_person_singular_rate", label: "First person singular (I/me/my)", category: "voice", unit: "per_100_words", binomial: true, headlineEligible: true, definition: "I, me, my, mine, myself per 100 words (contractions like I'm counted via their pronoun part: no).", compute: per100(firstS + norms.filter((n) => /^i'(m|ve|ll|d)$/.test(n)).length) },
+    { name: "first_person_singular_rate", label: "First person singular (I/me/my)", category: "voice", unit: "per_100_words", binomial: true, headlineEligible: true, definition: "I, me, my, mine, myself per 100 words and I'm/I've/I'll/I'd.", compute: per100(firstS + norms.filter((n) => /^i'(m|ve|ll|d)$/.test(n)).length) },
     { name: "first_person_plural_rate", label: "First person plural (we/us/our)", category: "voice", unit: "per_100_words", binomial: true, headlineEligible: true, definition: "we, us, our, ours, ourselves (and we're/we've/we'll/we'd) per 100 words.", compute: per100(firstP + norms.filter((n) => /^we'(re|ve|ll|d)$/.test(n)).length) },
     { name: "first_person_rate", label: "First-person density", category: "voice", unit: "per_100_words", binomial: true, headlineEligible: true, definition: "All first-person pronouns (singular + plural, including contracted forms) per 100 words.", compute: per100(firstS + firstP + norms.filter((n) => /^(i|we)'(m|re|ve|ll|d)$/.test(n)).length) },
     { name: "second_person_rate", label: "Second person (you/your)", category: "voice", unit: "per_100_words", binomial: true, headlineEligible: true, definition: "you, your, yours, yourself(ves) and you're/you've/you'll/you'd per 100 words.", compute: per100(second + norms.filter((n) => /^you'(re|ve|ll|d)$/.test(n)).length) },
@@ -239,7 +239,7 @@ export function computeFingerprint(writingSample: string): Fingerprint {
         ["ellipsis_rate", "Ellipses", "… or a run of 2+ periods (each run counts once)", /…|\.{2,}/gu],
       ] as const
     ).map(([name, label, what, re]): Spec => ({ name, label, category: "punctuation", unit: "per_100_words", headlineEligible: true, definition: `Occurrences of ${what} per 100 words.`, compute: per100(countChar(P, re)) })),
-    { name: "apostrophe_rate", label: "Apostrophes", category: "punctuation", unit: "per_100_words", headlineEligible: true, definition: "Straight or curly apostrophes (including inside contractions and possessives) per 100 words; URL/email characters excluded.", compute: per100(Math.max(0, apostrophes)) },
+    { name: "apostrophe_rate", label: "Apostrophes", category: "punctuation", unit: "per_100_words", headlineEligible: true, definition: "In-word apostrophes (contractions, possessives: don't, Sam's) per 100 words; quote marks and URL/email characters excluded.", compute: per100(Math.max(0, apostrophes)) },
     { name: "quotation_mark_rate", label: "Quotation marks", category: "punctuation", unit: "per_100_words", headlineEligible: true, definition: "Double quotes (\" “ ” « » „) and single quotes not inside a word, per 100 words.", compute: per100(quoteMarks) },
     { name: "hyphenated_word_rate", label: "Hyphenated words", category: "punctuation", unit: "per_100_words", binomial: true, headlineEligible: true, definition: "Words containing an internal hyphen (well-known) per 100 words. Normal hyphens, not dashes.", compute: per100(hyphenated) },
     { name: "punctuation_density", label: "Punctuation density", category: "punctuation", unit: "per_100_words", headlineEligible: true, definition: "All punctuation marks (. , ; : ! ? … quotes brackets dashes spaced hyphens apostrophes; not in-word hyphens) per 100 words.", compute: per100(punctAll) },
