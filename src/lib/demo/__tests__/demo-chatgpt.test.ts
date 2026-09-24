@@ -247,6 +247,60 @@ describe("OpenAI provider (server-side)", () => {
     expect(JSON.stringify(r)).not.toContain("req_abc");
   });
 
+  it("logs the model OpenAI actually returned, per attempt", async () => {
+    setEnv();
+    const log = vi.spyOn(console, "info").mockImplementation(() => {});
+    vi.stubGlobal("fetch", vi.fn(async () => okBody({ model: "example-model-version" })));
+    await generateChatgptDemoAnswer(input);
+    const logged = log.mock.calls.flat().join(" ");
+    expect(logged).toContain("returned_model=example-model-version");
+    // The configured id is never substituted for what OpenAI actually served.
+    expect(logged).not.toContain("returned_model=configured-model");
+  });
+
+  it("logs a different identifier when OpenAI serves a different model", async () => {
+    setEnv();
+    const log = vi.spyOn(console, "info").mockImplementation(() => {});
+    vi.stubGlobal("fetch", vi.fn(async () => okBody({ model: "another-model-2026-03-01" })));
+    await generateChatgptDemoAnswer(input);
+    const last = log.mock.calls.at(-1)!.join(" ");
+    expect(last).toContain("returned_model=another-model-2026-03-01");
+    expect(last).not.toContain("example-model-version");
+  });
+
+
+
+  it("logs returned_model=unavailable (never a fabricated value) when OpenAI omits the model", async () => {
+    setEnv();
+    const log = vi.spyOn(console, "info").mockImplementation(() => {});
+    vi.stubGlobal("fetch", vi.fn(async () => okBody({ model: undefined })));
+    await generateChatgptDemoAnswer(input);
+    const logged = log.mock.calls.flat().join(" ");
+    expect(logged).toContain("returned_model=unavailable");
+    expect(logged).not.toContain("returned_model=configured-model");
+  });
+
+  it("the returned-model log carries no candidate data or secrets", async () => {
+    setEnv();
+    const log = vi.spyOn(console, "info").mockImplementation(() => {});
+    vi.stubGlobal("fetch", vi.fn(async () => okBody({ model: "example-model-version" })));
+    await generateChatgptDemoAnswer(input);
+    const logged = log.mock.calls.flat().join(" ");
+    for (const banned of [
+      "sk-test",
+      "Bearer",
+      "Authorization",
+      buildChatgptPrompt(input),
+      input.question,
+      input.resume,
+      input.jobDescription,
+      "Hello.",
+      "a@b.co",
+    ]) {
+      expect(logged).not.toContain(banned);
+    }
+  });
+
   it("falls back to the configured model and follows configuration changes", async () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
     process.env.OPENAI_API_KEY = "sk-test";
@@ -482,10 +536,10 @@ describe("static safety", () => {
       expect(s).not.toMatch(/OPENAI_API_KEY|api\.openai\.com|Here is a job I am applying to/);
     }
   });
-  it("OpenAI module logs only attempt, status and request id", () => {
+  it("OpenAI module logs only attempt, status, request id and returned model", () => {
     const logs = read("src/lib/demo/openai.server.ts").match(/console\.[a-z]+\([^;]*;/g) ?? [];
     expect(logs).toEqual([
-      "console.info(`[demo-openai] attempt=${attempt} status=${status} request_id=${requestId ?? \"none\"}`);",
+      `console.info(\n    \`[demo-openai] attempt=\${attempt} status=\${status} request_id=\${requestId ?? "none"} returned_model=\${returnedModel || "unavailable"}\`,\n  );`,
     ]);
   });
   it("Aplyer pipeline is unchanged and the old direct Claude demo path is not reintroduced", () => {
