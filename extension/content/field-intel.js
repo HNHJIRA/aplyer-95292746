@@ -163,7 +163,8 @@
     registry.clear();
     skipped = 0;
     const seenRadioGroups = new Set();
-    const nodes = document.querySelectorAll(
+    const scope = (window.__aplyerScopeRoot && window.__aplyerScopeRoot.isConnected && window.__aplyerScopeRoot) || document;
+    const nodes = scope.querySelectorAll(
       'input, select, textarea, [contenteditable="true"]',
     );
     const fields = [];
@@ -375,6 +376,15 @@
 
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (!msg || typeof msg !== "object") return false;
+    if (
+      window.__aplyerRequireAdapter &&
+      !window.__aplyerAdapterActive &&
+      (msg.type === "APLYER_FI_SCAN" || msg.type === "APLYER_FI_APPLY" || msg.type === "APLYER_FI_ANSWER")
+    ) {
+      // Generic page not confirmed as a job application: never scan or fill.
+      sendResponse({ ok: false, code: "unsupported_page", fields: [] });
+      return true;
+    }
     if (msg.type === "APLYER_FI_SCAN") {
       sendResponse({ ok: true, fields: scanFields(), skipped });
       return true;

@@ -6,7 +6,7 @@ const SAFETY_KEY = "aplyer.job_safety_by_tab.v1";
 const AUTOFILL_TARGET_KEY = "aplyer.autofill_target_by_tab.v1";
 /** Hard cap mirrored in the content script; oversized answers are rejected. */
 const MAX_AUTOFILL_CHARS = 8000;
-const SUPPORTED_ADAPTERS = new Set(["greenhouse", "lever", "workday"]);
+const SUPPORTED_ADAPTERS = new Set(["greenhouse", "lever", "workday", "generic"]);
 
 const API_BASE = "https://aplyer.devssh.xyz";
 const SAFETY_TTL_MS = 10 * 60 * 1000;
