@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { handleDemoRequest } from "../handler.server";
 import { drainDemoQueue } from "../queue.server";
 import { computeCost, countWords, decideAdmission, normalizeWritingSample, type DemoSettings } from "../policy";
-import { generateLegacyDemoAnswer } from "../generate.server";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { AdmitInput, DemoStore, DemoRequestRow, CostEventInput } from "../store";
@@ -121,10 +120,7 @@ beforeEach(() => {
   generate = vi.fn(async () => ({
     text: "An answer.",
     side: "aplyer",
-    provider: "anthropic",
-    model: "m",
-    operation: "demo_answer_legacy",
-    usage: { inputTokens: 1000, outputTokens: 500 },
+    calls: [{ provider: "anthropic", model: "m", operation: "prompt_a_answer", usage: { inputTokens: 1000, outputTokens: 500 } }],
   }));
 });
 
@@ -448,19 +444,6 @@ describe("writing sample (Step 2)", () => {
     await call(store, { ...base(), question: "same", writingSample: "one" });
     await call(store, { ...base(), question: "same", writingSample: "two" });
     expect(rows).toHaveLength(2);
-  });
-
-  it("is not sent to any AI provider in this step", async () => {
-    const prev = process.env.ANTHROPIC_API_KEY;
-    process.env.ANTHROPIC_API_KEY = "test";
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("x", { status: 500 }));
-    await generateLegacyDemoAnswer({
-      resume: "r", jobDescription: "j", question: "q",
-      writingSample: "SECRET_SAMPLE_TEXT", writingSampleWordCount: 1,
-    }).catch(() => undefined);
-    expect(String((fetchSpy.mock.calls[0][1] as RequestInit).body)).not.toContain("SECRET_SAMPLE_TEXT");
-    fetchSpy.mockRestore();
-    process.env.ANTHROPIC_API_KEY = prev;
   });
 
   it("is never logged or echoed in error responses", async () => {
