@@ -219,7 +219,9 @@ function AuthPage() {
         </motion.div>
 
         <p className="mt-6 text-center text-[12.5px] text-muted-foreground">
-          By continuing you agree to Aplyer's Terms and Privacy.
+          By continuing you agree to Aplyer's{" "}
+          <a href="/terms" className="underline underline-offset-2 hover:text-foreground">Terms of Service</a>{" "}and{" "}
+          <a href="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy Policy</a>.
         </p>
       </div>
     </div>

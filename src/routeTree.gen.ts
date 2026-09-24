@@ -9,9 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsDothtmlRouteImport } from './routes/terms[.]html'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ResumeMatchRouteImport } from './routes/resume-match'
 import { Route as ResumeAuditRouteImport } from './routes/resume-audit'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PrivacyDothtmlRouteImport } from './routes/privacy[.]html'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LegacyLandingRouteImport } from './routes/legacy-landing'
 import { Route as ExtensionAuthRouteImport } from './routes/extension-auth'
 import { Route as DemoRouteImport } from './routes/demo'
@@ -41,6 +45,16 @@ import { Route as AuthenticatedDashboardProfileRouteImport } from './routes/_aut
 import { Route as ApiPublicExtensionVoicecardRouteImport } from './routes/api/public/extension.voicecard'
 import { Route as ApiPublicAiClassifyQuestionRouteImport } from './routes/api/public/ai.classify-question'
 
+const TermsDothtmlRoute = TermsDothtmlRouteImport.update({
+  id: '/terms.html',
+  path: '/terms.html',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResumeMatchRoute = ResumeMatchRouteImport.update({
   id: '/resume-match',
   path: '/resume-match',
@@ -54,6 +68,16 @@ const ResumeAuditRoute = ResumeAuditRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyDothtmlRoute = PrivacyDothtmlRouteImport.update({
+  id: '/privacy.html',
+  path: '/privacy.html',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LegacyLandingRoute = LegacyLandingRouteImport.update({
@@ -211,9 +235,13 @@ export interface FileRoutesByFullPath {
   '/demo': typeof DemoRoute
   '/extension-auth': typeof ExtensionAuthRoute
   '/legacy-landing': typeof LegacyLandingRoute
+  '/privacy': typeof PrivacyRoute
+  '/privacy.html': typeof PrivacyDothtmlRoute
   '/reset-password': typeof ResetPasswordRoute
   '/resume-audit': typeof ResumeAuditRoute
   '/resume-match': typeof ResumeMatchRoute
+  '/terms': typeof TermsRoute
+  '/terms.html': typeof TermsDothtmlRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/api/resume-audit': typeof ApiResumeAuditRoute
   '/api/resume-match': typeof ApiResumeMatchRoute
@@ -243,9 +271,13 @@ export interface FileRoutesByTo {
   '/demo': typeof DemoRoute
   '/extension-auth': typeof ExtensionAuthRoute
   '/legacy-landing': typeof LegacyLandingRoute
+  '/privacy': typeof PrivacyRoute
+  '/privacy.html': typeof PrivacyDothtmlRoute
   '/reset-password': typeof ResetPasswordRoute
   '/resume-audit': typeof ResumeAuditRoute
   '/resume-match': typeof ResumeMatchRoute
+  '/terms': typeof TermsRoute
+  '/terms.html': typeof TermsDothtmlRoute
   '/api/resume-audit': typeof ApiResumeAuditRoute
   '/api/resume-match': typeof ApiResumeMatchRoute
   '/auth/forgot': typeof AuthForgotRoute
@@ -276,9 +308,13 @@ export interface FileRoutesById {
   '/demo': typeof DemoRoute
   '/extension-auth': typeof ExtensionAuthRoute
   '/legacy-landing': typeof LegacyLandingRoute
+  '/privacy': typeof PrivacyRoute
+  '/privacy.html': typeof PrivacyDothtmlRoute
   '/reset-password': typeof ResetPasswordRoute
   '/resume-audit': typeof ResumeAuditRoute
   '/resume-match': typeof ResumeMatchRoute
+  '/terms': typeof TermsRoute
+  '/terms.html': typeof TermsDothtmlRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/api/resume-audit': typeof ApiResumeAuditRoute
   '/api/resume-match': typeof ApiResumeMatchRoute
@@ -310,9 +346,13 @@ export interface FileRouteTypes {
     | '/demo'
     | '/extension-auth'
     | '/legacy-landing'
+    | '/privacy'
+    | '/privacy.html'
     | '/reset-password'
     | '/resume-audit'
     | '/resume-match'
+    | '/terms'
+    | '/terms.html'
     | '/dashboard'
     | '/api/resume-audit'
     | '/api/resume-match'
@@ -342,9 +382,13 @@ export interface FileRouteTypes {
     | '/demo'
     | '/extension-auth'
     | '/legacy-landing'
+    | '/privacy'
+    | '/privacy.html'
     | '/reset-password'
     | '/resume-audit'
     | '/resume-match'
+    | '/terms'
+    | '/terms.html'
     | '/api/resume-audit'
     | '/api/resume-match'
     | '/auth/forgot'
@@ -374,9 +418,13 @@ export interface FileRouteTypes {
     | '/demo'
     | '/extension-auth'
     | '/legacy-landing'
+    | '/privacy'
+    | '/privacy.html'
     | '/reset-password'
     | '/resume-audit'
     | '/resume-match'
+    | '/terms'
+    | '/terms.html'
     | '/_authenticated/dashboard'
     | '/api/resume-audit'
     | '/api/resume-match'
@@ -408,9 +456,13 @@ export interface RootRouteChildren {
   DemoRoute: typeof DemoRoute
   ExtensionAuthRoute: typeof ExtensionAuthRoute
   LegacyLandingRoute: typeof LegacyLandingRoute
+  PrivacyRoute: typeof PrivacyRoute
+  PrivacyDothtmlRoute: typeof PrivacyDothtmlRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ResumeAuditRoute: typeof ResumeAuditRoute
   ResumeMatchRoute: typeof ResumeMatchRoute
+  TermsRoute: typeof TermsRoute
+  TermsDothtmlRoute: typeof TermsDothtmlRoute
   ApiResumeAuditRoute: typeof ApiResumeAuditRoute
   ApiResumeMatchRoute: typeof ApiResumeMatchRoute
   ApiAiClassifyQuestionRoute: typeof ApiAiClassifyQuestionRoute
@@ -428,6 +480,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms.html': {
+      id: '/terms.html'
+      path: '/terms.html'
+      fullPath: '/terms.html'
+      preLoaderRoute: typeof TermsDothtmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/resume-match': {
       id: '/resume-match'
       path: '/resume-match'
@@ -447,6 +513,20 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy.html': {
+      id: '/privacy.html'
+      path: '/privacy.html'
+      fullPath: '/privacy.html'
+      preLoaderRoute: typeof PrivacyDothtmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/legacy-landing': {
@@ -703,9 +783,13 @@ const rootRouteChildren: RootRouteChildren = {
   DemoRoute: DemoRoute,
   ExtensionAuthRoute: ExtensionAuthRoute,
   LegacyLandingRoute: LegacyLandingRoute,
+  PrivacyRoute: PrivacyRoute,
+  PrivacyDothtmlRoute: PrivacyDothtmlRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ResumeAuditRoute: ResumeAuditRoute,
   ResumeMatchRoute: ResumeMatchRoute,
+  TermsRoute: TermsRoute,
+  TermsDothtmlRoute: TermsDothtmlRoute,
   ApiResumeAuditRoute: ApiResumeAuditRoute,
   ApiResumeMatchRoute: ApiResumeMatchRoute,
   ApiAiClassifyQuestionRoute: ApiAiClassifyQuestionRoute,
