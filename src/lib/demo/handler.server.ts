@@ -21,6 +21,7 @@ import type { DemoStore, DemoRequestRow } from "./store";
 import type { DemoAiCall, DemoGenerator, DemoInput } from "./generate.server";
 import { DemoGenerationError } from "./generate.server";
 import type { ChatgptGenerator } from "./openai.server";
+import { resolveScoreboard, selectMarkers, type MarkerSelection, type ScoreboardView } from "./scoreboard";
 
 export const DEMO_SESSION_COOKIE = "aplyer_demo_sid";
 
@@ -91,7 +92,12 @@ function duplicateResponse(req: DemoRequestRow): { body: Record<string, unknown>
   switch (req.status) {
     case "completed":
       return {
-        body: { status: "completed", answer: req.answer ?? "", ...(chatgptView(req) ? { chatgpt: chatgptView(req) } : {}) },
+        body: {
+          status: "completed",
+          answer: req.answer ?? "",
+          ...(chatgptView(req) ? { chatgpt: chatgptView(req) } : {}),
+          ...(req.scoreboard_status === "shown" && req.scoreboard ? { scoreboard: req.scoreboard } : {}),
+        },
         status: 200,
       };
     case "queued":
@@ -194,13 +200,21 @@ export interface SideOutcome {
 }
 
 /** Aplyer side: the unchanged Step 3 pipeline. Never throws. */
-async function runAplyerSide(deps: DemoDeps, id: string, input: DemoInput, send: Send): Promise<SideOutcome> {
+async function runAplyerSide(
+  deps: DemoDeps,
+  id: string,
+  input: DemoInput,
+  send: Send,
+  styleNote: string | null = null,
+): Promise<SideOutcome> {
   try {
     const result = await deps.generate(
       input,
       send
         ? { onDelta: (text) => send("delta", { text }), onProgress: (stage) => send("progress", { stage }) }
-        : undefined,
+        : styleNote
+          ? { styleNote }
+          : undefined,
     );
     let cost: number | null = null;
     try {
@@ -258,16 +272,83 @@ export async function runChatgptSide(
   }
 }
 
+/** Loads scoreboard config; any failure => null (scoreboard suppressed). */
+export async function loadScoreboardSelection(store: DemoStore, writingSample: string | null): Promise<MarkerSelection | null> {
+  if (!writingSample || !store.getScoreboardConfig) return null;
+  try {
+    return selectMarkers(writingSample, await store.getScoreboardConfig());
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Scoreboard step after both answers are complete. Markers were fixed from
+ * the writing sample BEFORE generation. Regeneration uses the unchanged Aplyer
+ * side (its cost is recorded like any Aplyer generation). Never throws.
+ */
+export async function scoreAndMaybeRegenerate(
+  deps: Pick<DemoDeps, "store" | "generate">,
+  id: string,
+  input: DemoInput,
+  selection: MarkerSelection | null,
+  aplyerText: string,
+  chatgptText: string | null,
+): Promise<{ aplyerText: string; scoreboard: ScoreboardView | null; extraCost: number | null; extraCalls: number }> {
+  let extraCost: number | null = 0;
+  let extraCalls = 0;
+  const outcome = await resolveScoreboard({
+    selection,
+    aplyerText,
+    chatgptText,
+    regenerate: async (note) => {
+      const r = await runAplyerSide(deps as DemoDeps, id, input, null, note);
+      extraCalls += r.calls;
+      extraCost = extraCost === null || r.cost === null || r.cost === undefined ? (r.calls ? null : extraCost) : extraCost + r.cost;
+      return r.ok ? r.text : null;
+    },
+  }).catch(() => null);
+  if (!outcome) {
+    await deps.store.update(id, { scoreboard: null, scoreboard_status: "suppressed" }).catch(() => undefined);
+    return { aplyerText, scoreboard: null, extraCost, extraCalls };
+  }
+  if (outcome.suppressedReason && selection) {
+    // Spec: log every suppression with the failing markers. Ids and metric names only.
+    console.warn(
+      JSON.stringify({ evt: "demo_scoreboard_suppressed", request: id, reason: outcome.suppressedReason, markers: outcome.failingMarkers, attempts: outcome.attempts }),
+    );
+  }
+  if (outcome.aplyerText !== aplyerText) await deps.store.update(id, { answer: outcome.aplyerText }).catch(() => undefined);
+  await deps.store
+    .update(id, { scoreboard: outcome.scoreboard, scoreboard_status: outcome.scoreboard ? "shown" : "suppressed" })
+    .catch(() => undefined);
+  return { aplyerText: outcome.aplyerText, scoreboard: outcome.scoreboard, extraCost, extraCalls };
+}
+
 /**
  * Runs both sides concurrently from one canonical input inside one admitted
- * request, then writes the terminal row state once (payload cleared).
+ * request, then (non-streamed) the scoreboard, then writes the terminal row
+ * state once (payload cleared).
  */
 async function runBothSides(deps: DemoDeps, id: string, input: DemoInput, send: Send) {
+  // Markers are chosen from the writing sample only, before either answer exists.
+  const selection = await loadScoreboardSelection(deps.store, input.writingSample);
   const [aplyer, gpt] = await Promise.all([
     runAplyerSide(deps, id, input, send),
     deps.generateChatgpt ? runChatgptSide(deps.generateChatgpt, deps.store, id, input, send) : Promise.resolve(null),
   ]);
-  const cost = sumCost(aplyer.cost, gpt ? gpt.cost : 0, aplyer.calls + (gpt?.calls ?? 0) > 0);
+  let scoreboard: ScoreboardView | null = null;
+  let aplyerCost = aplyer.cost;
+  let aplyerCalls = aplyer.calls;
+  if (aplyer.ok) {
+    const gptText = gpt?.view.status === "completed" ? gpt.view.answer ?? null : null;
+    const sb = await scoreAndMaybeRegenerate(deps, id, input, selection, aplyer.text, gptText);
+    aplyer.text = sb.aplyerText;
+    scoreboard = sb.scoreboard;
+    aplyerCalls += sb.extraCalls;
+    aplyerCost = sb.extraCalls ? (aplyerCost === null || aplyerCost === undefined || sb.extraCost === null ? null : aplyerCost + sb.extraCost) : aplyerCost;
+  }
+  const cost = sumCost(aplyerCost, gpt ? gpt.cost : 0, aplyerCalls + (gpt?.calls ?? 0) > 0);
   await deps.store
     .update(id, {
       status: aplyer.ok ? "completed" : "failed",
@@ -277,7 +358,7 @@ async function runBothSides(deps: DemoDeps, id: string, input: DemoInput, send: 
       completed_at: aplyer.ok ? new Date().toISOString() : null,
     })
     .catch(() => undefined);
-  return { aplyer, chatgpt: gpt?.view ?? null };
+  return { aplyer, chatgpt: gpt?.view ?? null, scoreboard };
 }
 
 export async function handleDemoRequest(request: Request, deps: DemoDeps): Promise<Response> {
@@ -390,7 +471,11 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
             try {
               send("open", { ok: true });
               const r = await runBothSides(deps, row.id, input, send);
-              if (r.aplyer.ok) send("final", { answer: r.aplyer.text });
+              if (r.aplyer.ok) {
+                send("final", { answer: r.aplyer.text });
+                // Only a complete, valid scoreboard is ever sent (never streamed).
+                if (r.scoreboard) send("scoreboard", r.scoreboard);
+              }
               else send("error", { error: r.aplyer.error });
             } catch (e) {
               console.error(`[demo] stream failed request=${row.id}`, e instanceof Error ? e.name : "unknown");
@@ -415,6 +500,7 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
     const r = await runBothSides(deps, row.id, input, null);
     const out: Record<string, unknown> = r.aplyer.ok ? { answer: r.aplyer.text } : { error: r.aplyer.error };
     if (r.chatgpt) out.chatgpt = r.chatgpt;
+    if (r.aplyer.ok && r.scoreboard) out.scoreboard = r.scoreboard;
     return respond(request, out, r.aplyer.ok ? 200 : 500, setCookie);
   } catch (err) {
     console.error("[demo]", err instanceof Error ? err.message : err);
