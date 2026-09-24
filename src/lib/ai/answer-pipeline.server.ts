@@ -706,7 +706,7 @@ export async function generateValidatedAnswer(
 /* Stateless entry point (Demo)                                        */
 /* ------------------------------------------------------------------ */
 
-export type StatelessStage = "reading_resume" | "writing" | "checking";
+export type StatelessStage = "reading_resume" | "writing";
 
 export interface StatelessAnswerInput {
   resumeText: string;
@@ -773,7 +773,6 @@ export async function generateStatelessValidatedAnswer(
         ? (t) => input.onDraftDelta?.(t)
         : null,
     });
-    input.onStage?.("checking");
     return { answer: one.answer, wordCount: one.wordCount };
   } catch (e) {
     const code = e instanceof AnswerPipelineError ? e.code : e instanceof PromptError ? e.code : "pipeline_failed";

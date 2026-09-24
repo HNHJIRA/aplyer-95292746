@@ -1,93 +1,116 @@
 /**
- * Current demo generation (unchanged behaviour, one Claude call) — SERVER ONLY.
- * Extracted from the route so cost controls can wrap it. Step 1 does not
- * change the prompt, model or output.
+ * Demo generation — SERVER ONLY.
+ *
+ * Step 3: the Aplyer side of the Demo runs the REAL Aplyer answer pipeline
+ * (Prompt I -> P0 -> Prompt A -> deterministic guards -> Prompt J -> repair ->
+ * final post-guard) via `generateStatelessValidatedAnswer`. There is no
+ * Demo-specific prompt and no direct provider call in this module. Every
+ * provider call made by the pipeline is reported for cost accounting.
  */
-import { consumeAnthropicStream } from "@/lib/ai/anthropic-stream.server";
+import type { PromptUsageEvent } from "@/lib/ai/run-prompt.server";
 
-const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-export const DEMO_LEGACY_PROVIDER = "anthropic";
-export const DEMO_LEGACY_MODEL = "claude-sonnet-4-5";
-export const DEMO_LEGACY_OPERATION = "demo_answer_legacy";
+export const DEMO_APLYER_SIDE = "aplyer" as const;
 
 export interface DemoInput {
   resume: string;
   jobDescription: string;
   question: string;
   /** Optional writing sample, exact text as submitted, or null. Both future
-   * comparison sides receive this same value. Not sent to any AI in Step 2. */
+   * comparison sides receive this same value. The current pipeline has no
+   * stage that consumes a raw sample, so it is not sent to any AI yet. */
   writingSample: string | null;
   /** Deterministic word count of writingSample (0 when null). */
   writingSampleWordCount: number;
 }
 
-export interface DemoGenerationResult {
-  text: string;
-  side: "openai" | "aplyer";
+/** One billable AI operation. Server-side accounting only. */
+export interface DemoAiCall {
   provider: string;
   model: string;
   operation: string;
   usage: { inputTokens?: number; outputTokens?: number };
 }
 
+export interface DemoGenerationResult {
+  text: string;
+  side: "openai" | "aplyer";
+  calls: DemoAiCall[];
+}
+
 export class DemoGenerationError extends Error {
   constructor(
     public code: string,
     public busy = false,
+    /** Calls that were billed before the failure, so they are still recorded. */
+    public calls: DemoAiCall[] = [],
   ) {
     super(code);
   }
 }
 
-export type DemoGenerator = (
-  input: DemoInput,
-  onDelta?: (text: string) => void,
-) => Promise<DemoGenerationResult>;
+/** Safe, generic progress stages (no internal detail). */
+export type DemoProgressStage = "reading_resume" | "writing";
 
-export const generateLegacyDemoAnswer: DemoGenerator = async (input, onDelta) => {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new DemoGenerationError("missing_key");
+export interface DemoGenerateHooks {
+  onDelta?: (text: string) => void;
+  onProgress?: (stage: DemoProgressStage) => void;
+}
 
-  const capResume = input.resume.slice(0, 20000);
-  const capJd = input.jobDescription.slice(0, 20000);
-  const capQ = input.question.slice(0, 2000);
+export type DemoGenerator = (input: DemoInput, hooks?: DemoGenerateHooks) => Promise<DemoGenerationResult>;
 
-  const system =
-    "You are an expert job-application writer. Write answers in the candidate's natural voice using real experience from their resume, weaving in relevant keywords from the job description. Keep it human, specific, and low AI-signature. Return only the answer text — no preamble, no markdown, no headings.";
+const OPERATION: Record<string, string> = {
+  I_QUESTION_CLASSIFICATION: "prompt_i_classification",
+  P0_FACT_INVENTORY: "p0_fact_inventory",
+  A_ANSWER_GENERATION: "prompt_a_answer",
+  J_QUALITY_SCAN: "prompt_j_quality_scan",
+};
 
-  const user = `Resume:\n"""\n${capResume}\n"""\n\nJob Description:\n"""\n${capJd}\n"""\n\nQuestion:\n${capQ}\n\nWrite a 2–4 paragraph answer to the question. Separate paragraphs with a blank line. Return only the answer text.`;
-
-  const res = await fetch(ANTHROPIC_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: DEMO_LEGACY_MODEL,
-      max_tokens: 1500,
-      system,
-      messages: [{ role: "user", content: user }],
-      stream: true,
-    }),
+/** Maps pipeline usage events to per-call cost records (numbered per prompt). */
+export function usageToCalls(events: PromptUsageEvent[]): DemoAiCall[] {
+  const seen: Record<string, number> = {};
+  return events.map((e) => {
+    const base = OPERATION[e.promptId] ?? e.promptId.toLowerCase();
+    seen[base] = (seen[base] ?? 0) + 1;
+    // 1st call = the stage itself; later calls are retries / J repair scans.
+    const operation = seen[base] === 1 ? base : `${base}_${seen[base]}`;
+    return {
+      provider: e.provider,
+      model: e.model,
+      operation,
+      usage: { inputTokens: e.inputTokens, outputTokens: e.outputTokens },
+    };
   });
+}
 
-  if (!res.ok || !res.body) {
-    const text = await res.text().catch(() => "");
-    console.error("[demo] provider error", res.status, text.slice(0, 300));
-    throw new DemoGenerationError(`http_${res.status}`, res.status === 429 || res.status === 529);
+export const generateAplyerDemoAnswer: DemoGenerator = async (input, hooks = {}) => {
+  const [{ withPromptUsage, PromptError }, { generateStatelessValidatedAnswer, AnswerPipelineError }, { supabaseAdmin }] =
+    await Promise.all([
+      import("@/lib/ai/run-prompt.server"),
+      import("@/lib/ai/answer-pipeline.server"),
+      import("@/integrations/supabase/client.server"),
+    ]);
+  const events: PromptUsageEvent[] = [];
+  try {
+    const r = await withPromptUsage(
+      (e) => events.push(e),
+      () =>
+        generateStatelessValidatedAnswer({
+          resumeText: input.resume,
+          jobDescription: input.jobDescription,
+          question: input.question,
+          db: supabaseAdmin,
+          onDraftDelta: hooks.onDelta ?? null,
+          onStage: hooks.onProgress ?? null,
+        }),
+    );
+    return { text: r.answer, side: DEMO_APLYER_SIDE, calls: usageToCalls(events) };
+  } catch (e) {
+    const calls = usageToCalls(events);
+    if (e instanceof AnswerPipelineError) {
+      const busy = e.code === "provider_error" || e.code === "timeout";
+      throw new DemoGenerationError(e.code, busy, calls);
+    }
+    if (e instanceof PromptError) throw new DemoGenerationError(e.code, e.status === 429 || e.status === 529, calls);
+    throw new DemoGenerationError("pipeline_failed", false, calls);
   }
-
-  const result = await consumeAnthropicStream(res.body, onDelta);
-  const text = result.text.trim();
-  if (!text || result.sawError) throw new DemoGenerationError("empty_or_error");
-  return {
-    text,
-    side: "aplyer",
-    provider: DEMO_LEGACY_PROVIDER,
-    model: DEMO_LEGACY_MODEL,
-    operation: DEMO_LEGACY_OPERATION,
-    usage: result.usage,
-  };
 };
