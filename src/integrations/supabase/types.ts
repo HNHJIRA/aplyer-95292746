@@ -146,6 +146,9 @@ export type Database = {
         Row: {
           answer: string | null
           attempts: number
+          chatgpt_answer: string | null
+          chatgpt_prompt: string | null
+          chatgpt_status: string
           completed_at: string | null
           content_hash: string
           cost_status: string
@@ -170,6 +173,9 @@ export type Database = {
         Insert: {
           answer?: string | null
           attempts?: number
+          chatgpt_answer?: string | null
+          chatgpt_prompt?: string | null
+          chatgpt_status?: string
           completed_at?: string | null
           content_hash: string
           cost_status?: string
@@ -194,6 +200,9 @@ export type Database = {
         Update: {
           answer?: string | null
           attempts?: number
+          chatgpt_answer?: string | null
+          chatgpt_prompt?: string | null
+          chatgpt_status?: string
           completed_at?: string | null
           content_hash?: string
           cost_status?: string
@@ -902,6 +911,9 @@ export type Database = {
         Returns: {
           answer: string | null
           attempts: number
+          chatgpt_answer: string | null
+          chatgpt_prompt: string | null
+          chatgpt_status: string
           completed_at: string | null
           content_hash: string
           cost_status: string
