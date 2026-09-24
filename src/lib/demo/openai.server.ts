@@ -17,19 +17,31 @@ export const DEMO_CHATGPT_SIDE = "openai" as const;
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
 /**
+ * Client-owned prompt template, one exported source of truth (Demo Build
+ * Specification, September 23, 2026, Part D). Placeholders: [question],
+ * [job description], [resume], [writing sample, when provided].
+ */
+export const DEMO_CHATGPT_PROMPT_TEMPLATE =
+  "Here is a job I am applying to and my resume.\n" +
+  "Write my answer to this question:\n" +
+  "[question]\n" +
+  "[job description]\n" +
+  "[resume]\n" +
+  "[writing sample, when provided]";
+
+/**
  * Exact assembled ChatGPT prompt. One source of truth: this string is both
  * what is sent to OpenAI and what the visitor is shown in the reveal.
- * Lines are joined by a single newline, one spec line per line.
+ * The question starts on its own line; the writing-sample line is omitted
+ * entirely when the field is blank.
  */
 export function buildChatgptPrompt(input: Pick<DemoInput, "question" | "jobDescription" | "resume" | "writingSample">): string {
-  const lines = [
-    "Here is a job I am applying to and my resume.",
-    `Write my answer to this question: ${input.question}`,
-    input.jobDescription,
-    input.resume,
-  ];
-  if (typeof input.writingSample === "string" && input.writingSample.trim()) lines.push(input.writingSample);
-  return lines.join("\n");
+  const hasSample = typeof input.writingSample === "string" && input.writingSample.trim();
+  return DEMO_CHATGPT_PROMPT_TEMPLATE
+    .replace("[question]", input.question)
+    .replace("[job description]", input.jobDescription)
+    .replace("[resume]", input.resume)
+    .replace(hasSample ? "[writing sample, when provided]" : "\n[writing sample, when provided]", hasSample ? (input.writingSample as string) : "");
 }
 
 export interface ChatgptResult {
