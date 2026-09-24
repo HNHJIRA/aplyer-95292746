@@ -3,12 +3,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Plus, ShieldCheck } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
-import {
-  computeWriteDna,
-  countQualifyingSamples,
-  stageColor,
-  stageLabel,
-} from "@/lib/writedna";
+import { computeWriteDna, countQualifyingSamples, stageColor, stageLabel } from "@/lib/writedna";
 import { ProgressRing } from "@/components/writedna/ProgressRing";
 import { setResumeOnlyApi } from "@/lib/extension/voicecard-api";
 
@@ -62,7 +57,7 @@ export function WriteDnaProgress({ onNext, onBack, onAddSample, onCelebrate }: P
     <div className="flex h-full flex-col px-6 pt-2">
       <div>
         <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-field px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-          Write DNA
+          WriteDNA
         </div>
         <h2 className="mt-2 text-[20px] font-black tracking-tight">{stageLabel(dna.stage)}</h2>
         <p className="mt-1 text-[14px] text-muted-foreground">
@@ -84,7 +79,10 @@ export function WriteDnaProgress({ onNext, onBack, onAddSample, onCelebrate }: P
 
         <div className="mt-4 grid gap-2">
           <Step done={dna.resumeUploaded} label="Resume uploaded" />
-          <Step done={dna.writingSampleCount >= 1} label="First qualifying sample (100+ chars, 30+ words)" />
+          <Step
+            done={dna.writingSampleCount >= 1}
+            label="First qualifying sample (100+ chars, 30+ words)"
+          />
           <Step done={dna.writingSampleCount >= 2} label="Second qualifying sample → Strong DNA" />
         </div>
 

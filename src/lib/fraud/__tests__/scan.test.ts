@@ -14,13 +14,18 @@ function makeScanner() {
     action: "run_fraud_scan" as const,
     hostname,
   }));
-  return { fn: fn as unknown as FraudAiScanner, get calls() { return fn.mock.calls.length; } };
+  return {
+    fn: fn as unknown as FraudAiScanner,
+    get calls() {
+      return fn.mock.calls.length;
+    },
+  };
 }
 
 describe("runFraudScan", () => {
   beforeEach(() => clearFraudScanCache());
 
-  it("short-circuits trusted ATS urls with Safe / 100 and no AI call", async () => {
+  it("short-circuits trusted ATS urls without certifying the listing or assigning a score", async () => {
     const ai = makeScanner();
     for (const url of [
       "https://boards.greenhouse.io/acme/jobs/1",
@@ -28,9 +33,9 @@ describe("runFraudScan", () => {
       "https://acme.wd5.myworkdayjobs.com/en-US/careers/job/1",
     ]) {
       const r = await runFraudScan(url, { aiScanner: ai.fn });
-      expect(r.status).toBe("safe");
-      expect(r.genuineScore).toBe(100);
-      expect(r.label).toBe("Safe");
+      expect(r.status).toBe("unverified");
+      expect(r.genuineScore).toBeNull();
+      expect(r.label).toBe("Unverified");
       expect(r.aiScanUsed).toBe(false);
       expect(r.scanMethod).toBe("trusted_ats_allowlist");
     }
@@ -54,7 +59,13 @@ describe("runFraudScan", () => {
 
   it("fails validation safely and never bypasses the scan", async () => {
     const ai = makeScanner();
-    for (const bad of ["", "javascript:alert(1)", "file:///etc/passwd", "nope", "https://x.example/" + "a".repeat(3000)]) {
+    for (const bad of [
+      "",
+      "javascript:alert(1)",
+      "file:///etc/passwd",
+      "nope",
+      "https://x.example/" + "a".repeat(3000),
+    ]) {
       const r = await runFraudScan(bad, { aiScanner: ai.fn });
       expect(r.status).toBe("invalid");
       expect(r.trustedAts).toBe(false);

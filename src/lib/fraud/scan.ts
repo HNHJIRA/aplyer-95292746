@@ -1,13 +1,13 @@
 /**
  * Deterministic fraud-scan middleware.
  *
- * Flow: parse/normalize URL -> trusted ATS allowlist -> short-circuit "safe".
+ * Flow: parse/normalize URL -> trusted ATS allowlist -> neutral short-circuit.
  * Only unknown domains fall through to the (expensive) AI fraud pipeline.
  */
 
 import { parseJobUrl, getTrustedAtsProvider, type TrustedAtsProvider } from "./trusted-ats";
 
-export type ScanStatus = "safe" | "needs_scan" | "invalid";
+export type ScanStatus = "unverified" | "needs_scan" | "invalid";
 
 export interface FraudScanResult {
   status: ScanStatus;
@@ -27,14 +27,14 @@ export type FraudAiScanner = (input: { url: string; hostname: string }) => Promi
 
 /**
  * Default downstream pipeline. The AI fraud analyzer is not built yet, so we
- * return `needs_scan` rather than guessing — an unknown domain is never a scam
+ * return `needs_scan` rather than guessing; an unknown domain is never a scam
  * by default.
  */
 export const defaultAiScanner: FraudAiScanner = async ({ hostname }) => ({
   status: "needs_scan",
   genuineScore: null,
   label: "Unverified",
-  reason: "Not hosted on a recognized applicant tracking platform — deeper analysis required",
+  reason: "Not hosted on a recognized applicant tracking platform; deeper analysis required",
   provider: null,
   scanMethod: "ai_fraud_scan",
   aiScanUsed: false,
@@ -113,10 +113,11 @@ export async function runFraudScan(
 
   if (provider) {
     const result: FraudScanResult = {
-      status: "safe",
-      genuineScore: 100,
-      label: "Safe",
-      reason: "Recognized trusted applicant tracking system",
+      status: "unverified",
+      genuineScore: null,
+      label: "Unverified",
+      reason:
+        "Hosted on a recognized applicant tracking platform; the employer and listing are not verified",
       provider,
       scanMethod: "trusted_ats_allowlist",
       aiScanUsed: false,
@@ -124,14 +125,28 @@ export async function runFraudScan(
       hostname,
     };
     cacheSet(normalizedUrl, result, TRUSTED_TTL_MS);
-    log({ hostname, provider, trusted: true, scanMethod: result.scanMethod, startedAt, requestId: options.requestId });
+    log({
+      hostname,
+      provider,
+      trusted: true,
+      scanMethod: result.scanMethod,
+      startedAt,
+      requestId: options.requestId,
+    });
     return result;
   }
 
   const scanner = options.aiScanner ?? defaultAiScanner;
   const result = await scanner({ url: normalizedUrl, hostname });
   cacheSet(normalizedUrl, result, UNKNOWN_TTL_MS);
-  log({ hostname, provider: null, trusted: false, scanMethod: result.scanMethod, startedAt, requestId: options.requestId });
+  log({
+    hostname,
+    provider: null,
+    trusted: false,
+    scanMethod: result.scanMethod,
+    startedAt,
+    requestId: options.requestId,
+  });
   return result;
 }
 

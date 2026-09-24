@@ -16,7 +16,7 @@ let currentFramework = null;
 
 const $ = (id) => document.getElementById(id);
 
-function safeText(v, fallback = "—") {
+function safeText(v, fallback = "Not available") {
   if (v === null || v === undefined || v === "") return fallback;
   return String(v);
 }
@@ -32,16 +32,16 @@ function renderSafety(entry) {
   const r = entry.result;
   host.textContent = [entry.hostname || "", r?.provider ? `Provider: ${r.provider}` : ""].filter(Boolean).join("  ·  ");
   badge.classList.remove("is-safe", "is-unknown");
-  if (r && r.status === "safe") {
-    badge.textContent = "Safe";
-    badge.classList.add("is-safe");
-    score.textContent = "100% Genuine";
-    copy.textContent = "Hosted on a recognized applicant tracking platform. This confirms the hosting platform, not the employer or the individual listing.";
+  if (r && r.status === "unverified" && r.trustedAts) {
+    badge.textContent = "Unverified";
+    badge.classList.add("is-unknown");
+    score.textContent = "";
+    copy.textContent = "The hosting platform is recognized. This does not verify the employer or listing.";
   } else if (r && r.status === "needs_scan") {
     badge.textContent = "Unverified";
     badge.classList.add("is-unknown");
     score.textContent = "";
-    copy.textContent = "Not a recognized applicant tracking platform — a full safety scan is required before we can rate this listing.";
+    copy.textContent = "The hosting platform is not recognized. This listing has not been verified.";
   } else {
     badge.textContent = "Checking…";
     score.textContent = "";
@@ -63,8 +63,8 @@ function render(state) {
   $("s-platform").textContent = safeText(status?.platform, "Not detected");
   $("s-count").textContent = String(status?.questionsCount ?? 0);
   $("s-conn").textContent = session ? "Signed in" : "Not signed in";
-  $("s-resume").textContent = session ? "Open dashboard" : "—";
-  $("s-plan").textContent = session ? "Free" : "—";
+  $("s-resume").textContent = session ? "Open dashboard" : "Not available";
+  $("s-plan").textContent = session ? "Free" : "Not available";
 
   if (question && question.questionText) {
     $("question-card").style.display = "";
@@ -258,7 +258,7 @@ function renderAnswerState(state) {
   }
   if (btn) btn.disabled = false;
   if (state.phase === "choice" && Array.isArray(state.options)) {
-    setGenStatus("Two wordings ready — pick the one that sounds like you.", false);
+    setGenStatus("Two wordings are ready. Pick the one that sounds like you.", false);
     showChoice(state.options);
     return;
   }
@@ -383,7 +383,7 @@ async function undoAutofill() {
   const questionHash = normalizeQuestionText(data[KEY_QUESTION]?.questionText || "");
   const res = await send("APLYER_AUTOFILL_UNDO", { tabId: currentTabId, questionHash }, 20000);
   if (res?.ok) {
-    setFillStatus("Undone — the field is back to what it was.", false);
+    setFillStatus("Undone. The field is back to what it was.", false);
     const undo = $("answer-undo");
     if (undo) undo.style.display = "none";
     return;
@@ -463,7 +463,7 @@ function renderAskFields(ask) {
       );
       save.disabled = false;
       row.textContent = res?.ok
-        ? `✓ ${f.questionText} — filled${res.remembered ? " and remembered" : ""}`
+        ? `✓ ${f.questionText}, filled${res.remembered ? " and remembered" : ""}`
         : `We couldn't fill "${f.questionText}".`;
     });
 
@@ -601,7 +601,7 @@ function bind() {
       await navigator.clipboard.writeText($("answer-text").textContent || "");
       setGenStatus("Copied to your clipboard.", false);
     } catch {
-      setGenStatus("Copy failed — select the text and copy manually.", true);
+      setGenStatus("Copy failed. Select the text and copy manually.", true);
     }
   });
 }

@@ -34,7 +34,7 @@ describe("prompt library", () => {
     expect(PROMPT_J_QUALITY_SCAN.model).toBe(MODEL_OPUS);
     expect(PROMPT_A_ANSWER_GENERATION.model).toBe(MODEL_OPUS);
     expect(PROMPT_B_VOICE_CARD.model).toBe(MODEL_HAIKU);
-    expect(PROMPT_P0_FACT_INVENTORY.model).toBe(MODEL_HAIKU);
+    expect(PROMPT_P0_FACT_INVENTORY.model).toBe(MODEL_OPUS);
     expect(PROMPT_P0_FACT_INVENTORY.temperature).toBe(0);
     expect(PROMPT_P0_FACT_INVENTORY.json).toBe(true);
   });
@@ -78,7 +78,9 @@ describe("prompt I — classification", () => {
   it("keeps the heuristic classifier out of production exports used by the server", () => {
     // The heuristic is diagnostics-only; its name makes that explicit and the
     // server module must not import it.
-    expect(heuristicClassificationForDiagnostics("Tell me about a time you failed.").framework).toBe("STAR-F");
+    expect(
+      heuristicClassificationForDiagnostics("Tell me about a time you failed.").framework,
+    ).toBe("STAR-F");
   });
 });
 
@@ -95,7 +97,8 @@ describe("prompt B — voice card", () => {
     hooks_and_transitions: ["b"],
     values_signals: ["c"],
     do_and_avoid: { do: ["d"], avoid: ["e"] },
-    archetype_description: "You keep sentences short and load them with signal. Every line does one piece of work.",
+    archetype_description:
+      "You keep sentences short and load them with signal. Every line does one piece of work.",
   };
 
   it("requires one resume plus two qualifying prose samples", () => {
@@ -113,7 +116,9 @@ describe("prompt B — voice card", () => {
   });
 
   it("attaches the exact reveal line", () => {
-    expect(validateVoiceCard({ ...base, archetype: "storyteller" }).reveal).toBe("Okay, we read you loud and clear!");
+    expect(validateVoiceCard({ ...base, archetype: "storyteller" }).reveal).toBe(
+      "Okay, we read you loud and clear!",
+    );
     expect(VOICE_CARD_REVEAL).toBe("Okay, we read you loud and clear!");
   });
 
@@ -124,7 +129,11 @@ describe("prompt B — voice card", () => {
 
   it("rejects em dashes, prohibited job-search terms, and statistics", () => {
     expect(() =>
-      validateVoiceCard({ ...base, archetype: "The Natural", archetype_description: "You write plainly — always." }),
+      validateVoiceCard({
+        ...base,
+        archetype: "The Natural",
+        archetype_description: "You write plainly — always.",
+      }),
     ).toThrow(/em dash/i);
     expect(() =>
       validateVoiceCard({

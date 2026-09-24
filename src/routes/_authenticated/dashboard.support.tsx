@@ -14,11 +14,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "How is my Resume Score calculated?",
-    a: "It is calculated on your device from the text of your resume. Six sections earn points when they are found — experience, contact information, skills, education, professional summary and certifications — plus a bonus for length and a bonus for numbers and percentages. The Resume page shows which sections were found.",
+    a: "It is calculated on your device from the text of your resume. Six sections earn points when they are found: experience, contact information, skills, education, professional summary and certifications. There is also a bonus for length and a bonus for numbers and percentages. The Resume page shows which sections were found.",
   },
   {
-    q: "How does Write DNA work?",
-    a: "Write DNA has three steps: upload your resume, add a first qualifying writing sample, then add a second. A sample qualifies when it is at least 100 characters and at least 30 words of prose. Your progress shows 33%, 67% and 100% as you complete each step.",
+    q: "How does WriteDNA work?",
+    a: "WriteDNA has three steps: upload your resume, add a first qualifying writing sample, then add a second. A sample qualifies when it is at least 100 characters and at least 30 words of prose. Your progress shows 33%, 67% and 100% as you complete each step.",
   },
   {
     q: "When does my Voice Card become available?",
@@ -49,7 +49,9 @@ function SupportPage() {
     <div className="space-y-4">
       <div>
         <h1 className="text-[32px] font-black tracking-tight">Customer Support</h1>
-        <p className="mt-1 text-[15px] text-muted-foreground">We typically reply to requests within a few hours</p>
+        <p className="mt-1 text-[15px] text-muted-foreground">
+          We typically reply to requests within a few hours
+        </p>
       </div>
 
       <a
@@ -66,7 +68,9 @@ function SupportPage() {
       </a>
 
       <div className="rounded-2xl border border-border bg-card p-5">
-        <div className="font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">Guides &amp; FAQs</div>
+        <div className="font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
+          Guides &amp; FAQs
+        </div>
         <div className="mt-3 grid gap-2 lg:grid-cols-2">
           {FAQS.map((f, i) => {
             const isOpen = open === i;
@@ -83,7 +87,9 @@ function SupportPage() {
                     className={`h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`}
                   />
                 </button>
-                {isOpen && <p className="px-4 pb-3.5 text-[14px] leading-relaxed text-sub">{f.a}</p>}
+                {isOpen && (
+                  <p className="px-4 pb-3.5 text-[14px] leading-relaxed text-sub">{f.a}</p>
+                )}
               </div>
             );
           })}

@@ -54,9 +54,10 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
   useEffect(() => {
     const timer = setTimeout(() => {
       void update({
-        writingSampleDraft: adding || title || content
-          ? { type, title, content, isOpen: adding, updatedAt: new Date().toISOString() }
-          : null,
+        writingSampleDraft:
+          adding || title || content
+            ? { type, title, content, isOpen: adding, updatedAt: new Date().toISOString() }
+            : null,
       });
     }, 200);
     return () => clearTimeout(timer);
@@ -137,7 +138,9 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
   }
 
   async function continueNext() {
-    await update({ onboardingStatus: { ...state.onboardingStatus, skippedWritingSamples: samples.length === 0 } });
+    await update({
+      onboardingStatus: { ...state.onboardingStatus, skippedWritingSamples: samples.length === 0 },
+    });
     onNext();
   }
 
@@ -148,7 +151,9 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
           Optional
         </div>
         <h2 className="mt-2 text-[20px] font-black tracking-tight">Help Aplyer Learn Your Voice</h2>
-        <p className="mt-1 text-[14px] text-muted-foreground">Paste 2 short pieces you actually wrote — we read your writing style, not your files.</p>
+        <p className="mt-1 text-[14px] text-muted-foreground">
+          Paste 2 short pieces you actually wrote. We read your writing style, not your files.
+        </p>
       </div>
 
       <div className="popup-scroll -mx-6 flex-1 overflow-y-auto px-6">
@@ -194,13 +199,23 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
               />
               <div className="mt-1.5 flex items-center justify-between text-[12px] text-muted-foreground">
                 <span>
-                  {content.length.toLocaleString()} / {MAX.toLocaleString()} chars · {wordCount} words ·{" "}
+                  {content.length.toLocaleString()} / {MAX.toLocaleString()} chars · {wordCount}{" "}
+                  words ·{" "}
                   <span className={qualifies ? "text-brand-green" : "text-[#E5B73A]"}>
-                    {qualifies ? "Qualifies for Write DNA" : `Need ${MIN_CHARS}+ chars & ${MIN_WORDS}+ words`}
+                    {qualifies
+                      ? "Qualifies for WriteDNA"
+                      : `Need ${MIN_CHARS}+ chars & ${MIN_WORDS}+ words`}
                   </span>
                 </span>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="ghost" onClick={() => void clearDraft()} disabled={saving}>Cancel</Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => void clearDraft()}
+                    disabled={saving}
+                  >
+                    Cancel
+                  </Button>
                   <Button size="sm" onClick={() => void save()} disabled={!qualifies || saving}>
                     {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
                     {saving ? "Saving…" : "Save Sample"}
@@ -209,27 +224,43 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
               </div>
             </motion.div>
           ) : (
-            <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 space-y-2">
+            <motion.div
+              key="list"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-4 space-y-2"
+            >
               {samples.length === 0 && (
                 <div className="rounded-xl border border-dashed border-border bg-paper p-5 text-center">
-                  <p className="text-[14px] text-muted-foreground">No samples yet — totally optional.</p>
+                  <p className="text-[14px] text-muted-foreground">
+                    No samples yet. This is optional.
+                  </p>
                 </div>
               )}
               {samples.map((s) => (
-                <div key={s.id} className="flex items-start gap-3 rounded-lg border border-border bg-paper p-3">
+                <div
+                  key={s.id}
+                  className="flex items-start gap-3 rounded-lg border border-border bg-paper p-3"
+                >
                   <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-green/10 text-brand-green">
                     <FileText className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[14px] font-semibold">{s.title}</p>
-                    <p className="text-[12px] text-muted-foreground">{TYPES.find((t) => t.id === s.type)?.label} · {s.wordCount} words</p>
+                    <p className="text-[12px] text-muted-foreground">
+                      {TYPES.find((t) => t.id === s.type)?.label} · {s.wordCount} words
+                    </p>
                   </div>
                   <button
                     onClick={() => void remove(s.id)}
                     disabled={removingId === s.id}
                     className="rounded-md p-1 text-muted-foreground hover:bg-field hover:text-brand-red disabled:opacity-50"
                   >
-                    {removingId === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    {removingId === s.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5" />
+                    )}
                   </button>
                 </div>
               ))}
@@ -242,9 +273,15 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
       </div>
 
       <div className="mt-3 flex items-center gap-2 pb-1">
-        <Button variant="ghost" onClick={onBack}><ArrowLeft className="h-4 w-4" /> Back</Button>
-        <Button variant="secondary" onClick={() => void skip()}>Skip</Button>
-        <Button className="flex-1" onClick={() => void continueNext()}>Continue <ArrowRight className="h-4 w-4" /></Button>
+        <Button variant="ghost" onClick={onBack}>
+          <ArrowLeft className="h-4 w-4" /> Back
+        </Button>
+        <Button variant="secondary" onClick={() => void skip()}>
+          Skip
+        </Button>
+        <Button className="flex-1" onClick={() => void continueNext()}>
+          Continue <ArrowRight className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
@@ -253,8 +290,12 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
 function Stat({ label, value, small }: { label: string; value: number | string; small?: boolean }) {
   return (
     <div className="rounded-lg border border-border bg-paper p-2.5">
-      <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
-      <div className={`mt-1 font-black text-foreground ${small ? "text-[15px]" : "text-[18px]"}`}>{value}</div>
+      <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+      </div>
+      <div className={`mt-1 font-black text-foreground ${small ? "text-[15px]" : "text-[18px]"}`}>
+        {value}
+      </div>
     </div>
   );
 }

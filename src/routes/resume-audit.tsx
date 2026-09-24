@@ -2,20 +2,23 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { apiUrl } from "@/lib/api-base";
 import AuditResult from "@/components/audit/AuditResult";
-import { mergeStreamedOverallTake, partialAuditFromJson, type Audit } from "@/components/audit/types";
+import {
+  mergeStreamedOverallTake,
+  partialAuditFromJson,
+  type Audit,
+} from "@/components/audit/types";
 import { requestToolResult, ToolRequestError, GENERIC_TOOL_ERROR } from "@/lib/tool-stream";
-
 
 export const Route = createFileRoute("/resume-audit")({
   head: () => ({
     meta: [
-      { title: "Resume Red Flag Audit — Aplyer.ai" },
+      { title: "Resume Red Flag Audit | Aplyer.ai" },
       {
         name: "description",
         content:
           "Upload your resume and get a fast recruiter-style red flag audit. Free, no sign-up, results in seconds.",
       },
-      { property: "og:title", content: "Resume Red Flag Audit — Aplyer.ai" },
+      { property: "og:title", content: "Resume Red Flag Audit | Aplyer.ai" },
       {
         property: "og:description",
         content:
@@ -33,7 +36,6 @@ export const Route = createFileRoute("/resume-audit")({
   }),
   component: ResumeAuditPage,
 });
-
 
 const NAVY = "#0a2540";
 const GREEN = "#22c55e";
@@ -260,10 +262,20 @@ function ResumeAuditPage() {
             justifyContent: "space-between",
           }}
         >
-          <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+          <a
+            href="/"
+            style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}
+          >
             <svg width="32" height="32" viewBox="0 0 88 88" fill="none" aria-hidden="true">
               <defs>
-                <linearGradient id="raNavG" x1="0" y1="44" x2="88" y2="44" gradientUnits="userSpaceOnUse">
+                <linearGradient
+                  id="raNavG"
+                  x1="0"
+                  y1="44"
+                  x2="88"
+                  y2="44"
+                  gradientUnits="userSpaceOnUse"
+                >
                   <stop offset="0%" stopColor="#E5373A" />
                   <stop offset="45%" stopColor="#E5373A" />
                   <stop offset="55%" stopColor="#1DB954" />
@@ -271,16 +283,66 @@ function ResumeAuditPage() {
                 </linearGradient>
               </defs>
               <circle cx="44" cy="44" r="40" fill="#0D1829" stroke="url(#raNavG)" strokeWidth="2" />
-              <line x1="22" y1="28" x2="44" y2="44" stroke="#E5373A" strokeWidth="5" strokeLinecap="round" />
-              <line x1="22" y1="60" x2="44" y2="44" stroke="#E5373A" strokeWidth="5" strokeLinecap="round" />
-              <line x1="44" y1="44" x2="56" y2="56" stroke="#1DB954" strokeWidth="5" strokeLinecap="round" />
-              <line x1="56" y1="56" x2="72" y2="28" stroke="#1DB954" strokeWidth="5" strokeLinecap="round" />
+              <line
+                x1="22"
+                y1="28"
+                x2="44"
+                y2="44"
+                stroke="#E5373A"
+                strokeWidth="5"
+                strokeLinecap="round"
+              />
+              <line
+                x1="22"
+                y1="60"
+                x2="44"
+                y2="44"
+                stroke="#E5373A"
+                strokeWidth="5"
+                strokeLinecap="round"
+              />
+              <line
+                x1="44"
+                y1="44"
+                x2="56"
+                y2="56"
+                stroke="#1DB954"
+                strokeWidth="5"
+                strokeLinecap="round"
+              />
+              <line
+                x1="56"
+                y1="56"
+                x2="72"
+                y2="28"
+                stroke="#1DB954"
+                strokeWidth="5"
+                strokeLinecap="round"
+              />
             </svg>
             <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <span style={{ fontFamily: "'Lato', sans-serif", fontSize: 26, fontWeight: 700, color: "#1DB954", letterSpacing: "-0.01em", lineHeight: 1 }}>
+              <span
+                style={{
+                  fontFamily: "'Lato', sans-serif",
+                  fontSize: 26,
+                  fontWeight: 700,
+                  color: "#1DB954",
+                  letterSpacing: "-0.01em",
+                  lineHeight: 1,
+                }}
+              >
                 Aplyer.ai
               </span>
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", color: "#E5373A", fontFamily: "'Lato', sans-serif" }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 3,
+                  textTransform: "uppercase",
+                  color: "#E5373A",
+                  fontFamily: "'Lato', sans-serif",
+                }}
+              >
                 Stop Skipping Jobs
               </span>
             </div>
@@ -334,10 +396,12 @@ function ResumeAuditPage() {
         >
           Resume Red Flag Audit
         </h1>
-        <p style={{ color: MUTED, fontSize: 19, lineHeight: 1.6, margin: "0 0 32px", maxWidth: 720 }}>
-          A free tool. See what a recruiter spots in the first seven seconds, and how to fix it. No signup.
+        <p
+          style={{ color: MUTED, fontSize: 19, lineHeight: 1.6, margin: "0 0 32px", maxWidth: 720 }}
+        >
+          A free tool. See what a recruiter spots in the first seven seconds, and how to fix it. No
+          signup.
         </p>
-
 
         {!shown && (
           <>
@@ -490,9 +554,9 @@ function ResumeAuditPage() {
               {loading && <span style={{ color: MUTED, fontSize: 14 }}>{loadingMsg}</span>}
             </div>
 
-
             <p style={{ marginTop: 28, color: MUTED, fontSize: 13, fontStyle: "italic" }}>
-              Verified against HR hiring sources, including LinkedIn, Indeed, and Harvard Business Review.
+              Verified against HR hiring sources, including LinkedIn, Indeed, and Harvard Business
+              Review.
             </p>
           </>
         )}
@@ -507,7 +571,6 @@ function ResumeAuditPage() {
               alignItems: "start",
             }}
           >
-
             <div style={{ minWidth: 0 }}>
               {!audit && loading && (
                 <div
@@ -521,29 +584,28 @@ function ResumeAuditPage() {
               <AuditResult audit={shown} />
 
               {audit && (
-              <div style={{ marginTop: 28 }}>
-                <button
-                  onClick={() => {
-                    setAudit(null);
-                    setFile(null);
-                  }}
-                  style={{
-                    background: "transparent",
-                    border: `1px solid ${BORDER}`,
-                    color: NAVY,
-                    padding: "12px 18px",
-                    borderRadius: 8,
-                    fontSize: 15,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  Audit another resume
-                </button>
-              </div>
+                <div style={{ marginTop: 28 }}>
+                  <button
+                    onClick={() => {
+                      setAudit(null);
+                      setFile(null);
+                    }}
+                    style={{
+                      background: "transparent",
+                      border: `1px solid ${BORDER}`,
+                      color: NAVY,
+                      padding: "12px 18px",
+                      borderRadius: 8,
+                      fontSize: 15,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Audit another resume
+                  </button>
+                </div>
               )}
             </div>
-
 
             <aside
               className="ra-aside"
@@ -560,8 +622,8 @@ function ResumeAuditPage() {
                 Get early access to Aplyer
               </h3>
               <p style={{ margin: "8px 0 16px", color: "#cdd6e0", fontSize: 15, lineHeight: 1.5 }}>
-                Aplyer writes your job application answers in your own voice. Join the waitlist
-                for early access.
+                Aplyer writes your job application answers in your own voice. Join the waitlist for
+                early access.
               </p>
               {waitState === "done" ? (
                 <div
@@ -576,10 +638,7 @@ function ResumeAuditPage() {
                   You are on the list. We will be in touch soon.
                 </div>
               ) : (
-                <form
-                  onSubmit={joinWaitlist}
-                  style={{ display: "flex", gap: 8, flexWrap: "wrap" }}
-                >
+                <form onSubmit={joinWaitlist} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <input
                     type="email"
                     required
@@ -647,10 +706,16 @@ function ResumeAuditPage() {
             Powered by WriteDNA Technology™
           </div>
           <div style={{ display: "flex", gap: 16 }}>
-            <a href="/privacy" style={{ fontSize: 13, color: "#333", textDecoration: "none", fontWeight: 400 }}>
+            <a
+              href="/privacy"
+              style={{ fontSize: 13, color: "#333", textDecoration: "none", fontWeight: 400 }}
+            >
               Privacy Policy
             </a>
-            <a href="/terms" style={{ fontSize: 13, color: "#333", textDecoration: "none", fontWeight: 400 }}>
+            <a
+              href="/terms"
+              style={{ fontSize: 13, color: "#333", textDecoration: "none", fontWeight: 400 }}
+            >
               Terms of Service
             </a>
           </div>
@@ -659,4 +724,3 @@ function ResumeAuditPage() {
     </div>
   );
 }
-

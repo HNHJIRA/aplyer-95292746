@@ -1,47 +1,49 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { ArrowLeft, Check, Crown, Lock, Shield, LifeBuoy, FileText, PenLine, User as UserIcon, Sparkles, LogOut, RotateCcw } from "lucide-react";
+import {
+  ArrowLeft,
+  Shield,
+  LifeBuoy,
+  FileText,
+  PenLine,
+  User as UserIcon,
+  LogOut,
+  RotateCcw,
+} from "lucide-react";
 import { Button } from "../ui/Button";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
-import type { AIProviderId, SubscriptionTier } from "@/lib/storage/types";
 
-type Section = "account" | "resume" | "profile" | "writing" | "subscription" | "ai" | "support" | "privacy";
+type Section = "account" | "resume" | "profile" | "writing" | "support" | "privacy";
 
 const SECTIONS: { id: Section; label: string; icon: React.ReactNode }[] = [
   { id: "account", label: "Account", icon: <UserIcon className="h-3.5 w-3.5" /> },
   { id: "resume", label: "Resume", icon: <FileText className="h-3.5 w-3.5" /> },
   { id: "profile", label: "Profile", icon: <UserIcon className="h-3.5 w-3.5" /> },
   { id: "writing", label: "Writing", icon: <PenLine className="h-3.5 w-3.5" /> },
-  { id: "subscription", label: "Plan", icon: <Crown className="h-3.5 w-3.5" /> },
-  { id: "ai", label: "AI", icon: <Sparkles className="h-3.5 w-3.5" /> },
   { id: "support", label: "Support", icon: <LifeBuoy className="h-3.5 w-3.5" /> },
   { id: "privacy", label: "Privacy", icon: <Shield className="h-3.5 w-3.5" /> },
 ];
 
-const PROVIDERS: { id: AIProviderId; name: string; status: "available" | "soon"; desc: string }[] = [
-  { id: "claude", name: "Claude Sonnet", status: "soon", desc: "Anthropic's nuanced writer. Great for cover letters." },
-  { id: "openai", name: "OpenAI GPT", status: "soon", desc: "Versatile, fast, broad knowledge." },
-  { id: "gemini", name: "Gemini", status: "soon", desc: "Google's multimodal model." },
-];
-
-const PLANS: { id: SubscriptionTier; name: string; price: string; features: string[]; highlighted?: boolean }[] = [
-  { id: "free", name: "Free", price: "$0", features: ["10 applications / month", "Basic resume scoring", "Local storage"] },
-  { id: "pro", name: "Pro", price: "$12/mo", features: ["Unlimited applications", "Advanced AI providers", "Priority autofill", "Writing voice training"], highlighted: true },
-  { id: "enterprise", name: "Enterprise", price: "Custom", features: ["Team workspaces", "SSO", "Dedicated support", "Custom integrations"] },
-];
-
-export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: () => void | Promise<void> }) {
+export function Settings({
+  onBack,
+  onLogout,
+}: {
+  onBack: () => void;
+  onLogout?: () => void | Promise<void>;
+}) {
   const { state, update, reset } = useAplyerStore();
   const [section, setSection] = useState<Section>("account");
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
-
   return (
     <div className="relative flex h-full flex-col">
       <div className="flex items-center gap-2 border-b border-border bg-paper/60 px-4 py-3 backdrop-blur">
-        <button onClick={onBack} className="rounded-md p-1 text-muted-foreground hover:bg-field hover:text-foreground">
+        <button
+          onClick={onBack}
+          className="rounded-md p-1 text-muted-foreground hover:bg-field hover:text-foreground"
+        >
           <ArrowLeft className="h-4 w-4" />
         </button>
         <h2 className="text-[16px] font-bold">Settings</h2>
@@ -66,7 +68,14 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
             {section === "account" && (
               <Card title="Account">
                 <Row label="Plan" value={state.subscriptionStatus.tier.toUpperCase()} />
-                <Row label="Last sync" value={state.lastUpdated ? new Date(state.lastUpdated).toLocaleString() : "—"} />
+                <Row
+                  label="Last sync"
+                  value={
+                    state.lastUpdated
+                      ? new Date(state.lastUpdated).toLocaleString()
+                      : "Not available"
+                  }
+                />
                 <Row label="Storage" value="chrome.storage.local" />
                 <Button variant="outline" size="sm" className="mt-3 w-full" onClick={reset}>
                   <RotateCcw className="h-3.5 w-3.5" /> Reset Onboarding
@@ -77,7 +86,6 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
                 >
                   <LogOut className="h-3.5 w-3.5" /> Logout
                 </button>
-
               </Card>
             )}
 
@@ -86,8 +94,14 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
                 {state.resumeMetadata ? (
                   <>
                     <Row label="File" value={state.resumeMetadata.fileName} />
-                    <Row label="Size" value={`${(state.resumeMetadata.fileSize / 1024).toFixed(1)} KB`} />
-                    <Row label="Uploaded" value={new Date(state.resumeMetadata.uploadedAt).toLocaleDateString()} />
+                    <Row
+                      label="Size"
+                      value={`${(state.resumeMetadata.fileSize / 1024).toFixed(1)} KB`}
+                    />
+                    <Row
+                      label="Uploaded"
+                      value={new Date(state.resumeMetadata.uploadedAt).toLocaleDateString()}
+                    />
                     <Row label="Score" value={`${state.resumeScore?.score ?? 0}/100`} />
                   </>
                 ) : (
@@ -99,7 +113,9 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
             {section === "profile" && (
               <Card title="Profile">
                 {state.profile ? (
-                  Object.entries(state.profile).map(([k, v]) => <Row key={k} label={k} value={v || "—"} />)
+                  Object.entries(state.profile).map(([k, v]) => (
+                    <Row key={k} label={k} value={v || "Not available"} />
+                  ))
                 ) : (
                   <Empty>Profile not completed.</Empty>
                 )}
@@ -109,67 +125,12 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
             {section === "writing" && (
               <Card title="Writing Samples">
                 <Row label="Samples" value={String(state.writingSamples.length)} />
-                <Row label="Total words" value={String(state.writingSamples.reduce((a, s) => a + s.wordCount, 0))} />
+                <Row
+                  label="Total words"
+                  value={String(state.writingSamples.reduce((a, s) => a + s.wordCount, 0))}
+                />
                 {state.writingSamples.length === 0 && <Empty>None yet.</Empty>}
               </Card>
-            )}
-
-            {section === "subscription" && (
-              <div className="space-y-2.5">
-                {PLANS.map((p) => (
-                  <div key={p.id} className={`rounded-xl border p-3 ${p.highlighted ? "border-brand-green/40 bg-brand-green/5" : "border-border bg-paper"}`}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-[15px] font-bold">{p.name}</p>
-                        <p className="text-[13px] text-muted-foreground">{p.price}</p>
-                      </div>
-                      {state.subscriptionStatus.tier === p.id ? (
-                        <span className="rounded-full bg-brand-green/15 px-2 py-0.5 font-mono text-[11px] uppercase text-brand-green">Current</span>
-                      ) : (
-                        <Button size="sm" variant={p.highlighted ? "primary" : "outline"} onClick={() => update({ subscriptionStatus: { tier: p.id } })}>
-                          Select
-                        </Button>
-                      )}
-                    </div>
-                    <ul className="mt-2 space-y-1">
-                      {p.features.map((f) => (
-                        <li key={f} className="flex items-center gap-1.5 text-[13px] text-sub">
-                          <Check className="h-3 w-3 text-brand-green" /> {f}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {section === "ai" && (
-              <div className="space-y-2.5">
-                <p className="text-[13px] text-muted-foreground">Aplyer selects the best model for each step automatically.</p>
-                {PROVIDERS.map((p) => {
-                  const active = state.settings.aiProvider === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => update({ settings: { ...state.settings, aiProvider: p.id } })}
-                      className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition ${active ? "border-brand-green/40 bg-brand-green/5" : "border-border bg-paper hover:border-border"}`}
-                    >
-                      <span className={`mt-0.5 flex h-4 w-4 items-center justify-center rounded-full border ${active ? "border-brand-green bg-brand-green" : "border-border"}`}>
-                        {active && <Check className="h-2.5 w-2.5 text-white" strokeWidth={4} />}
-                      </span>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-[14px] font-bold">{p.name}</p>
-                          <span className="inline-flex items-center gap-1 rounded-full bg-field px-1.5 py-0.5 font-mono text-[8.5px] uppercase tracking-[0.14em] text-muted-foreground">
-                            <Lock className="h-2.5 w-2.5" /> Coming soon
-                          </span>
-                        </div>
-                        <p className="mt-0.5 text-[13px] text-muted-foreground">{p.desc}</p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
             )}
 
             {section === "support" && (
@@ -183,10 +144,25 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
 
             {section === "privacy" && (
               <Card title="Privacy">
-                <Toggle label="Anonymous telemetry" checked={state.settings.telemetry} onChange={(v) => update({ settings: { ...state.settings, telemetry: v } })} />
-                <Toggle label="Autofill enabled" checked={state.settings.autofillEnabled} onChange={(v) => update({ settings: { ...state.settings, autofillEnabled: v } })} />
-                <Toggle label="Notifications" checked={state.settings.notifications} onChange={(v) => update({ settings: { ...state.settings, notifications: v } })} />
-                <p className="mt-3 text-[13px] text-muted-foreground">Aplyer keeps your resume and profile on this device. Nothing is sent without your explicit action.</p>
+                <Toggle
+                  label="Anonymous telemetry"
+                  checked={state.settings.telemetry}
+                  onChange={(v) => update({ settings: { ...state.settings, telemetry: v } })}
+                />
+                <Toggle
+                  label="Autofill enabled"
+                  checked={state.settings.autofillEnabled}
+                  onChange={(v) => update({ settings: { ...state.settings, autofillEnabled: v } })}
+                />
+                <Toggle
+                  label="Notifications"
+                  checked={state.settings.notifications}
+                  onChange={(v) => update({ settings: { ...state.settings, notifications: v } })}
+                />
+                <p className="mt-3 text-[13px] text-muted-foreground">
+                  Your resume is saved on this device and synchronized with your Aplyer account when
+                  you are signed in.
+                </p>
               </Card>
             )}
           </motion.div>
@@ -214,7 +190,8 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
                 <h3 className="text-[17px] font-bold">Sign out?</h3>
               </div>
               <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground">
-                You'll be signed out of the extension. Your data remains safely stored in your Aplyer account.
+                You'll be signed out of the extension. Your data remains safely stored in your
+                Aplyer account.
               </p>
               <div className="mt-4 flex gap-2">
                 <Button
@@ -251,11 +228,12 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
   );
 }
 
-
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-border bg-paper p-3">
-      <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{title}</p>
+      <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+        {title}
+      </p>
       <div className="space-y-1.5">{children}</div>
     </div>
   );
@@ -283,12 +261,27 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-[13px] text-muted-foreground">{children}</p>;
 }
 
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
-    <button onClick={() => onChange(!checked)} className="flex w-full items-center justify-between py-2">
+    <button
+      onClick={() => onChange(!checked)}
+      className="flex w-full items-center justify-between py-2"
+    >
       <span className="text-[14px]">{label}</span>
-      <span className={`relative h-5 w-9 rounded-full transition ${checked ? "bg-brand-green" : "bg-field-2"}`}>
-        <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition ${checked ? "left-4" : "left-0.5"}`} />
+      <span
+        className={`relative h-5 w-9 rounded-full transition ${checked ? "bg-brand-green" : "bg-field-2"}`}
+      >
+        <span
+          className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition ${checked ? "left-4" : "left-0.5"}`}
+        />
       </span>
     </button>
   );

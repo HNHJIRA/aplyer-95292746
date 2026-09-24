@@ -49,7 +49,7 @@ export function SignIn({
             className="inline-flex items-center justify-center gap-1.5 py-1 text-[13px] text-muted-foreground hover:text-foreground"
           >
             <RefreshCw className={`h-3 w-3 ${checking ? "animate-spin" : ""}`} />
-            {checking ? "Checking…" : "I've signed in — check again"}
+            {checking ? "Checking..." : "I've signed in. Check again"}
           </button>
         </div>
       )}

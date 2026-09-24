@@ -44,8 +44,6 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-
-
 // Extract <style>...</style> blocks and the contents of <body>...</body>
 // from the original HTML so we can render the design pixel-for-pixel inside
 // the React shell.
@@ -107,7 +105,7 @@ function DownloadExtensionButton() {
       {state === "working"
         ? "Preparing download…"
         : state === "error"
-          ? "Download failed — try again"
+          ? "Download failed. Try again"
           : "Download Extension"}
     </button>
   );
@@ -130,22 +128,26 @@ function HomeNavActions() {
     <>
       {loading ? null : user ? (
         <>
-          <Link className="nav-cta" to="/dashboard">Dashboard</Link>
+          <Link className="nav-cta" to="/dashboard">
+            Dashboard
+          </Link>
           <button type="button" className="nav-link" onClick={handleSignOut}>
             Sign Out
           </button>
         </>
       ) : (
         <>
-          <Link className="nav-link" to="/auth">Sign In</Link>
-          <Link className="nav-cta" to="/auth">Sign Up</Link>
+          <Link className="nav-link" to="/auth">
+            Sign In
+          </Link>
+          <Link className="nav-cta" to="/auth">
+            Sign Up
+          </Link>
           <button
             type="button"
             className="nav-cta"
             onClick={() =>
-              document
-                .getElementById("waitlist-form")
-                ?.scrollIntoView({ behavior: "smooth" })
+              document.getElementById("waitlist-form")?.scrollIntoView({ behavior: "smooth" })
             }
           >
             Join the Waitlist →
@@ -199,12 +201,6 @@ function Index() {
       }
     }
 
-
-
-
-
-
-
     // ----- toggle handlers (mirroring the original inline scripts) -----
     window.toggleFAQ = () => {
       const body = document.getElementById("faq-body");
@@ -255,19 +251,31 @@ function Index() {
       const email = emailEl.value.trim();
       const name = nameEl?.value.trim() ?? "";
       const linkedin =
-        (document.querySelector('input[name="linkedin"]') as HTMLInputElement | null)?.value.trim() ?? "";
+        (
+          document.querySelector('input[name="linkedin"]') as HTMLInputElement | null
+        )?.value.trim() ?? "";
       const facebook =
-        (document.querySelector('input[name="facebook"]') as HTMLInputElement | null)?.value.trim() ?? "";
+        (
+          document.querySelector('input[name="facebook"]') as HTMLInputElement | null
+        )?.value.trim() ?? "";
       const instagram =
-        (document.querySelector('input[name="instagram"]') as HTMLInputElement | null)?.value.trim() ?? "";
+        (
+          document.querySelector('input[name="instagram"]') as HTMLInputElement | null
+        )?.value.trim() ?? "";
       const tiktok =
-        (document.querySelector('input[name="tiktok"]') as HTMLInputElement | null)?.value.trim() ?? "";
+        (document.querySelector('input[name="tiktok"]') as HTMLInputElement | null)?.value.trim() ??
+        "";
       const twitter =
-        (document.querySelector('input[name="twitter"]') as HTMLInputElement | null)?.value.trim() ?? "";
-      const resumeFile = (document.getElementById("aplyer-resume") as HTMLInputElement | null)?.files?.[0];
-      const coverFile = (document.getElementById("aplyer-cover") as HTMLInputElement | null)?.files?.[0];
+        (
+          document.querySelector('input[name="twitter"]') as HTMLInputElement | null
+        )?.value.trim() ?? "";
+      const resumeFile = (document.getElementById("aplyer-resume") as HTMLInputElement | null)
+        ?.files?.[0];
+      const coverFile = (document.getElementById("aplyer-cover") as HTMLInputElement | null)
+        ?.files?.[0];
       const writingSample =
-        (document.getElementById("aplyer-sample") as HTMLTextAreaElement | null)?.value.trim() ?? "";
+        (document.getElementById("aplyer-sample") as HTMLTextAreaElement | null)?.value.trim() ??
+        "";
 
       errEl.style.display = "none";
       if (!email) {
@@ -296,9 +304,6 @@ function Index() {
       if (resumeFile) formData.append("resume", resumeFile);
       if (coverFile) formData.append("coverLetter", coverFile);
       if (writingSample) formData.append("writingSample", writingSample);
-
-
-
 
       const result = await subscribe(formData);
       if (result.ok) {
@@ -330,4 +335,3 @@ function Index() {
     </>
   );
 }
-

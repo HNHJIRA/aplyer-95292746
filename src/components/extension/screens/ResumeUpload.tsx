@@ -1,6 +1,14 @@
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowLeft, FileText, Upload, CheckCircle2, AlertCircle, X } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowLeft,
+  FileText,
+  Upload,
+  CheckCircle2,
+  AlertCircle,
+  X,
+} from "lucide-react";
 import { Button } from "../ui/Button";
 import { parseResume } from "@/lib/resume/parse";
 import { scoreResume } from "@/lib/resume/score";
@@ -47,7 +55,11 @@ export function ResumeUpload({ onNext, onBack }: { onNext: () => void; onBack: (
         resumeScore: score,
       });
       // best-effort backend sync (no-op if not signed in)
-      try { await syncResumeToBackend(file, parsed.text, score, meta); } catch (e) { console.warn("[aplyer] resume sync", e); }
+      try {
+        await syncResumeToBackend(file, parsed.text, score, meta);
+      } catch (e) {
+        console.warn("[aplyer] resume sync", e);
+      }
       setStatus("success");
     } catch {
       setError("Could not read this file.");
@@ -69,7 +81,10 @@ export function ResumeUpload({ onNext, onBack }: { onNext: () => void; onBack: (
 
   return (
     <div className="flex h-full flex-col px-6 pt-2">
-      <Header title="Upload Your Resume" subtitle="PDF or DOCX. Stored locally on your device." />
+      <Header
+        title="Upload Your Resume"
+        subtitle="PDF or DOCX. Saved to your Aplyer account when you are signed in."
+      />
 
       <div className="flex-1">
         {status !== "success" ? (
@@ -84,7 +99,11 @@ export function ResumeUpload({ onNext, onBack }: { onNext: () => void; onBack: (
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             className={`relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed bg-paper px-4 text-center transition-all ${
-              dragOver ? "border-brand-green bg-brand-green/5" : status === "error" ? "border-brand-red/50" : "border-border hover:border-brand-green/40"
+              dragOver
+                ? "border-brand-green bg-brand-green/5"
+                : status === "error"
+                  ? "border-brand-red/50"
+                  : "border-border hover:border-brand-green/40"
             }`}
           >
             <input
@@ -108,9 +127,15 @@ export function ResumeUpload({ onNext, onBack }: { onNext: () => void; onBack: (
               )}
             </div>
             <p className="mt-3 text-[15px] font-semibold text-foreground">
-              {status === "uploading" ? "Reading your resume…" : status === "error" ? error : "Drop your resume here"}
+              {status === "uploading"
+                ? "Reading your resume..."
+                : status === "error"
+                  ? error
+                  : "Drop your resume here"}
             </p>
-            <p className="mt-1 text-[13px] text-muted-foreground">or click to browse — PDF, DOCX up to 10 MB</p>
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              or click to browse. PDF or DOCX up to 10 MB
+            </p>
           </motion.label>
         ) : (
           <motion.div
@@ -125,11 +150,16 @@ export function ResumeUpload({ onNext, onBack }: { onNext: () => void; onBack: (
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="h-3.5 w-3.5 text-brand-green" />
-                  <span className="font-mono text-[12px] uppercase tracking-[0.14em] text-brand-green">Stored locally</span>
+                  <span className="font-mono text-[12px] uppercase tracking-[0.14em] text-brand-green">
+                    Resume ready
+                  </span>
                 </div>
-                <p className="mt-1 truncate text-[15px] font-semibold text-foreground">{meta?.fileName}</p>
+                <p className="mt-1 truncate text-[15px] font-semibold text-foreground">
+                  {meta?.fileName}
+                </p>
                 <p className="mt-0.5 text-[13px] text-muted-foreground">
-                  {meta && formatSize(meta.fileSize)} · {meta && new Date(meta.uploadedAt).toLocaleDateString()}
+                  {meta && formatSize(meta.fileSize)} ·{" "}
+                  {meta && new Date(meta.uploadedAt).toLocaleDateString()}
                 </p>
               </div>
               <button
@@ -144,9 +174,15 @@ export function ResumeUpload({ onNext, onBack }: { onNext: () => void; onBack: (
         )}
 
         <ul className="mt-5 space-y-2 text-[13px] text-muted-foreground">
-          <li className="flex items-center gap-2"><Dot /> Your file never leaves this device.</li>
-          <li className="flex items-center gap-2"><Dot /> Re-upload anytime to refresh your profile.</li>
-          <li className="flex items-center gap-2"><Dot /> Used only when you choose to apply.</li>
+          <li className="flex items-center gap-2">
+            <Dot /> Signed-in resumes are synchronized with your Aplyer account.
+          </li>
+          <li className="flex items-center gap-2">
+            <Dot /> Re-upload anytime to refresh your profile.
+          </li>
+          <li className="flex items-center gap-2">
+            <Dot /> Used to prepare your profile and application answers.
+          </li>
         </ul>
       </div>
 
@@ -168,7 +204,17 @@ function Dot() {
   return <span className="h-1 w-1 rounded-full bg-brand-green/60" />;
 }
 
-function NavRow({ onBack, onNext, nextDisabled, nextLabel = "Continue" }: { onBack?: () => void; onNext: () => void; nextDisabled?: boolean; nextLabel?: string }) {
+function NavRow({
+  onBack,
+  onNext,
+  nextDisabled,
+  nextLabel = "Continue",
+}: {
+  onBack?: () => void;
+  onNext: () => void;
+  nextDisabled?: boolean;
+  nextLabel?: string;
+}) {
   return (
     <div className="mt-4 flex items-center gap-2 pb-1">
       {onBack && (

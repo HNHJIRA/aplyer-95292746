@@ -11,13 +11,13 @@ export const Route = createFileRoute("/resume-match")({
       {
         name: "description",
         content:
-          "See how closely your resume matches a job description using AI-powered ATS and recruiter analysis.",
+          "See how closely your resume matches a job description with a focused resume comparison.",
       },
       { property: "og:title", content: "Resume Score vs the Job | Aplyer" },
       {
         property: "og:description",
         content:
-          "See how closely your resume matches a job description using AI-powered ATS and recruiter analysis.",
+          "See how closely your resume matches a job description with a focused resume comparison.",
       },
     ],
     links: [
@@ -66,7 +66,7 @@ const LOADING_MSGS = [
   "Reading your resume...",
   "Parsing the job description...",
   "Comparing keywords and skills...",
-  "Running ATS evaluation...",
+  "Comparing resume details...",
   "Building your match report...",
 ];
 
@@ -142,7 +142,14 @@ function ScoreCircle({ value, label }: { value: number; label: string }) {
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
       <div style={{ position: "relative", width: size, height: size }}>
         <svg width={size} height={size}>
-          <circle cx={size / 2} cy={size / 2} r={r} stroke={BORDER} strokeWidth={stroke} fill="none" />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            stroke={BORDER}
+            strokeWidth={stroke}
+            fill="none"
+          />
           <circle
             cx={size / 2}
             cy={size / 2}
@@ -167,7 +174,9 @@ function ScoreCircle({ value, label }: { value: number; label: string }) {
           }}
         >
           <div style={{ fontSize: 32, fontWeight: 900, color: NAVY, lineHeight: 1 }}>{display}</div>
-          <div style={{ fontSize: 11, color: MUTED, fontFamily: "'DM Mono', monospace", marginTop: 2 }}>
+          <div
+            style={{ fontSize: 11, color: MUTED, fontFamily: "'DM Mono', monospace", marginTop: 2 }}
+          >
             / 100
           </div>
         </div>
@@ -312,7 +321,8 @@ function ResumeMatchPage() {
       try {
         text = (await extractText(file)).replace(/\s+/g, " ").trim();
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Could not read this file. Try a different format.";
+        const msg =
+          e instanceof Error ? e.message : "Could not read this file. Try a different format.";
         setError(msg);
         setLoading(false);
         track("resume_match_analysis_failed", { reason: "extract" });
@@ -415,10 +425,20 @@ function ResumeMatchPage() {
             justifyContent: "space-between",
           }}
         >
-          <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+          <a
+            href="/"
+            style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}
+          >
             <svg width="32" height="32" viewBox="0 0 88 88" fill="none" aria-hidden="true">
               <defs>
-                <linearGradient id="rmNavG" x1="0" y1="44" x2="88" y2="44" gradientUnits="userSpaceOnUse">
+                <linearGradient
+                  id="rmNavG"
+                  x1="0"
+                  y1="44"
+                  x2="88"
+                  y2="44"
+                  gradientUnits="userSpaceOnUse"
+                >
                   <stop offset="0%" stopColor="#E5373A" />
                   <stop offset="45%" stopColor="#E5373A" />
                   <stop offset="55%" stopColor="#1DB954" />
@@ -426,16 +446,66 @@ function ResumeMatchPage() {
                 </linearGradient>
               </defs>
               <circle cx="44" cy="44" r="40" fill="#0D1829" stroke="url(#rmNavG)" strokeWidth="2" />
-              <line x1="22" y1="28" x2="44" y2="44" stroke="#E5373A" strokeWidth="5" strokeLinecap="round" />
-              <line x1="22" y1="60" x2="44" y2="44" stroke="#E5373A" strokeWidth="5" strokeLinecap="round" />
-              <line x1="44" y1="44" x2="56" y2="56" stroke="#1DB954" strokeWidth="5" strokeLinecap="round" />
-              <line x1="56" y1="56" x2="72" y2="28" stroke="#1DB954" strokeWidth="5" strokeLinecap="round" />
+              <line
+                x1="22"
+                y1="28"
+                x2="44"
+                y2="44"
+                stroke="#E5373A"
+                strokeWidth="5"
+                strokeLinecap="round"
+              />
+              <line
+                x1="22"
+                y1="60"
+                x2="44"
+                y2="44"
+                stroke="#E5373A"
+                strokeWidth="5"
+                strokeLinecap="round"
+              />
+              <line
+                x1="44"
+                y1="44"
+                x2="56"
+                y2="56"
+                stroke="#1DB954"
+                strokeWidth="5"
+                strokeLinecap="round"
+              />
+              <line
+                x1="56"
+                y1="56"
+                x2="72"
+                y2="28"
+                stroke="#1DB954"
+                strokeWidth="5"
+                strokeLinecap="round"
+              />
             </svg>
             <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <span style={{ fontFamily: "'Lato', sans-serif", fontSize: 26, fontWeight: 700, color: "#1DB954", letterSpacing: "-0.01em", lineHeight: 1 }}>
+              <span
+                style={{
+                  fontFamily: "'Lato', sans-serif",
+                  fontSize: 26,
+                  fontWeight: 700,
+                  color: "#1DB954",
+                  letterSpacing: "-0.01em",
+                  lineHeight: 1,
+                }}
+              >
                 Aplyer.ai
               </span>
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", color: "#E5373A", fontFamily: "'Lato', sans-serif" }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 3,
+                  textTransform: "uppercase",
+                  color: "#E5373A",
+                  fontFamily: "'Lato', sans-serif",
+                }}
+              >
                 Stop Skipping Jobs
               </span>
             </div>
@@ -459,8 +529,15 @@ function ResumeMatchPage() {
         </div>
       </header>
 
-      <div style={{ maxWidth: report ? 1180 : 820, width: "100%", margin: "0 auto", padding: "124px 20px 80px", flex: 1 }}>
-
+      <div
+        style={{
+          maxWidth: report ? 1180 : 820,
+          width: "100%",
+          margin: "0 auto",
+          padding: "124px 20px 80px",
+          flex: 1,
+        }}
+      >
         <h1
           style={{
             fontSize: 40,
@@ -474,7 +551,7 @@ function ResumeMatchPage() {
           Resume Score vs the Job
         </h1>
         <p style={{ color: MUTED, fontSize: 17, lineHeight: 1.5, margin: "0 0 28px" }}>
-          A free tool. See how your resume matches a job description, the way an ATS reads it. No signup.
+          A free tool. See how your resume compares with a job description. No signup.
         </p>
 
         {!report && (
@@ -549,7 +626,9 @@ function ResumeMatchPage() {
                   >
                     {file.name}
                   </div>
-                  <div style={{ color: MUTED, fontSize: 13, marginTop: 2 }}>{formatSize(file.size)}</div>
+                  <div style={{ color: MUTED, fontSize: 13, marginTop: 2 }}>
+                    {formatSize(file.size)}
+                  </div>
                 </div>
                 <button
                   onClick={() => inputRef.current?.click()}
@@ -692,7 +771,7 @@ function ResumeMatchPage() {
             )}
 
             <p style={{ marginTop: 28, color: MUTED, fontSize: 13, fontStyle: "italic" }}>
-              Modeled on how ATS systems and recruiters evaluate resumes for a specific role.
+              Compares the information in your resume with the requirements in the job description.
             </p>
           </>
         )}
@@ -736,7 +815,7 @@ function ResumeMatchPage() {
               >
                 <ScoreCircle value={report.overallMatch} label="Overall Match" />
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                  <Bar value={report.atsScore} label="ATS Compatibility" />
+                  <Bar value={report.atsScore} label="Resume Compatibility" />
                   <Bar value={report.keywordCoverage} label="Keyword Coverage" />
                 </div>
               </div>
@@ -807,7 +886,15 @@ function ResumeMatchPage() {
                   <h2 style={{ color: NAVY, fontSize: 22, margin: "28px 0 12px", fontWeight: 900 }}>
                     Strengths
                   </h2>
-                  <ul style={{ paddingLeft: 20, margin: 0, color: TEXT, fontSize: 16, lineHeight: 1.6 }}>
+                  <ul
+                    style={{
+                      paddingLeft: 20,
+                      margin: 0,
+                      color: TEXT,
+                      fontSize: 16,
+                      lineHeight: 1.6,
+                    }}
+                  >
                     {report.strengths?.map((s, i) => (
                       <li key={i}>{s}</li>
                     ))}
@@ -873,7 +960,9 @@ function ResumeMatchPage() {
                         >
                           Priority {p.priority || i + 1}
                         </div>
-                        <div style={{ fontWeight: 700, color: NAVY, fontSize: 16, marginBottom: 6 }}>
+                        <div
+                          style={{ fontWeight: 700, color: NAVY, fontSize: 16, marginBottom: 6 }}
+                        >
                           {p.title}
                         </div>
                         <div style={{ color: TEXT, fontSize: 15, lineHeight: 1.55 }}>
@@ -890,11 +979,22 @@ function ResumeMatchPage() {
                 const score = report.overallMatch ?? 0;
                 let tier = "Low";
                 let tierColor = RED;
-                if (score >= 90) { tier = "Very High"; tierColor = GREEN; }
-                else if (score >= 80) { tier = "High"; tierColor = GREEN; }
-                else if (score >= 70) { tier = "Medium to High"; tierColor = GREEN; }
-                else if (score >= 60) { tier = "Medium"; tierColor = AMBER; }
-                else if (score >= 50) { tier = "Low to Medium"; tierColor = AMBER; }
+                if (score >= 90) {
+                  tier = "Very High";
+                  tierColor = GREEN;
+                } else if (score >= 80) {
+                  tier = "High";
+                  tierColor = GREEN;
+                } else if (score >= 70) {
+                  tier = "Medium to High";
+                  tierColor = GREEN;
+                } else if (score >= 60) {
+                  tier = "Medium";
+                  tierColor = AMBER;
+                } else if (score >= 50) {
+                  tier = "Low to Medium";
+                  tierColor = AMBER;
+                }
                 return (
                   <div
                     style={{
@@ -941,7 +1041,8 @@ function ResumeMatchPage() {
                         lineHeight: 1.5,
                       }}
                     >
-                      This score reflects how closely your resume aligns with the job description. It does not guarantee an interview or hiring outcome.
+                      This score reflects how closely your resume aligns with the job description.
+                      It does not guarantee an interview or hiring outcome.
                     </div>
                   </div>
                 );
@@ -984,7 +1085,8 @@ function ResumeMatchPage() {
                 Get early access to Aplyer
               </h3>
               <p style={{ margin: "8px 0 16px", color: "#cdd6e0", fontSize: 15, lineHeight: 1.5 }}>
-                Aplyer writes your job application answers in your own voice. Join the waitlist for early access.
+                Aplyer writes your job application answers in your own voice. Join the waitlist for
+                early access.
               </p>
               {waitState === "done" ? (
                 <div
@@ -1067,10 +1169,16 @@ function ResumeMatchPage() {
             Powered by WriteDNA Technology™
           </div>
           <div style={{ display: "flex", gap: 16 }}>
-            <a href="/privacy" style={{ fontSize: 13, color: "#333", textDecoration: "none", fontWeight: 400 }}>
+            <a
+              href="/privacy"
+              style={{ fontSize: 13, color: "#333", textDecoration: "none", fontWeight: 400 }}
+            >
               Privacy Policy
             </a>
-            <a href="/terms" style={{ fontSize: 13, color: "#333", textDecoration: "none", fontWeight: 400 }}>
+            <a
+              href="/terms"
+              style={{ fontSize: 13, color: "#333", textDecoration: "none", fontWeight: 400 }}
+            >
               Terms of Service
             </a>
           </div>
@@ -1079,4 +1187,3 @@ function ResumeMatchPage() {
     </div>
   );
 }
-

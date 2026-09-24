@@ -42,7 +42,10 @@ async function fetchOverview() {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase.from("writing_samples").select("id", { count: "exact", head: true }).eq("user_id", uid),
+    supabase
+      .from("writing_samples")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", uid),
     supabase.from("subscriptions").select("*").eq("user_id", uid).maybeSingle(),
   ]);
   return {
@@ -56,10 +59,19 @@ async function fetchOverview() {
 }
 
 function DashboardHome() {
-  const { data, isLoading } = useQuery({ queryKey: ["dashboard-overview"], queryFn: fetchOverview });
+  const { data, isLoading } = useQuery({
+    queryKey: ["dashboard-overview"],
+    queryFn: fetchOverview,
+  });
 
   if (isLoading || !data) {
-    return <div className="space-y-3"><Skeleton h={28} w={260} /><Skeleton h={120} /><Skeleton h={180} /></div>;
+    return (
+      <div className="space-y-3">
+        <Skeleton h={28} w={260} />
+        <Skeleton h={120} />
+        <Skeleton h={180} />
+      </div>
+    );
   }
 
   const fullName = [data.profile?.first_name, data.profile?.last_name].filter(Boolean).join(" ");
@@ -91,10 +103,30 @@ function DashboardHome() {
       </motion.div>
 
       <div className="grid gap-3 md:grid-cols-4">
-        <Stat label="Resume" value={data.resume ? "Uploaded" : "Missing"} icon={<FileText className="h-4 w-4" />} tone={data.resume ? "green" : "muted"} />
-        <Stat label="Resume score" value={data.score ? `${data.score.score}/100` : "—"} icon={<TrendingUp className="h-4 w-4" />} tone={data.score ? "green" : "muted"} />
-        <Stat label="Profile" value={`${profileCompletion}%`} icon={<UserIcon className="h-4 w-4" />} tone={profileCompletion >= 80 ? "green" : "amber"} />
-        <Stat label="Writing samples" value={String(data.samplesCount)} icon={<BookOpen className="h-4 w-4" />} tone={data.samplesCount > 0 ? "green" : "muted"} />
+        <Stat
+          label="Resume"
+          value={data.resume ? "Uploaded" : "Missing"}
+          icon={<FileText className="h-4 w-4" />}
+          tone={data.resume ? "green" : "muted"}
+        />
+        <Stat
+          label="Resume score"
+          value={data.score ? `${data.score.score}/100` : "Not available"}
+          icon={<TrendingUp className="h-4 w-4" />}
+          tone={data.score ? "green" : "muted"}
+        />
+        <Stat
+          label="Profile"
+          value={`${profileCompletion}%`}
+          icon={<UserIcon className="h-4 w-4" />}
+          tone={profileCompletion >= 80 ? "green" : "amber"}
+        />
+        <Stat
+          label="Writing samples"
+          value={String(data.samplesCount)}
+          icon={<BookOpen className="h-4 w-4" />}
+          tone={data.samplesCount > 0 ? "green" : "muted"}
+        />
       </div>
 
       {(() => {
@@ -108,10 +140,13 @@ function DashboardHome() {
                 stage: (prof.writedna_stage as WriteDnaState["stage"]) ?? "idle",
                 voiceConfidence: Number(prof.voice_confidence ?? 0),
                 writingSampleCount: Number(prof.writing_sample_count ?? 0),
-                qualifyingProseCount: Number(prof.qualifying_prose_count ?? prof.writing_sample_count ?? 0),
+                qualifyingProseCount: Number(
+                  prof.qualifying_prose_count ?? prof.writing_sample_count ?? 0,
+                ),
                 resumeUploaded: !!prof.resume_uploaded,
                 resumeOnly: !!prof.resume_only,
-                voiceCardStatus: (prof.voice_card_status as WriteDnaState["voiceCardStatus"]) ?? "locked",
+                voiceCardStatus:
+                  (prof.voice_card_status as WriteDnaState["voiceCardStatus"]) ?? "locked",
                 voiceCard: (prof.voice_card_data as WriteDnaState["voiceCard"]) ?? null,
                 voiceCardGeneratedAt: (prof.voice_card_generated_at as string | null) ?? null,
                 voiceCardError: (prof.voice_card_error as string | null) ?? null,
@@ -134,7 +169,9 @@ function DashboardHome() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-[17px] font-bold tracking-tight">Setup checklist</h2>
-              <p className="text-[14px] text-muted-foreground">Complete these to unlock full autofill power.</p>
+              <p className="text-[14px] text-muted-foreground">
+                Complete these to unlock full autofill power.
+              </p>
             </div>
             <span className="font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
               {steps.filter((s) => s.done).length} / {steps.length}
@@ -142,13 +179,18 @@ function DashboardHome() {
           </div>
           <ul className="mt-3 space-y-2">
             {steps.map((s) => (
-              <li key={s.label} className="flex items-center gap-3 rounded-lg border border-border bg-paper px-4 py-2.5">
+              <li
+                key={s.label}
+                className="flex items-center gap-3 rounded-lg border border-border bg-paper px-4 py-2.5"
+              >
                 {s.done ? (
                   <CheckCircle2 className="h-4 w-4 text-brand-green" />
                 ) : (
                   <Circle className="h-4 w-4 text-muted-foreground" />
                 )}
-                <span className={`text-[15px] ${s.done ? "text-foreground" : "text-sub"}`}>{s.label}</span>
+                <span className={`text-[15px] ${s.done ? "text-foreground" : "text-sub"}`}>
+                  {s.label}
+                </span>
               </li>
             ))}
           </ul>
@@ -171,28 +213,51 @@ function DashboardHome() {
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <QuickAction href="/dashboard/resume" title="Update your resume" desc="Upload a new version, refresh your score." />
-        <QuickAction href="/dashboard/profile" title="Finish your profile" desc="Used to autofill applications instantly." />
+        <QuickAction
+          href="/dashboard/resume"
+          title="Update your resume"
+          desc="Upload a new version, refresh your score."
+        />
+        <QuickAction
+          href="/dashboard/profile"
+          title="Finish your profile"
+          desc="Used to autofill applications instantly."
+        />
       </div>
 
       {fullName && (
         <p className="text-center text-[13px] text-muted-foreground">
-          Signed in as <span className="text-foreground">{data.user.email}</span> · {data.subscription?.tier ?? "free"} plan
+          Signed in as <span className="text-foreground">{data.user.email}</span> ·{" "}
+          {data.subscription?.tier ?? "free"} plan
         </p>
       )}
     </div>
   );
 }
 
-function Stat({ label, value, icon, tone }: { label: string; value: string; icon: React.ReactNode; tone: "green" | "amber" | "muted" }) {
-  const toneCls = tone === "green" ? "text-brand-green" : tone === "amber" ? "text-[#E5B73A]" : "text-muted-foreground";
+function Stat({
+  label,
+  value,
+  icon,
+  tone,
+}: {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  tone: "green" | "amber" | "muted";
+}) {
+  const toneCls =
+    tone === "green"
+      ? "text-brand-green"
+      : tone === "amber"
+        ? "text-[#E5B73A]"
+        : "text-muted-foreground";
   return (
-    <motion.div
-      whileHover={{ y: -2 }}
-      className="rounded-xl border border-border bg-card p-4"
-    >
+    <motion.div whileHover={{ y: -2 }} className="rounded-xl border border-border bg-card p-4">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{label}</span>
+        <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          {label}
+        </span>
         <span className={toneCls}>{icon}</span>
       </div>
       <div className="mt-2 text-[22px] font-black tracking-tight">{value}</div>
@@ -216,5 +281,10 @@ function QuickAction({ href, title, desc }: { href: string; title: string; desc:
 }
 
 function Skeleton({ h, w }: { h: number; w?: number }) {
-  return <div className="animate-pulse rounded-xl bg-field" style={{ height: h, width: w ? w : undefined }} />;
+  return (
+    <div
+      className="animate-pulse rounded-xl bg-field"
+      style={{ height: h, width: w ? w : undefined }}
+    />
+  );
 }
