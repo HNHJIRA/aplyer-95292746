@@ -398,6 +398,16 @@
 
   .output-wrap.show { display: block; }
 
+  /* The two answer cards sit as equal columns on wide screens, stacked on small ones. */
+  #outputWrap, #gptWrap { grid-column: auto; }
+  #outputWrap.show, #gptWrap.show { display: flex; }
+  #outputWrap .output-panel, #gptWrap .output-panel { flex: 1; display: flex; flex-direction: column; }
+  #outputWrap .output-body, #gptWrap .output-body { flex: 1; }
+
+  @media(max-width:800px) {
+    #outputWrap, #gptWrap { grid-column: 1 / -1; }
+  }
+
   .output-panel {
     background: var(--navy2);
     border: 1px solid rgba(29,185,84,0.25);
@@ -748,7 +758,6 @@
     <div class="output-panel">
       <div class="output-head">
         <div class="output-left">
-          <div class="output-badge">✓ GENERATED</div>
           <div class="output-title">Aplyer</div>
           <div class="output-badge" id="hsAplyer" style="display:none;" aria-label="Human Score"></div>
         </div>
