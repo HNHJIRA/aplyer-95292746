@@ -201,6 +201,40 @@ export async function getFactInventoryState(
 }
 
 /**
+ * The P0 extraction step itself: pinned P0 prompt (one strict corrective retry
+ * inside the runner) -> deterministic grounding guardrails. Shared by the
+ * persisted profile path below and the stateless Demo path, so there is only
+ * ONE P0 implementation. Throws PromptError / GroundingError on failure.
+ */
+export async function extractGroundedInventory(
+  resumeText: string,
+  sourceId: string,
+): Promise<ResumeFactInventory> {
+  const text = resumeText.slice(0, MAX_RESUME_CHARS);
+  const { value: draft } = await runPromptValidated(
+    PROMPT_P0_FACT_INVENTORY,
+    buildFactInventoryUser(text),
+    validateFactInventoryShape,
+    FACT_INVENTORY_RETRY_INSTRUCTION,
+  );
+  const { inventory, rejections } = applyGrounding(draft, text, sourceId);
+  if (rejections.length) {
+    console.warn(
+      JSON.stringify({
+        evt: "p0_facts_rejected",
+        prompt: PROMPT_P0_FACT_INVENTORY.id,
+        count: rejections.length,
+        reasons: [...new Set(rejections.map((r) => r.reason))],
+      }),
+    );
+  }
+  return inventory;
+}
+
+/** Same minimum as the profile path; shorter text cannot ground an answer. */
+export const MIN_RESUME_TEXT_CHARS = MIN_RESUME_CHARS;
+
+/**
  * Idempotent, concurrency-safe extraction.
  * Zero AI calls when a ready inventory already matches the source hash.
  */
@@ -261,30 +295,7 @@ export async function ensureFactInventory(
 
   // 4. Run the pinned P0 prompt (one strict corrective retry inside).
   try {
-    const { value: draft } = await runPromptValidated(
-      PROMPT_P0_FACT_INVENTORY,
-      buildFactInventoryUser(resume.resumeText.slice(0, MAX_RESUME_CHARS)),
-      validateFactInventoryShape,
-      FACT_INVENTORY_RETRY_INSTRUCTION,
-    );
-
-    // 5. Deterministic grounding guardrails.
-    const { inventory, rejections } = applyGrounding(
-      draft,
-      resume.resumeText.slice(0, MAX_RESUME_CHARS),
-      resume.id,
-    );
-
-    if (rejections.length) {
-      console.warn(
-        JSON.stringify({
-          evt: "p0_facts_rejected",
-          prompt: PROMPT_P0_FACT_INVENTORY.id,
-          count: rejections.length,
-          reasons: [...new Set(rejections.map((r) => r.reason))],
-        }),
-      );
-    }
+    const inventory = await extractGroundedInventory(resume.resumeText, resume.id);
 
     // 6. Commit only while we still own the lock.
     const { data: committed } = await write
