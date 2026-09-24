@@ -321,7 +321,7 @@ describe("queue", () => {
     expect(t.completed).toBe(1);
     expect(rows[0].status).toBe("completed");
     expect(rows[0].payload).toBeNull();
-    expect(sendOk).toHaveBeenCalledWith("a@b.co", expect.any(Object), "An answer.");
+    expect(sendOk).toHaveBeenCalledWith("a@b.co", expect.any(Object), "An answer.", null);
   });
   it("stays queued (deferred, no attempt used) while the cap is reached", async () => {
     const { store, rows } = makeStore(OPEN, { spent: 9.9 });
