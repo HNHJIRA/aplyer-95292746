@@ -247,6 +247,58 @@ describe("OpenAI provider (server-side)", () => {
     expect(JSON.stringify(r)).not.toContain("req_abc");
   });
 
+  it("logs the model OpenAI actually returned, per attempt", async () => {
+    setEnv();
+    const log = vi.spyOn(console, "info").mockImplementation(() => {});
+    vi.stubGlobal("fetch", vi.fn(async () => okBody({ model: "example-model-version" })));
+    await generateChatgptDemoAnswer(input);
+    const logged = log.mock.calls.flat().join(" ");
+    expect(logged).toContain("returned_model=example-model-version");
+    // The configured id is never substituted for what OpenAI actually served.
+    expect(logged).not.toContain("returned_model=configured-model");
+  });
+
+  it("logs a different identifier when OpenAI serves a different model", async () => {
+    setEnv();
+    const log = vi.spyOn(console, "info").mockImplementation(() => {});
+    vi.stubGlobal("fetch", vi.fn(async () => okBody({ model: "another-model-2026-03-01" })));
+    await generateChatgptDemoAnswer(input);
+    const logged = log.mock.calls.flat().join(" ");
+    expect(logged).toContain("returned_model=another-model-2026-03-01");
+    expect(logged).not.toContain("example-model-version");
+  });
+
+  it("logs returned_model=unavailable (never a fabricated value) when OpenAI omits the model", async () => {
+    setEnv();
+    const log = vi.spyOn(console, "info").mockImplementation(() => {});
+    vi.stubGlobal("fetch", vi.fn(async () => okBody({ model: undefined })));
+    await generateChatgptDemoAnswer(input);
+    const logged = log.mock.calls.flat().join(" ");
+    expect(logged).toContain("returned_model=unavailable");
+    expect(logged).not.toContain("returned_model=configured-model");
+  });
+
+  it("the returned-model log carries no candidate data or secrets", async () => {
+    setEnv();
+    const log = vi.spyOn(console, "info").mockImplementation(() => {});
+    vi.stubGlobal("fetch", vi.fn(async () => okBody({ model: "example-model-version" })));
+    await generateChatgptDemoAnswer(input);
+    const logged = log.mock.calls.flat().join(" ");
+    for (const banned of [
+      "sk-test",
+      "Bearer",
+      "Authorization",
+      buildChatgptPrompt(input),
+      input.question,
+      input.resume,
+      input.jobDescription,
+      "Hello.",
+      "a@b.co",
+    ]) {
+      expect(logged).not.toContain(banned);
+    }
+  });
+
   it("falls back to the configured model and follows configuration changes", async () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
     process.env.OPENAI_API_KEY = "sk-test";
