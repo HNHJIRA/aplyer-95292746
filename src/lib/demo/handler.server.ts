@@ -18,7 +18,7 @@ import {
   normalizeEmail,
 } from "./policy";
 import type { DemoStore, DemoRequestRow } from "./store";
-import type { DemoGenerationResult, DemoGenerator, DemoInput } from "./generate.server";
+import type { DemoAiCall, DemoGenerationResult, DemoGenerator, DemoInput } from "./generate.server";
 import { DemoGenerationError } from "./generate.server";
 
 export const DEMO_SESSION_COOKIE = "aplyer_demo_sid";
@@ -102,24 +102,44 @@ function duplicateResponse(req: DemoRequestRow): { body: Record<string, unknown>
 }
 
 /** Records one AI operation's cost. Unknown pricing => unpriced, never guessed. */
+/**
+ * Records every actual AI call of one Demo side as its own cost event.
+ * Returns the summed estimated cost, or null when any call is unpriced
+ * (a price is never guessed).
+ */
 export async function recordGenerationCost(
   store: DemoStore,
   demoRequestId: string,
-  r: DemoGenerationResult,
+  side: "openai" | "aplyer",
+  calls: DemoAiCall[],
 ): Promise<{ cost: number | null }> {
-  const pricing = await store.getPricing(r.provider, r.model).catch(() => null);
-  const cost = computeCost(pricing, r.usage);
-  await store.recordCost({
-    demoRequestId,
-    side: r.side,
-    provider: r.provider,
-    model: r.model,
-    operation: r.operation,
-    inputTokens: r.usage.inputTokens ?? null,
-    outputTokens: r.usage.outputTokens ?? null,
-    estimatedCostUsd: cost,
-  });
-  return { cost };
+  let total: number | null = calls.length ? 0 : null;
+  for (const c of calls) {
+    const pricing = await store.getPricing(c.provider, c.model).catch(() => null);
+    const cost = computeCost(pricing, c.usage);
+    await store.recordCost({
+      demoRequestId,
+      side,
+      provider: c.provider,
+      model: c.model,
+      operation: c.operation,
+      inputTokens: c.usage.inputTokens ?? null,
+      outputTokens: c.usage.outputTokens ?? null,
+      estimatedCostUsd: cost,
+    });
+    total = cost === null || total === null ? null : Math.round((total + cost) * 1e6) / 1e6;
+  }
+  return { cost: total };
+}
+
+/** Records the calls billed before a failure. Never throws. */
+export async function recordFailedCalls(store: DemoStore, demoRequestId: string, e: unknown): Promise<void> {
+  if (!(e instanceof DemoGenerationError) || e.calls.length === 0) return;
+  try {
+    await recordGenerationCost(store, demoRequestId, "aplyer", e.calls);
+  } catch (err) {
+    console.error("[demo] cost record failed", err instanceof Error ? err.message : err);
+  }
 }
 
 export async function handleDemoRequest(request: Request, deps: DemoDeps): Promise<Response> {
@@ -215,7 +235,7 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
     const finish = async (result: DemoGenerationResult) => {
       let cost: number | null = null;
       try {
-        cost = (await recordGenerationCost(deps.store, row.id, result)).cost;
+        cost = (await recordGenerationCost(deps.store, row.id, result.side, result.calls)).cost;
       } catch (e) {
         console.error("[demo] cost record failed", e instanceof Error ? e.message : e);
       }
@@ -229,6 +249,7 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
     };
     const fail = async (e: unknown) => {
       const code = e instanceof DemoGenerationError ? e.code : e instanceof Error ? e.name : "unknown";
+      await recordFailedCalls(deps.store, row.id, e);
       await deps.store
         .update(row.id, { status: "failed", last_error: code.slice(0, 200) })
         .catch(() => undefined);
@@ -253,7 +274,12 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
           void (async () => {
             try {
               send("open", { ok: true });
-              const result = await deps.generate(input, (text) => send("delta", { text }));
+              // Only the candidate-facing Prompt A answer text is previewed; the
+              // validated answer arrives in `final` and replaces it.
+              const result = await deps.generate(input, {
+                onDelta: (text) => send("delta", { text }),
+                onProgress: (stage) => send("progress", { stage }),
+              });
               await finish(result);
               send("final", { answer: result.text });
             } catch (e) {

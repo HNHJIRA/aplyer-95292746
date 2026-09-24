@@ -11,7 +11,7 @@ import { countWords, missingSettings, spendAllows } from "./policy";
 import type { DemoStore, DemoRequestRow } from "./store";
 import type { DemoGenerator, DemoInput } from "./generate.server";
 import { DemoGenerationError } from "./generate.server";
-import { recordGenerationCost } from "./handler.server";
+import { recordFailedCalls, recordGenerationCost } from "./handler.server";
 
 const BACKOFF_MINUTES = [5, 15, 60, 180, 720];
 
@@ -93,7 +93,7 @@ async function runOne(
     let answer = job.answer;
     if (!answer) {
       const result = await deps.generate(input);
-      const { cost } = await recordGenerationCost(store, job.id, result);
+      const { cost } = await recordGenerationCost(store, job.id, result.side, result.calls);
       answer = result.text;
       // Persist before emailing so a send retry never pays for a second generation.
       await store.update(job.id, {
@@ -114,6 +114,7 @@ async function runOne(
     });
     tally.completed += 1;
   } catch (e) {
+    await recordFailedCalls(store, job.id, e);
     const code = e instanceof DemoGenerationError ? e.code : e instanceof Error ? e.name : "unknown";
     const exhausted = job.attempts >= job.max_attempts;
     const delay = BACKOFF_MINUTES[Math.min(job.attempts - 1, BACKOFF_MINUTES.length - 1)] ?? 60;
