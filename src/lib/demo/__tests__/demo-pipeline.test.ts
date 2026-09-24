@@ -247,7 +247,7 @@ function makeStore(settings: DemoSettings) {
     async admit(i: AdmitInput) {
       const dup = rows.find((r) => r.idempotency_key === i.idempotencyKey || r.content_hash === i.contentHash);
       if (dup) return { duplicate: true, request: dup };
-      const row = { id: `r${rows.length + 1}`, email: i.email, status: "admitting", answer: null, payload: i.payload, attempts: 0, max_attempts: 3, idempotency_key: i.idempotencyKey, content_hash: i.contentHash };
+      const row: DemoRequestRow & Record<string, unknown> = { id: `r${rows.length + 1}`, email: i.email, status: "admitting", answer: null, payload: i.payload, attempts: 0, max_attempts: 3, idempotency_key: i.idempotencyKey, content_hash: i.contentHash };
       rows.push(row);
       return { duplicate: false, request: row, counts: { email_total: 0, session_recent: 0, ip_recent: 0 }, settings: s, spend: spend() };
     },
