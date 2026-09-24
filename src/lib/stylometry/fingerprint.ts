@@ -144,7 +144,8 @@ export function computeFingerprint(writingSample: string): Fingerprint {
   const S = t.sentences.length;
   const sentLens = t.sentences.map((s) => s.words.length);
   const wordLens = t.words.map(letters);
-  const P = t.punctuationText;
+  // Decimal points / thousands separators inside numbers are not punctuation.
+  const P = t.punctuationText.replace(/(?<=\p{N})[.,](?=\p{N})/gu, "");
   const sufficient = W >= MIN_SAMPLE_WORDS;
 
   const inSet = (s: Set<string>) => norms.filter((n) => s.has(n)).length;
@@ -197,7 +198,7 @@ export function computeFingerprint(writingSample: string): Fingerprint {
     { name: "numeric_token_rate", label: "Numbers", category: "formatting", unit: "per_100_words", headlineEligible: true, definition: "Number tokens (e.g. 38, 3.5, 40%) per 100 words.", compute: per100(numbers) },
 
     // SENTENCE
-    { name: "sentence_count", label: "Sentence count", category: "sentence", unit: "count", exactCount: true, definition: "Sentences split at . ! ? … runs, bullet items and paragraph breaks.", compute: () => ({ observed: S }) },
+    { name: "sentence_count", label: "Sentence count", category: "sentence", unit: "count", exactCount: true, definition: "Sentences split at . ! ? … runs, bullet items and paragraph breaks. Decimal points and thousands separators inside numbers are never punctuation.", compute: () => ({ observed: S }) },
     { name: "avg_sentence_length", label: "Average sentence length", category: "sentence", unit: "words", headlineEligible: true, definition: "Words ÷ sentences.", compute: () => ({ observed: S ? W / S : null, numerator: W, denominator: S }) },
     { name: "median_sentence_length", label: "Median sentence length", category: "sentence", unit: "words", headlineEligible: true, definition: "Median words per sentence.", compute: () => ({ observed: S ? median(sentLens) : null, denominator: S }) },
     { name: "sentence_length_sd", label: "Sentence length variance (SD)", category: "sentence", unit: "words", definition: "Sample SD of words per sentence. Removed from headline by spec item 2; internal signal only.", compute: () => ({ observed: S >= 2 ? sd(sentLens) : null, denominator: S }) },

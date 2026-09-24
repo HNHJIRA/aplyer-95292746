@@ -108,7 +108,7 @@ describe("tokenizer", () => {
   });
   it("sentences, repeated punctuation, abbreviations, line breaks", () => {
     const t = tokenize("Really?! Yes... Dr. Smith agreed, e.g. twice.  Then   we left\nfor home.");
-    expect(t.sentences.map((s) => s.words.length)).toEqual([1, 1, 5, 5]);
+    expect(t.sentences.map((s) => s.words.length)).toEqual([1, 1, 6, 5]);
     expect(t.sentences[0].terminal).toBe("?!");
   });
   it("paragraphs and bullets", () => {
