@@ -36,12 +36,14 @@ export const DEMO_CHATGPT_PROMPT_TEMPLATE =
  * entirely when the field is blank.
  */
 export function buildChatgptPrompt(input: Pick<DemoInput, "question" | "jobDescription" | "resume" | "writingSample">): string {
-  const hasSample = typeof input.writingSample === "string" && input.writingSample.trim();
+  const hasSample = typeof input.writingSample === "string" && !!input.writingSample.trim();
+  // Function replacers: candidate text must be inserted literally, never
+  // interpreted (e.g. "$&" in a resume is not a back-reference).
   return DEMO_CHATGPT_PROMPT_TEMPLATE
-    .replace("[question]", input.question)
-    .replace("[job description]", input.jobDescription)
-    .replace("[resume]", input.resume)
-    .replace(hasSample ? "[writing sample, when provided]" : "\n[writing sample, when provided]", hasSample ? (input.writingSample as string) : "");
+    .replace("[question]", () => input.question)
+    .replace("[job description]", () => input.jobDescription)
+    .replace("[resume]", () => input.resume)
+    .replace("\n[writing sample, when provided]", hasSample ? () => "\n" + (input.writingSample as string) : "");
 }
 
 export interface ChatgptResult {
