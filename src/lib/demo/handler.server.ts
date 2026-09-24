@@ -46,6 +46,8 @@ export interface DemoDeps {
   checkEmail?: (email: string) => Promise<boolean>;
   /** AI-detector clients (Copyleaks + Pangram). Omitted => Human Score unavailable. */
   detectors?: DetectorClient[];
+  /** Detector calls are refused until approved detector pricing exists. */
+  detectorPricingConfigured?: () => boolean;
 }
 
 async function sha256(v: string): Promise<string> {

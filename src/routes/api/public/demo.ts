@@ -39,6 +39,11 @@ export const Route = createFileRoute("/api/public/demo")({
           salt: process.env.DEMO_HASH_SALT,
           checkEmail: zeroBounceAllows,
           detectors: demoDetectorClients(),
+          // CLIENT DECISION REQUIRED: approved per-call detector price (USD).
+          detectorPricingConfigured: () => {
+            const v = Number(process.env.DEMO_DETECTOR_COST_PER_CALL_USD);
+            return Number.isFinite(v) && v > 0;
+          },
         }),
     },
   },
