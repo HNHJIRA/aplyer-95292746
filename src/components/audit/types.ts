@@ -104,7 +104,7 @@ export function partialAuditFromJson(value: unknown): Audit | null {
         fixPoints: partialStrList(g["fixPoints"]),
         employer: partialStr(g["employer"]) || null,
       };
-      return rf.flag.trim() || rf.whyPoints!.length || rf.fixPoints!.length ? rf : null;
+      return rf.flag!.trim() || rf.whyPoints!.length || rf.fixPoints!.length ? rf : null;
     })
     .filter((f): f is RedFlag => f !== null);
   if (flags.length) out.redFlags = flags;
