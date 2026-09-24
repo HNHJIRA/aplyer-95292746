@@ -10,6 +10,8 @@ import { sseFrame, sseHeaders } from "@/lib/ai/anthropic-stream.server";
 import {
   DEMO_COPY,
   computeCost,
+  countWords,
+  normalizeWritingSample,
   decideAdmission,
   isValidEmail,
   isValidIdempotencyKey,
@@ -130,10 +132,16 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
     if (!email) return respond(request, { error: DEMO_COPY.emailRequired }, 400, null);
     if (!isValidEmail(email)) return respond(request, { error: DEMO_COPY.emailInvalid }, 400, null);
 
+    const writingSample = normalizeWritingSample(body.writingSample);
+    if (writingSample === undefined) {
+      return respond(request, { error: DEMO_COPY.fieldsRequired }, 400, null);
+    }
     const input: DemoInput = {
       resume: str(body.resume),
       jobDescription: str(body.jobDescription),
       question: str(body.question),
+      writingSample,
+      writingSampleWordCount: countWords(writingSample),
     };
     if (!input.resume || !input.jobDescription || !input.question) {
       return respond(request, { error: DEMO_COPY.fieldsRequired }, 400, null);
@@ -160,7 +168,7 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
     // 3. Idempotency: client key is validated and scoped to this email on the
     // server; without one, the request content itself is the key.
     const contentHash = await sha256(
-      `${input.resume}\u0000${input.jobDescription}\u0000${input.question}`,
+      `${input.resume}\u0000${input.jobDescription}\u0000${input.question}\u0000${input.writingSample ?? ""}`,
     );
     const rawKey =
       request.headers.get("idempotency-key") ?? (typeof body.idempotencyKey === "string" ? body.idempotencyKey : "");
