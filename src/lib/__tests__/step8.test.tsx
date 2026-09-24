@@ -97,7 +97,7 @@ describe("11. Resume Match paragraph splitting", () => {
     expect(toReadableParagraphs("A one. A two.\n\nB one.")).toEqual(["A one. A two.", "B one."]);
   });
   it("never leaves a one-sentence tail paragraph", () => {
-    const paras = toReadableParagraphs("A. B. C. D. E. F. G.");
+    const paras = toReadableParagraphs("Aa one. Bb two. Cc three. Dd four. Ee five. Ff six. Gg seven.");
     expect(paras.map((p) => splitSentences(p).length)).toEqual([3, 4]);
   });
 });
