@@ -84,6 +84,8 @@ describe("prompt I — classification", () => {
 
 describe("prompt B — voice card", () => {
   const base = {
+    tagline: "You get to the point fast.",
+    reads: "Reads like short notes with the point up front.",
     headline: "You write in clean, direct lines.",
     tone: "warm",
     cadence: "short",

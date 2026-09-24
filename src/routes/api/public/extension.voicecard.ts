@@ -4,11 +4,13 @@ import {
   PROMPT_B_VOICE_CARD,
   REQUIRED_QUALIFYING_SAMPLES,
   VOICE_CARD_RETRY_INSTRUCTION,
+  VOICE_CARD_SOURCE_HASH_VERSION,
   buildVoiceCardUser,
   validateVoiceCard,
   type VoiceCardData,
 } from "@/lib/ai/prompts/prompt-b-voice-card";
 import { PromptError, runPromptValidated } from "@/lib/ai/run-prompt.server";
+import { computeRarity, type Rarity } from "@/lib/stylometry/rarity";
 
 const PROMPT_VERSION = PROMPT_B_VOICE_CARD.version;
 const MODEL = PROMPT_B_VOICE_CARD.model;
@@ -50,7 +52,11 @@ export const Route = createFileRoute("/api/public/extension/voicecard")({
           const userId = authData.user.id;
 
           if (action === "state") {
-            return jsonWithCors(await getVoiceCardState(supabaseAdmin, userId));
+            const st = await getVoiceCardState(supabaseAdmin, userId);
+            if (st?.voice_card_status === "generated" && st.voice_card_data) {
+              return jsonWithCors({ ...st, rarity: await voiceCardRarity(supabaseAdmin, userId) });
+            }
+            return jsonWithCors(st);
           }
 
           if (action === "retry") {
@@ -76,7 +82,9 @@ export const Route = createFileRoute("/api/public/extension/voicecard")({
           }
 
           if (action === "start") {
-            return jsonWithCors(await startVoiceCardGeneration(supabaseAdmin, userId));
+            const res = await startVoiceCardGeneration(supabaseAdmin, userId);
+            if (res.status === "generated") return jsonWithCors({ ...res, rarity: await voiceCardRarity(supabaseAdmin, userId) });
+            return jsonWithCors(res);
           }
 
           if (action === "generate_ab_demo") {
@@ -294,7 +302,7 @@ async function fetchSourceSnapshot(supabase: any, userId: string): Promise<Sourc
     title: string;
   }>;
   const qualifyingSamples = rawSamples.filter((s) => isQualifyingProse(s.content, s.type));
-  const sourceHash = await sha256Hex([resume?.id ?? "", "|", qualifyingSamples.map((s) => s.content_hash).join(","), "|", PROMPT_VERSION].join(""));
+  const sourceHash = await sha256Hex([resume?.id ?? "", "|", qualifyingSamples.map((s) => s.content_hash).join(","), "|", VOICE_CARD_SOURCE_HASH_VERSION].join(""));
   return { resumeId: resume?.id ?? null, resumeText: resume?.resume_text ?? null, qualifyingSamples, sourceHash };
 }
 
@@ -335,4 +343,24 @@ async function callClaudeText(system: string, user: string, maxTokens: number): 
   if (!res.ok) throw new Error(`Claude ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
   const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
   return data.content?.find((c) => c.type === "text")?.text?.trim() ?? "";
+}
+
+/**
+ * Rarity is derived on read from the same qualifying samples and the same
+ * approved ordinary-writer references the Demo scoreboard uses. Nothing is
+ * stored; no AI call; it never feeds archetype selection. Any failure =>
+ * unavailable (never a made-up percentile).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function voiceCardRarity(supabase: any, userId: string): Promise<Rarity> {
+  try {
+    const { data } = await supabase.from("demo_settings").select("scoreboard_references").eq("id", true).maybeSingle();
+    const refs = Array.isArray(data?.scoreboard_references) ? data.scoreboard_references : [];
+    if (!refs.length) return { status: "unavailable" };
+    const snap = await fetchSourceSnapshot(supabase, userId);
+    const text = snap.qualifyingSamples.slice(0, 2).map((s) => s.content).join("\n\n");
+    return computeRarity(text, refs);
+  } catch {
+    return { status: "unavailable" };
+  }
 }

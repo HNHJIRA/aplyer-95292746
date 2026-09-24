@@ -1,3 +1,4 @@
+import { demoDetectorClients } from "@/lib/detectors/clients.server";
 /**
  * Waitlist queue runner — called on a schedule (pg_cron) so queued follow-up
  * work (Brevo contact sync, welcome email) is always processed, even when the
@@ -38,6 +39,7 @@ async function handle(request: Request): Promise<Response> {
     generate: generateAplyerDemoAnswer,
     generateChatgpt: generateChatgptDemoAnswer,
     sendResult: sendDemoResultEmail,
+    detectors: demoDetectorClients(),
   });
   return new Response(JSON.stringify({ ok: true, ...result, demo }), {
     status: 200,

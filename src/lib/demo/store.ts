@@ -1,5 +1,6 @@
 /** Storage contract for demo cost controls (implemented server-side; faked in tests). */
 import type { ScoreboardConfig } from "./scoreboard";
+import type { HumanScoreConfig } from "@/lib/detectors/human-score";
 import type { AdmissionCounts, DemoSettings, ModelPricing, SpendSnapshot } from "./policy";
 
 export type DemoStatus =
@@ -25,6 +26,8 @@ export interface DemoRequestRow {
   chatgpt_status?: "pending" | "completed" | "failed" | "not_configured" | null;
   scoreboard?: unknown;
   scoreboard_status?: "shown" | "suppressed" | null;
+  human_score?: unknown;
+  human_score_status?: "available" | "unavailable" | null;
 }
 
 export interface AdmitInput {
@@ -55,6 +58,8 @@ export interface CostEventInput {
   inputTokens: number | null;
   outputTokens: number | null;
   estimatedCostUsd: number | null;
+  /** Wall-clock duration of the provider call, when measured. */
+  durationMs?: number | null;
 }
 
 export interface DemoStore {
@@ -67,4 +72,6 @@ export interface DemoStore {
   requeueStale(): Promise<void>;
   /** Scoreboard threshold + approved references. Absent/null => scoreboard suppressed. */
   getScoreboardConfig?(): Promise<ScoreboardConfig | null>;
+  /** Human Score display switch + detector length gate. Absent => Human Score unavailable. */
+  getHumanScoreConfig?(): Promise<HumanScoreConfig | null>;
 }

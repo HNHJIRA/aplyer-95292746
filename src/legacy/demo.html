@@ -764,6 +764,7 @@
         <div class="output-left">
           <div class="output-badge">✓ GENERATED</div>
           <div class="output-title">Aplyer</div>
+          <div class="output-badge" id="hsAplyer" style="display:none;" aria-label="Human Score"></div>
         </div>
         <div class="output-actions">
           <button class="copy-btn" id="copyBtn" onclick="copyAnswer()">Copy Answer</button>
@@ -791,6 +792,7 @@
       <div class="output-head">
         <div class="output-left">
           <div class="output-title">ChatGPT</div>
+          <div class="output-badge" id="hsChatgpt" style="display:none;" aria-label="Human Score"></div>
         </div>
         <div class="output-actions">
           <button class="copy-btn" id="gptCopyBtn" onclick="copyGptAnswer()">Copy Answer</button>
@@ -998,6 +1000,19 @@
     document.getElementById('sbWrap').classList.add('show');
   }
 
+  // Human Score badge. Rendered only from a server result that is valid for BOTH answers.
+  function resetHumanScore() {
+    ['hsAplyer', 'hsChatgpt'].forEach(function (id) { const el = document.getElementById(id); el.textContent = ''; el.style.display = 'none'; });
+  }
+  function onHumanScore(h) {
+    if (!h || !h.aplyer || !h.chatgpt) return resetHumanScore();
+    [['hsAplyer', h.aplyer.shield], ['hsChatgpt', h.chatgpt.shield]].forEach(function (p) {
+      const el = document.getElementById(p[0]);
+      el.textContent = 'Human Score \u00b7 Shield: ' + Math.floor(Number(p[1])) + '%';
+      el.style.display = '';
+    });
+  }
+
   // ChatGPT side. The prompt shown is exactly the string the server sent.
   let gptPromptText = '';
   function resetGpt() {
@@ -1078,7 +1093,7 @@
     outputWrap.classList.remove('show');
     outputWrap.classList.remove('writing');
     document.getElementById('outputText').innerHTML = '';
-    resetGpt(); resetScoreboard();
+    resetGpt(); resetScoreboard(); resetHumanScore();
 
     let scrolled = false;
 
@@ -1093,6 +1108,7 @@
         writingSample: writingSample,
         onChatgpt: onGpt,
         onScoreboard: onScoreboard,
+        onHumanScore: onHumanScore,
         onChatgptDelta: onGptDelta,
         onDelta: function (preview) {
           document.getElementById('outputQ').textContent = question;
