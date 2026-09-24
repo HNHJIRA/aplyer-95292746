@@ -233,33 +233,8 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
     // processing ends (completed or failed), then are cleared.
     await deps.store.update(row.id, { status: "running" });
 
-    const finish = async (result: DemoGenerationResult) => {
-      let cost: number | null = null;
-      try {
-        cost = (await recordGenerationCost(deps.store, row.id, result.side, result.calls)).cost;
-      } catch (e) {
-        console.error("[demo] cost record failed", e instanceof Error ? e.message : e);
-      }
-      await deps.store.update(row.id, {
-        status: "completed",
-        payload: null,
-        answer: result.text,
-        estimated_cost_usd: cost,
-        cost_status: cost === null ? "unpriced" : "priced",
-        completed_at: new Date().toISOString(),
-      });
-    };
-    const fail = async (e: unknown) => {
-      const code = e instanceof DemoGenerationError ? e.code : e instanceof Error ? e.name : "unknown";
-      await recordFailedCalls(deps.store, row.id, e);
-      await deps.store
-        .update(row.id, { status: "failed", payload: null, last_error: code.slice(0, 200) })
-        .catch(() => undefined);
-      return e instanceof DemoGenerationError && e.busy
-        ? "The demo is busy. Please try again in a moment."
-        : DEMO_COPY.generic;
-    };
-
+    // 5. Run now. Both sides consume the SAME canonical `input` object and run
+    // concurrently inside this one admitted request (one reservation).
     if (wantsStream(request)) {
       const encoder = new TextEncoder();
       const out = new ReadableStream<Uint8Array>({
@@ -276,17 +251,12 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
           void (async () => {
             try {
               send("open", { ok: true });
-              // Only the candidate-facing Prompt A answer text is previewed; the
-              // validated answer arrives in `final` and replaces it.
-              const result = await deps.generate(input, {
-                onDelta: (text) => send("delta", { text }),
-                onProgress: (stage) => send("progress", { stage }),
-              });
-              await finish(result);
-              send("final", { answer: result.text });
+              const r = await runBothSides(deps, row.id, input, send);
+              if (r.aplyer.ok) send("final", { answer: r.aplyer.text });
+              else send("error", { error: r.aplyer.error });
             } catch (e) {
-              console.error("[demo] stream failed", e instanceof Error ? e.message : e);
-              send("error", { error: await fail(e) });
+              console.error(`[demo] stream failed request=${row.id}`, e instanceof Error ? e.name : "unknown");
+              send("error", { error: DEMO_COPY.generic });
             } finally {
               send("done", { ok: true });
               closed = true;
@@ -304,14 +274,10 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
       return new Response(out, { status: 200, headers });
     }
 
-    try {
-      const result = await deps.generate(input);
-      await finish(result);
-      return respond(request, { answer: result.text }, 200, setCookie);
-    } catch (e) {
-      const msg = await fail(e);
-      return respond(request, { error: msg }, 500, setCookie);
-    }
+    const r = await runBothSides(deps, row.id, input, null);
+    const body: Record<string, unknown> = r.aplyer.ok ? { answer: r.aplyer.text } : { error: r.aplyer.error };
+    if (r.chatgpt) body.chatgpt = r.chatgpt;
+    return respond(request, body, r.aplyer.ok ? 200 : 500, setCookie);
   } catch (err) {
     console.error("[demo]", err instanceof Error ? err.message : err);
     return respond(request, { error: DEMO_COPY.generic }, 500, setCookie);
