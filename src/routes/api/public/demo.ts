@@ -1,6 +1,7 @@
 // Public demo answer endpoint, wrapped in server-side cost controls
 // (email gate, per-email/session/IP limits, hard daily cap, idempotency,
 // durable queue). Generation runs the real Aplyer answer pipeline.
+import { demoDetectorClients } from "@/lib/detectors/clients.server";
 import { createFileRoute } from "@tanstack/react-router";
 import { preflight } from "@/lib/cors";
 import { handleDemoRequest } from "@/lib/demo/handler.server";
@@ -37,6 +38,7 @@ export const Route = createFileRoute("/api/public/demo")({
           generateChatgpt: generateChatgptDemoAnswer,
           salt: process.env.DEMO_HASH_SALT,
           checkEmail: zeroBounceAllows,
+          detectors: demoDetectorClients(),
         }),
     },
   },

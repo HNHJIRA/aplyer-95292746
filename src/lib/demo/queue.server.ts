@@ -16,6 +16,7 @@ import {
   recordFailedCalls,
   recordGenerationCost,
   runChatgptSide,
+  runHumanScore,
   scoreAndMaybeRegenerate,
   type ChatgptView,
 } from "./handler.server";
@@ -28,6 +29,8 @@ export interface DemoQueueDeps {
   generate: DemoGenerator;
   /** ChatGPT side; omitted = single-sided. */
   generateChatgpt?: ChatgptGenerator;
+  /** AI-detector clients; omitted => Human Score unavailable. */
+  detectors?: import("@/lib/detectors/clients.server").DetectorClient[];
   sendResult: (
     to: string,
     input: DemoInput,
@@ -150,6 +153,11 @@ async function runOne(
         const next = known === null || sb.extraCost === null ? null : Math.round((known + sb.extraCost) * 1e6) / 1e6;
         await store.update(job.id, { estimated_cost_usd: next, cost_status: next === null ? "unpriced" : "priced" });
       }
+    }
+    // Human Score runs once per request (a stored status means it already ran,
+    // so an email retry never re-bills the detectors).
+    if (!job.human_score_status && answer) {
+      await runHumanScore(deps, job.id, answer, chatgpt?.status === "completed" ? chatgpt.answer ?? null : null);
     }
     const sent = await deps.sendResult(job.email, input, answer!, chatgpt);
     if (!sent.ok) throw new DemoGenerationError(`email_${sent.errorCode ?? "failed"}`);

@@ -72,6 +72,7 @@ export type Database = {
         Row: {
           created_at: string
           demo_request_id: string
+          duration_ms: number | null
           estimated_cost_usd: number | null
           id: string
           input_tokens: number | null
@@ -85,6 +86,7 @@ export type Database = {
         Insert: {
           created_at?: string
           demo_request_id: string
+          duration_ms?: number | null
           estimated_cost_usd?: number | null
           id?: string
           input_tokens?: number | null
@@ -98,6 +100,7 @@ export type Database = {
         Update: {
           created_at?: string
           demo_request_id?: string
+          duration_ms?: number | null
           estimated_cost_usd?: number | null
           id?: string
           input_tokens?: number | null
@@ -156,6 +159,8 @@ export type Database = {
           delivered_at: string | null
           email: string
           estimated_cost_usd: number | null
+          human_score: Json | null
+          human_score_status: string | null
           id: string
           idempotency_key: string
           ip_hash: string
@@ -185,6 +190,8 @@ export type Database = {
           delivered_at?: string | null
           email: string
           estimated_cost_usd?: number | null
+          human_score?: Json | null
+          human_score_status?: string | null
           id?: string
           idempotency_key: string
           ip_hash: string
@@ -214,6 +221,8 @@ export type Database = {
           delivered_at?: string | null
           email?: string
           estimated_cost_usd?: number | null
+          human_score?: Json | null
+          human_score_status?: string | null
           id?: string
           idempotency_key?: string
           ip_hash?: string
@@ -235,6 +244,9 @@ export type Database = {
       demo_settings: {
         Row: {
           daily_cap_usd: number | null
+          detector_length_tolerance: number | null
+          detector_min_words: number | null
+          human_score_display: boolean
           id: boolean
           ip_limit: number | null
           ip_window_seconds: number | null
@@ -249,6 +261,9 @@ export type Database = {
         }
         Insert: {
           daily_cap_usd?: number | null
+          detector_length_tolerance?: number | null
+          detector_min_words?: number | null
+          human_score_display?: boolean
           id?: boolean
           ip_limit?: number | null
           ip_window_seconds?: number | null
@@ -263,6 +278,9 @@ export type Database = {
         }
         Update: {
           daily_cap_usd?: number | null
+          detector_length_tolerance?: number | null
+          detector_min_words?: number | null
+          human_score_display?: boolean
           id?: boolean
           ip_limit?: number | null
           ip_window_seconds?: number | null
@@ -933,6 +951,8 @@ export type Database = {
           delivered_at: string | null
           email: string
           estimated_cost_usd: number | null
+          human_score: Json | null
+          human_score_status: string | null
           id: string
           idempotency_key: string
           ip_hash: string

@@ -5,6 +5,10 @@
  */
 (function (root) {
   var DEFAULT_BASE = '';
+  function validShield(v) { return typeof v === 'number' && isFinite(v) && v >= 0 && v <= 100; }
+  function validHumanScore(h) {
+    return !!(h && h.aplyer && h.chatgpt && validShield(h.aplyer.shield) && validShield(h.chatgpt.shield));
+  }
   var GENERIC_ERROR = 'The demo is busy. Please try again in a moment.';
 
   function parsePayload(raw) {
@@ -58,6 +62,7 @@
     var onChatgpt = opts.onChatgpt || function () {};
     var onChatgptDelta = opts.onChatgptDelta || function () {};
     var onScoreboard = opts.onScoreboard || function () {};
+    var onHumanScore = opts.onHumanScore || function () {};
     var gptPreview = '';
 
     var response = await fetchImpl(base + '/api/public/demo?stream=1', {
@@ -126,6 +131,9 @@
         } else if (frame.event === 'scoreboard') {
           // Sent once, complete, after both answers. Never partial.
           if (payload && payload.status === 'shown' && Array.isArray(payload.markers) && payload.markers.length) onScoreboard(payload);
+        } else if (frame.event === 'human_score') {
+          // Sent once, only when BOTH answers have a valid score.
+          if (validHumanScore(payload)) onHumanScore(payload);
         } else if (frame.event === 'final') {
           var answer = textOf(payload);
           if (answer && answer.trim()) final = answer;
@@ -175,6 +183,9 @@
     }
     if (data && data.scoreboard && data.scoreboard.status === 'shown' && Array.isArray(data.scoreboard.markers) && opts && opts.onScoreboard) {
       opts.onScoreboard(data.scoreboard);
+    }
+    if (data && validHumanScore(data.humanScore) && opts && opts.onHumanScore) {
+      opts.onHumanScore(data.humanScore);
     }
     if (response.ok && data && data.answer) return String(data.answer);
     if (data && (data.status === 'queued' || data.status === 'processing') && data.message) {

@@ -21,6 +21,16 @@ import type { DemoStore, DemoRequestRow } from "./store";
 import type { DemoAiCall, DemoGenerator, DemoInput } from "./generate.server";
 import { DemoGenerationError } from "./generate.server";
 import type { ChatgptGenerator } from "./openai.server";
+import { spendAllows } from "./policy";
+import {
+  computeHumanScore,
+  detectorGateOpen,
+  humanScoreView,
+  type DetectorOutcome,
+  type HumanScoreView,
+  type StoredHumanScore,
+} from "@/lib/detectors/human-score";
+import type { DetectorClient } from "@/lib/detectors/clients.server";
 import { resolveScoreboard, selectMarkers, type MarkerSelection, type ScoreboardView } from "./scoreboard";
 
 export const DEMO_SESSION_COOKIE = "aplyer_demo_sid";
@@ -34,6 +44,8 @@ export interface DemoDeps {
   salt: string | undefined;
   /** Optional deliverability check (existing ZeroBounce rule). false = reject. */
   checkEmail?: (email: string) => Promise<boolean>;
+  /** AI-detector clients (Copyleaks + Pangram). Omitted => Human Score unavailable. */
+  detectors?: DetectorClient[];
 }
 
 async function sha256(v: string): Promise<string> {
@@ -326,6 +338,86 @@ export async function scoreAndMaybeRegenerate(
 }
 
 /**
+ * Human Score step — runs AFTER the scoreboard and independently of it (it
+ * neither reads nor changes the scoreboard). Only the two final answer texts
+ * are sent to the detectors. Order of gates, all before any paid call:
+ * configuration present -> spec length gate -> daily cap still allows spend.
+ * Every provider call is recorded as a cost event (unpriced: no approved
+ * detector pricing exists). Results are stored once, so retries never re-bill.
+ * Returns the candidate-facing view, or null (hidden). Never throws.
+ */
+export async function runHumanScore(
+  deps: Pick<DemoDeps, "store" | "detectors">,
+  id: string,
+  aplyerText: string | null,
+  chatgptText: string | null,
+): Promise<HumanScoreView | null> {
+  const { store } = deps;
+  const unavailable = async (reason: string) => {
+    console.log(JSON.stringify({ evt: "demo_human_score_unavailable", request: id, reason }));
+    await store.update(id, { human_score: null, human_score_status: "unavailable" }).catch(() => undefined);
+    return null;
+  };
+  try {
+    if (!deps.detectors?.length || !store.getHumanScoreConfig) return await unavailable("not_configured");
+    const cfg = await store.getHumanScoreConfig().catch(() => null);
+    if (!cfg) return await unavailable("no_config");
+    if (!detectorGateOpen(aplyerText, chatgptText, cfg)) return await unavailable("length_gate");
+    const { settings, spend } = await store.spendSnapshot();
+    if (!settings || !spendAllows(settings, spend)) return await unavailable("daily_cap");
+
+    const sides = [
+      { side: "aplyer" as const, costSide: "aplyer" as const, text: aplyerText! },
+      { side: "chatgpt" as const, costSide: "openai" as const, text: chatgptText! },
+    ];
+    const runs = await Promise.all(
+      sides.flatMap((s) =>
+        deps.detectors!.map(async (client) => {
+          const out: DetectorOutcome = await client
+            .check(s.text, { requestId: id, side: s.side })
+            .catch(() => ({ provider: client.provider, status: "failed" as const, code: "client_error", service: client.service, durationMs: 0, called: true }));
+          if (out.status === "ok" || out.called) {
+            await store
+              .recordCost({
+                demoRequestId: id,
+                side: s.costSide,
+                provider: client.provider,
+                model: client.service,
+                operation: "detector_ai_check",
+                inputTokens: null,
+                outputTokens: null,
+                estimatedCostUsd: null, // no approved detector pricing => unpriced, never guessed
+                durationMs: out.durationMs,
+              })
+              .catch((e) => console.error(`[demo] detector cost record failed request=${id}`, e instanceof Error ? e.message : "unknown"));
+          }
+          return { side: s.side, out };
+        }),
+      ),
+    );
+    const pick = (side: "aplyer" | "chatgpt") =>
+      computeHumanScore(Object.fromEntries(runs.filter((r) => r.side === side).map((r) => [r.out.provider, r.out])));
+    const stored: StoredHumanScore = { aplyer: pick("aplyer"), chatgpt: pick("chatgpt") };
+    const ok = stored.aplyer.status === "available" && stored.chatgpt.status === "available";
+    if (!ok) {
+      const reasons = [stored.aplyer, stored.chatgpt].map((r) => (r.status === "unavailable" ? r.reason : "ok"));
+      console.log(JSON.stringify({ evt: "demo_human_score_unavailable", request: id, reason: reasons.join(",") }));
+    }
+    await store.update(id, { human_score: stored, human_score_status: ok ? "available" : "unavailable" }).catch(() => undefined);
+    return humanScoreView(stored, cfg.display);
+  } catch (e) {
+    return await unavailable(e instanceof Error ? e.name : "unknown");
+  }
+}
+
+/** Reads the display switch for an already-stored result (duplicates). */
+export async function storedHumanScoreView(store: DemoStore, row: DemoRequestRow): Promise<HumanScoreView | null> {
+  if (row.human_score_status !== "available" || !store.getHumanScoreConfig) return null;
+  const cfg = await store.getHumanScoreConfig().catch(() => null);
+  return humanScoreView(row.human_score, cfg?.display === true);
+}
+
+/**
  * Runs both sides concurrently from one canonical input inside one admitted
  * request, then (non-streamed) the scoreboard, then writes the terminal row
  * state once (payload cleared).
@@ -348,6 +440,8 @@ async function runBothSides(deps: DemoDeps, id: string, input: DemoInput, send: 
     aplyerCalls += sb.extraCalls;
     aplyerCost = sb.extraCalls ? (aplyerCost === null || aplyerCost === undefined || sb.extraCost === null ? null : aplyerCost + sb.extraCost) : aplyerCost;
   }
+  const gptFinal = gpt?.view.status === "completed" ? gpt.view.answer ?? null : null;
+  const humanScore = aplyer.ok ? await runHumanScore(deps, id, aplyer.text, gptFinal) : null;
   const cost = sumCost(aplyerCost, gpt ? gpt.cost : 0, aplyerCalls + (gpt?.calls ?? 0) > 0);
   await deps.store
     .update(id, {
@@ -358,7 +452,7 @@ async function runBothSides(deps: DemoDeps, id: string, input: DemoInput, send: 
       completed_at: aplyer.ok ? new Date().toISOString() : null,
     })
     .catch(() => undefined);
-  return { aplyer, chatgpt: gpt?.view ?? null, scoreboard };
+  return { aplyer, chatgpt: gpt?.view ?? null, scoreboard, humanScore };
 }
 
 export async function handleDemoRequest(request: Request, deps: DemoDeps): Promise<Response> {
@@ -426,6 +520,10 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
 
     if (admitted.duplicate) {
       const d = duplicateResponse(admitted.request);
+      if (admitted.request.status === "completed") {
+        const hs = await storedHumanScoreView(deps.store, admitted.request);
+        if (hs) d.body.humanScore = hs;
+      }
       return respond(request, d.body, d.status, setCookie);
     }
 
@@ -475,6 +573,8 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
                 send("final", { answer: r.aplyer.text });
                 // Only a complete, valid scoreboard is ever sent (never streamed).
                 if (r.scoreboard) send("scoreboard", r.scoreboard);
+                // Only valid, displayable scores for BOTH answers are ever sent.
+                if (r.humanScore) send("human_score", r.humanScore);
               }
               else send("error", { error: r.aplyer.error });
             } catch (e) {
@@ -501,6 +601,7 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
     const out: Record<string, unknown> = r.aplyer.ok ? { answer: r.aplyer.text } : { error: r.aplyer.error };
     if (r.chatgpt) out.chatgpt = r.chatgpt;
     if (r.aplyer.ok && r.scoreboard) out.scoreboard = r.scoreboard;
+    if (r.aplyer.ok && r.humanScore) out.humanScore = r.humanScore;
     return respond(request, out, r.aplyer.ok ? 200 : 500, setCookie);
   } catch (err) {
     console.error("[demo]", err instanceof Error ? err.message : err);

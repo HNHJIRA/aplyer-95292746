@@ -65,6 +65,7 @@ export const dbDemoStore: DemoStore = {
       output_tokens: e.outputTokens,
       estimated_cost_usd: e.estimatedCostUsd,
       priced: e.estimatedCostUsd !== null,
+      duration_ms: e.durationMs ?? null,
     });
     if (error) throw new Error(`demo_cost_failed:${error.code ?? "unknown"}`);
   },
@@ -102,6 +103,21 @@ export const dbDemoStore: DemoStore = {
     return {
       threshold: t === null || t === undefined || t === "" ? null : Number(t),
       references: Array.isArray(data.scoreboard_references) ? data.scoreboard_references : [],
+    };
+  },
+  async getHumanScoreConfig() {
+    const db = await admin();
+    const { data, error } = await db
+      .from("demo_settings")
+      .select("human_score_display, detector_min_words, detector_length_tolerance")
+      .eq("id", true)
+      .maybeSingle();
+    if (error || !data) return null;
+    const n = (v: unknown) => (v === null || v === undefined || v === "" ? null : Number(v));
+    return {
+      display: data.human_score_display === true,
+      minWords: n(data.detector_min_words),
+      lengthTolerance: n(data.detector_length_tolerance),
     };
   },
   async requeueStale() {

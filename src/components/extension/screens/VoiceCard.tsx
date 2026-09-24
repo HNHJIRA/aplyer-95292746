@@ -25,6 +25,9 @@ type Status =
 interface VoiceCardData {
   archetype?: string;
   archetype_description?: string;
+  /** Added in Prompt B v3.1.0; older cards may not have them. */
+  tagline?: string;
+  reads?: string;
   reveal?: string;
   headline: string;
   tone: string;
@@ -40,6 +43,7 @@ interface VoiceCardData {
 export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onSkipToProfile?: () => void }) {
   const [status, setStatus] = useState<Status>("eligible");
   const [card, setCard] = useState<VoiceCardData | null>(null);
+  const [rarity, setRarity] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const startedRef = useRef(false);
@@ -50,8 +54,10 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
       voice_card_status: Status;
       voice_card_data: VoiceCardData | null;
       voice_card_error: string | null;
+      rarity?: { status: string; text?: string };
     } | null;
     if (!p) return;
+    setRarity(rarityLine(p.rarity));
     setStatus(p.voice_card_status);
     setCard(p.voice_card_data);
     setError(p.voice_card_error);
@@ -64,12 +70,13 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
     setStatus("generating");
     try {
       const res = (await startVoiceCardGenerationApi()) as
-        | { status: "generated"; voice_card: VoiceCardData }
+        | { status: "generated"; voice_card: VoiceCardData; rarity?: { status: string; text?: string } }
         | { status: "in_progress" }
         | { status: "failed"; error?: string };
       if (res.status === "generated") {
         setStatus("generated");
         setCard(res.voice_card);
+        setRarity(rarityLine(res.rarity));
       } else if (res.status === "failed") {
         setStatus("failed");
         setError(res.error ?? "Generation failed");
@@ -175,9 +182,17 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
         <h2 className="mt-2 text-[20px] font-black tracking-tight">
           {card.reveal ?? "Okay, we read you loud and clear!"}
         </h2>
+        {card.tagline && <p className="mt-1 text-[15px] font-semibold">{card.tagline}</p>}
         <p className="mt-1 text-[14px] text-muted-foreground">
           {card.archetype_description ?? card.headline}
         </p>
+        {card.reads && (
+          <p className="mt-2 text-[13px]">
+            <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Reads </span>
+            {card.reads}
+          </p>
+        )}
+        {rarity && <p className="mt-1 text-[13px] text-muted-foreground">{rarity}</p>}
         <div className="popup-scroll -mx-6 mt-3 flex-1 space-y-3 overflow-y-auto px-6 pb-3">
           <Row label="Tone" value={card.tone} />
           <Row label="Cadence" value={card.cadence} />
@@ -243,4 +258,9 @@ function Chips({ label, items }: { label: string; items: string[] }) {
       </div>
     </div>
   );
+}
+
+/** Only an available, server-computed rarity line is shown; otherwise hidden. */
+function rarityLine(r: { status: string; text?: string } | undefined): string | null {
+  return r?.status === "available" && typeof r.text === "string" && r.text ? r.text : null;
 }
