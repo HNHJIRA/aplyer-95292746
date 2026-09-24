@@ -37,8 +37,9 @@ vi.mock("@/lib/ai/run-prompt.server", () => {
     },
     runPromptValidated: async (...args: unknown[]) => {
       const spec = args[0] as { id: string; model: string };
+      const out = await runPromptValidated(...args); // failed calls are not billed
       sink?.({ provider: "anthropic", model: spec.model, promptId: spec.id, inputTokens: 100, outputTokens: 50 });
-      return runPromptValidated(...args);
+      return out;
     },
   };
 });
@@ -52,6 +53,7 @@ vi.mock("@/integrations/supabase/client.server", () => {
 });
 
 const { generateAplyerDemoAnswer } = await import("../generate.server");
+const { __resetClassificationMemoryCache } = await import("@/lib/ai/classify-question.server");
 const { handleDemoRequest } = await import("../handler.server");
 const { drainDemoQueue } = await import("../queue.server");
 
@@ -145,6 +147,7 @@ const INPUT = { resume: RESUME, jobDescription: JD, question: QUESTION, writingS
 
 beforeEach(() => {
   runPromptValidated.mockReset();
+  __resetClassificationMemoryCache();
 });
 
 /* ---------------- pipeline ---------------- */
