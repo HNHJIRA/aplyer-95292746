@@ -55,6 +55,9 @@
     var fetchImpl = opts.fetch || root.fetch;
     var base = opts.baseUrl || DEFAULT_BASE;
     var onDelta = opts.onDelta || function () {};
+    var onChatgpt = opts.onChatgpt || function () {};
+    var onChatgptDelta = opts.onChatgptDelta || function () {};
+    var gptPreview = '';
 
     var response = await fetchImpl(base + '/api/public/demo?stream=1', {
       method: 'POST',
@@ -70,7 +73,7 @@
     var ctype = (response.headers && response.headers.get && response.headers.get('content-type')) || '';
     // Server-side controls (email gate, limits, queue, duplicates) answer in JSON.
     if (ctype.indexOf('application/json') !== -1 && response.json) {
-      return handleJson(response);
+      return handleJson(response, opts);
     }
     if (!response.ok || ctype.indexOf('text/event-stream') === -1 || !response.body || !response.body.getReader) {
       var err = new Error('stream-unavailable');
@@ -103,6 +106,22 @@
             preview += piece;
             onDelta(preview);
           }
+        } else if (frame.event === 'chatgpt_delta') {
+          var gp = textOf(payload);
+          if (gp) {
+            gptPreview += gp;
+            onChatgptDelta(gptPreview);
+          }
+        } else if (frame.event === 'chatgpt_final') {
+          // The prompt comes from the server: the exact string sent to OpenAI.
+          if (payload && typeof payload.answer === 'string' && payload.answer.trim()) {
+            onChatgpt({ status: 'completed', answer: payload.answer, prompt: typeof payload.prompt === 'string' ? payload.prompt : '' });
+          }
+        } else if (frame.event === 'chatgpt_error') {
+          onChatgpt({
+            status: payload && payload.status === 'not_configured' ? 'not_configured' : 'failed',
+            error: (payload && typeof payload.error === 'string' && payload.error) || 'The ChatGPT answer could not be generated this time.',
+          });
         } else if (frame.event === 'final') {
           var answer = textOf(payload);
           if (answer && answer.trim()) final = answer;
@@ -140,12 +159,15 @@
    * Interprets a JSON reply. Returns the answer string, or a
    * { status: 'queued' | 'processing', message } notice. Throws on errors.
    */
-  async function handleJson(response) {
+  async function handleJson(response, opts) {
     var data = {};
     try {
       data = await response.json();
     } catch (e) {
       data = {};
+    }
+    if (data && data.chatgpt && typeof data.chatgpt === 'object' && opts && opts.onChatgpt) {
+      opts.onChatgpt(data.chatgpt);
     }
     if (response.ok && data && data.answer) return String(data.answer);
     if (data && (data.status === 'queued' || data.status === 'processing') && data.message) {
@@ -164,7 +186,7 @@
       credentials: 'same-origin',
       body: requestBody(opts),
     });
-    return handleJson(response);
+    return handleJson(response, opts);
   }
 
   /**
@@ -177,6 +199,7 @@
     } catch (err) {
       if (err && err.streamUnavailable) {
         if (opts.onDelta) opts.onDelta('');
+        if (opts.onChatgptDelta) opts.onChatgptDelta('');
         return await fetchAnswerJson(opts);
       }
       throw err;

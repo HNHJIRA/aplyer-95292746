@@ -8,6 +8,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { drainWaitlistJobs } from "@/lib/waitlist/jobs.server";
 import { drainDemoQueue } from "@/lib/demo/queue.server";
+import { generateChatgptDemoAnswer } from "@/lib/demo/openai.server";
 import { dbDemoStore } from "@/lib/demo/store.server";
 import { generateAplyerDemoAnswer } from "@/lib/demo/generate.server";
 import { sendDemoResultEmail } from "@/lib/demo/result-email.server";
@@ -35,6 +36,7 @@ async function handle(request: Request): Promise<Response> {
   const demo = await drainDemoQueue({
     store: dbDemoStore,
     generate: generateAplyerDemoAnswer,
+    generateChatgpt: generateChatgptDemoAnswer,
     sendResult: sendDemoResultEmail,
   });
   return new Response(JSON.stringify({ ok: true, ...result, demo }), {

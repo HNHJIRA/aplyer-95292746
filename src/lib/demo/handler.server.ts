@@ -18,14 +18,17 @@ import {
   normalizeEmail,
 } from "./policy";
 import type { DemoStore, DemoRequestRow } from "./store";
-import type { DemoAiCall, DemoGenerationResult, DemoGenerator, DemoInput } from "./generate.server";
+import type { DemoAiCall, DemoGenerator, DemoInput } from "./generate.server";
 import { DemoGenerationError } from "./generate.server";
+import type { ChatgptGenerator } from "./openai.server";
 
 export const DEMO_SESSION_COOKIE = "aplyer_demo_sid";
 
 export interface DemoDeps {
   store: DemoStore;
   generate: DemoGenerator;
+  /** ChatGPT side (exact client prompt). Omitted = single-sided (tests/legacy). */
+  generateChatgpt?: ChatgptGenerator;
   /** Server secret used to hash session/IP identifiers and scope idempotency keys. */
   salt: string | undefined;
   /** Optional deliverability check (existing ZeroBounce rule). false = reject. */
@@ -87,7 +90,10 @@ function respond(
 function duplicateResponse(req: DemoRequestRow): { body: Record<string, unknown>; status: number } {
   switch (req.status) {
     case "completed":
-      return { body: { status: "completed", answer: req.answer ?? "" }, status: 200 };
+      return {
+        body: { status: "completed", answer: req.answer ?? "", ...(chatgptView(req) ? { chatgpt: chatgptView(req) } : {}) },
+        status: 200,
+      };
     case "queued":
       return { body: { status: "queued", message: DEMO_COPY.queued }, status: 202 };
     case "admitting":
@@ -133,13 +139,145 @@ export async function recordGenerationCost(
 }
 
 /** Records the calls billed before a failure. Never throws. */
-export async function recordFailedCalls(store: DemoStore, demoRequestId: string, e: unknown): Promise<void> {
-  if (!(e instanceof DemoGenerationError) || e.calls.length === 0) return;
+export async function recordFailedCalls(
+  store: DemoStore,
+  demoRequestId: string,
+  e: unknown,
+  side: "openai" | "aplyer" = "aplyer",
+): Promise<{ cost: number | null } | null> {
+  if (!(e instanceof DemoGenerationError) || e.calls.length === 0) return null;
   try {
-    await recordGenerationCost(store, demoRequestId, "aplyer", e.calls);
+    return await recordGenerationCost(store, demoRequestId, side, e.calls);
   } catch (err) {
     console.error("[demo] cost record failed", err instanceof Error ? err.message : err);
+    return null;
   }
+}
+
+/** Candidate-facing ChatGPT result. Never carries provider diagnostics. */
+export interface ChatgptView {
+  status: "completed" | "failed" | "not_configured";
+  answer?: string;
+  /** Exact string that was sent to OpenAI (only when completed). */
+  prompt?: string;
+  error?: string;
+}
+
+export const CHATGPT_COPY = {
+  failed: "The ChatGPT answer could not be generated this time.",
+  notConfigured: "The ChatGPT comparison is not available yet.",
+};
+
+export function chatgptView(row: DemoRequestRow): ChatgptView | null {
+  if (row.chatgpt_status === "completed" && row.chatgpt_answer) {
+    return { status: "completed", answer: row.chatgpt_answer, prompt: row.chatgpt_prompt ?? undefined };
+  }
+  if (row.chatgpt_status === "failed") return { status: "failed", error: CHATGPT_COPY.failed };
+  if (row.chatgpt_status === "not_configured") return { status: "not_configured", error: CHATGPT_COPY.notConfigured };
+  return null;
+}
+
+function sumCost(a: number | null | undefined, b: number | null | undefined, anyCalls: boolean): number | null {
+  if (!anyCalls) return null;
+  if (a === null || b === null) return null;
+  return Math.round(((a ?? 0) + (b ?? 0)) * 1e6) / 1e6;
+}
+
+type Send = ((event: string, data: unknown) => void) | null;
+
+export interface SideOutcome {
+  ok: boolean;
+  text: string;
+  error: string;
+  cost: number | null | undefined;
+  calls: number;
+}
+
+/** Aplyer side: the unchanged Step 3 pipeline. Never throws. */
+async function runAplyerSide(deps: DemoDeps, id: string, input: DemoInput, send: Send): Promise<SideOutcome> {
+  try {
+    const result = await deps.generate(
+      input,
+      send
+        ? { onDelta: (text) => send("delta", { text }), onProgress: (stage) => send("progress", { stage }) }
+        : undefined,
+    );
+    let cost: number | null = null;
+    try {
+      cost = (await recordGenerationCost(deps.store, id, result.side, result.calls)).cost;
+    } catch (e) {
+      console.error(`[demo] cost record failed request=${id}`, e instanceof Error ? e.name : "unknown");
+    }
+    await deps.store.update(id, { answer: result.text });
+    return { ok: true, text: result.text, error: "", cost, calls: result.calls.length };
+  } catch (e) {
+    const rec = await recordFailedCalls(deps.store, id, e, "aplyer");
+    const code = e instanceof DemoGenerationError ? e.code : e instanceof Error ? e.name : "unknown";
+    await deps.store.update(id, { last_error: code.slice(0, 200) }).catch(() => undefined);
+    return {
+      ok: false,
+      text: "",
+      error: e instanceof DemoGenerationError && e.busy ? "The demo is busy. Please try again in a moment." : DEMO_COPY.generic,
+      cost: rec?.cost,
+      calls: e instanceof DemoGenerationError ? e.calls.length : 0,
+    };
+  }
+}
+
+/** ChatGPT side: exact client prompt, persisted before returning. Never throws. */
+export async function runChatgptSide(
+  gen: ChatgptGenerator,
+  store: DemoStore,
+  id: string,
+  input: DemoInput,
+  send: Send,
+): Promise<{ view: ChatgptView; cost: number | null | undefined; calls: number }> {
+  try {
+    const r = await gen(input, send ? { onDelta: (text) => send("chatgpt_delta", { text }) } : undefined);
+    let cost: number | null = null;
+    try {
+      cost = (await recordGenerationCost(store, id, "openai", r.calls)).cost;
+    } catch (e) {
+      console.error(`[demo] openai cost record failed request=${id}`, e instanceof Error ? e.name : "unknown");
+    }
+    await store.update(id, { chatgpt_answer: r.text, chatgpt_prompt: r.prompt, chatgpt_status: "completed" });
+    const view: ChatgptView = { status: "completed", answer: r.text, prompt: r.prompt };
+    send?.("chatgpt_final", { answer: r.text, prompt: r.prompt });
+    return { view, cost, calls: r.calls.length };
+  } catch (e) {
+    const notConfigured = e instanceof DemoGenerationError && e.code === "not_configured";
+    const rec = await recordFailedCalls(store, id, e, "openai");
+    const code = e instanceof DemoGenerationError ? e.code : "unknown";
+    console.warn(`[demo] chatgpt side failed request=${id} code=${code.slice(0, 40)}`);
+    await store.update(id, { chatgpt_status: notConfigured ? "not_configured" : "failed" }).catch(() => undefined);
+    const view: ChatgptView = notConfigured
+      ? { status: "not_configured", error: CHATGPT_COPY.notConfigured }
+      : { status: "failed", error: CHATGPT_COPY.failed };
+    send?.("chatgpt_error", { status: view.status, error: view.error });
+    return { view, cost: rec?.cost, calls: e instanceof DemoGenerationError ? e.calls.length : 0 };
+  }
+}
+
+/**
+ * Runs both sides concurrently from one canonical input inside one admitted
+ * request, then writes the terminal row state once (payload cleared).
+ */
+async function runBothSides(deps: DemoDeps, id: string, input: DemoInput, send: Send) {
+  const [aplyer, gpt] = await Promise.all([
+    runAplyerSide(deps, id, input, send),
+    deps.generateChatgpt ? runChatgptSide(deps.generateChatgpt, deps.store, id, input, send) : Promise.resolve(null),
+  ]);
+  const cost = sumCost(aplyer.cost, gpt ? gpt.cost : 0, aplyer.calls + (gpt?.calls ?? 0) > 0);
+  await deps.store
+    .update(id, {
+      status: aplyer.ok ? "completed" : "failed",
+      payload: null,
+      estimated_cost_usd: cost,
+      cost_status: cost === null ? "unpriced" : "priced",
+      completed_at: aplyer.ok ? new Date().toISOString() : null,
+    })
+    .catch(() => undefined);
+  return { aplyer, chatgpt: gpt?.view ?? null };
 }
 
 export async function handleDemoRequest(request: Request, deps: DemoDeps): Promise<Response> {
@@ -233,33 +371,8 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
     // processing ends (completed or failed), then are cleared.
     await deps.store.update(row.id, { status: "running" });
 
-    const finish = async (result: DemoGenerationResult) => {
-      let cost: number | null = null;
-      try {
-        cost = (await recordGenerationCost(deps.store, row.id, result.side, result.calls)).cost;
-      } catch (e) {
-        console.error("[demo] cost record failed", e instanceof Error ? e.message : e);
-      }
-      await deps.store.update(row.id, {
-        status: "completed",
-        payload: null,
-        answer: result.text,
-        estimated_cost_usd: cost,
-        cost_status: cost === null ? "unpriced" : "priced",
-        completed_at: new Date().toISOString(),
-      });
-    };
-    const fail = async (e: unknown) => {
-      const code = e instanceof DemoGenerationError ? e.code : e instanceof Error ? e.name : "unknown";
-      await recordFailedCalls(deps.store, row.id, e);
-      await deps.store
-        .update(row.id, { status: "failed", payload: null, last_error: code.slice(0, 200) })
-        .catch(() => undefined);
-      return e instanceof DemoGenerationError && e.busy
-        ? "The demo is busy. Please try again in a moment."
-        : DEMO_COPY.generic;
-    };
-
+    // 5. Run now. Both sides consume the SAME canonical `input` object and run
+    // concurrently inside this one admitted request (one reservation).
     if (wantsStream(request)) {
       const encoder = new TextEncoder();
       const out = new ReadableStream<Uint8Array>({
@@ -276,17 +389,12 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
           void (async () => {
             try {
               send("open", { ok: true });
-              // Only the candidate-facing Prompt A answer text is previewed; the
-              // validated answer arrives in `final` and replaces it.
-              const result = await deps.generate(input, {
-                onDelta: (text) => send("delta", { text }),
-                onProgress: (stage) => send("progress", { stage }),
-              });
-              await finish(result);
-              send("final", { answer: result.text });
+              const r = await runBothSides(deps, row.id, input, send);
+              if (r.aplyer.ok) send("final", { answer: r.aplyer.text });
+              else send("error", { error: r.aplyer.error });
             } catch (e) {
-              console.error("[demo] stream failed", e instanceof Error ? e.message : e);
-              send("error", { error: await fail(e) });
+              console.error(`[demo] stream failed request=${row.id}`, e instanceof Error ? e.name : "unknown");
+              send("error", { error: DEMO_COPY.generic });
             } finally {
               send("done", { ok: true });
               closed = true;
@@ -304,14 +412,10 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
       return new Response(out, { status: 200, headers });
     }
 
-    try {
-      const result = await deps.generate(input);
-      await finish(result);
-      return respond(request, { answer: result.text }, 200, setCookie);
-    } catch (e) {
-      const msg = await fail(e);
-      return respond(request, { error: msg }, 500, setCookie);
-    }
+    const r = await runBothSides(deps, row.id, input, null);
+    const out: Record<string, unknown> = r.aplyer.ok ? { answer: r.aplyer.text } : { error: r.aplyer.error };
+    if (r.chatgpt) out.chatgpt = r.chatgpt;
+    return respond(request, out, r.aplyer.ok ? 200 : 500, setCookie);
   } catch (err) {
     console.error("[demo]", err instanceof Error ? err.message : err);
     return respond(request, { error: DEMO_COPY.generic }, 500, setCookie);

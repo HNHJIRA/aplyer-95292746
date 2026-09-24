@@ -763,7 +763,7 @@
       <div class="output-head">
         <div class="output-left">
           <div class="output-badge">✓ GENERATED</div>
-          <div class="output-title">Your Answer</div>
+          <div class="output-title">Aplyer</div>
         </div>
         <div class="output-actions">
           <button class="copy-btn" id="copyBtn" onclick="copyAnswer()">Copy Answer</button>
@@ -781,6 +781,33 @@
         <div class="ind"><div class="ind-dot" style="background:var(--green)"></div><span style="color:var(--green)">✓ Low AI Signature</span></div>
         <div class="ind"><div class="ind-dot" style="background:var(--green)"></div><span style="color:var(--green)">✓ Real Experience Used</span></div>
         <div class="ind" style="margin-left:auto;color:#555555;font-size:11px;">ATS keywords from job description embedded</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHATGPT SIDE (same inputs, exact client prompt; neutral presentation) -->
+  <div class="output-wrap" id="gptWrap">
+    <div class="output-panel">
+      <div class="output-head">
+        <div class="output-left">
+          <div class="output-title">ChatGPT</div>
+        </div>
+        <div class="output-actions">
+          <button class="copy-btn" id="gptCopyBtn" onclick="copyGptAnswer()">Copy Answer</button>
+        </div>
+      </div>
+      <div class="output-body">
+        <div class="output-text" id="gptText"></div>
+        <div id="gptPromptBox" style="display:none;margin-top:18px;padding-top:16px;border-top:1px solid rgba(0,0,0,0.10);">
+          <button type="button" class="copy-btn" id="gptRevealBtn" aria-expanded="false" aria-controls="gptPromptWrap" onclick="toggleGptPrompt()">This is exactly what we sent ChatGPT.</button>
+          <div id="gptPromptWrap" style="display:none;margin-top:12px;">
+            <pre id="gptPrompt" style="white-space:pre-wrap;overflow-wrap:anywhere;font-family:'DM Mono',monospace;font-size:12px;line-height:1.6;background:#F5F7FA;border-radius:10px;padding:14px;max-height:360px;overflow:auto;margin:0;"></pre>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap;">
+              <button type="button" class="copy-btn" id="gptPromptCopyBtn" onclick="copyGptPrompt()">Copy Prompt</button>
+              <span style="font-size:13px;color:#555555;">Paste this into ChatGPT and compare for yourself.</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -919,6 +946,62 @@
     document.getElementById('outputText').innerHTML = formatted || `<p>${escapeHtml(value)}</p>`;
   }
 
+  // ChatGPT side. The prompt shown is exactly the string the server sent.
+  let gptPromptText = '';
+  function resetGpt() {
+    const w = document.getElementById('gptWrap');
+    w.classList.remove('show'); w.classList.remove('writing');
+    document.getElementById('gptText').innerHTML = '';
+    document.getElementById('gptPromptBox').style.display = 'none';
+    document.getElementById('gptPromptWrap').style.display = 'none';
+    document.getElementById('gptRevealBtn').setAttribute('aria-expanded', 'false');
+    document.getElementById('gptPrompt').textContent = '';
+    document.getElementById('gptCopyBtn').style.visibility = 'hidden';
+    gptPromptText = '';
+  }
+  function renderGptText(text) {
+    const value = String(text || '');
+    document.getElementById('gptText').innerHTML = value.split('\n\n').map(p => p.trim() ? `<p>${escapeHtml(p.trim())}</p>` : '').join('') || `<p>${escapeHtml(value)}</p>`;
+  }
+  function onGptDelta(preview) {
+    const w = document.getElementById('gptWrap');
+    if (!preview) { w.classList.remove('show'); document.getElementById('gptText').innerHTML = ''; return; }
+    renderGptText(preview);
+    w.classList.add('show'); w.classList.add('writing');
+  }
+  function onGpt(r) {
+    const w = document.getElementById('gptWrap');
+    w.classList.remove('writing'); w.classList.add('show');
+    if (r && r.status === 'completed' && r.answer) {
+      renderGptText(r.answer);
+      document.getElementById('gptCopyBtn').style.visibility = 'visible';
+      if (r.prompt) {
+        gptPromptText = String(r.prompt);
+        document.getElementById('gptPrompt').textContent = gptPromptText;
+        document.getElementById('gptPromptBox').style.display = 'block';
+      }
+    } else {
+      document.getElementById('gptText').innerHTML = `<p style="color:#555555;">${escapeHtml((r && r.error) || 'The ChatGPT answer could not be generated this time.')}</p>`;
+    }
+  }
+  function toggleGptPrompt() {
+    const wrap = document.getElementById('gptPromptWrap');
+    const open = wrap.style.display === 'none';
+    wrap.style.display = open ? 'block' : 'none';
+    document.getElementById('gptRevealBtn').setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  function flashCopied(id, label) {
+    const b = document.getElementById(id);
+    b.textContent = '✓ Copied!'; b.classList.add('copied');
+    setTimeout(() => { b.textContent = label; b.classList.remove('copied'); }, 2000);
+  }
+  function copyGptPrompt() {
+    navigator.clipboard.writeText(gptPromptText).then(() => flashCopied('gptPromptCopyBtn', 'Copy Prompt'));
+  }
+  function copyGptAnswer() {
+    navigator.clipboard.writeText(document.getElementById('gptText').innerText).then(() => flashCopied('gptCopyBtn', 'Copy Answer'));
+  }
+
   async function generate() {
     hideError();
 
@@ -943,6 +1026,7 @@
     outputWrap.classList.remove('show');
     outputWrap.classList.remove('writing');
     document.getElementById('outputText').innerHTML = '';
+    resetGpt();
 
     let scrolled = false;
 
@@ -955,6 +1039,8 @@
         jobDescription: jobDesc,
         question: question,
         writingSample: writingSample,
+        onChatgpt: onGpt,
+        onChatgptDelta: onGptDelta,
         onDelta: function (preview) {
           document.getElementById('outputQ').textContent = question;
           renderAnswer(preview);
@@ -974,6 +1060,7 @@
         outputWrap.classList.remove('writing');
         outputWrap.classList.remove('show');
         document.getElementById('outputText').innerHTML = '';
+        resetGpt();
         showError(result.message);
         return;
       }
@@ -993,6 +1080,8 @@
       document.getElementById('outputText').innerHTML = '';
       showError(err.message || 'Something went wrong. Please try again.');
     } finally {
+      // A ChatGPT preview with no completed answer is never left on screen.
+      if (document.getElementById('gptWrap').classList.contains('writing')) resetGpt();
       btn.classList.remove('loading');
       btn.disabled = false;
       document.getElementById('loadingOverlay').classList.remove('show');
