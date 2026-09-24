@@ -1,8 +1,8 @@
 /**
  * ChatGPT side of the Demo — SERVER ONLY.
  *
- * The prompt is the client-owned text from Demo Specification 9.17.26,
- * Part 5, used verbatim. The only substitutions are the visitor's own
+ * The prompt is the client-owned text from the Demo Build Specification
+ * of September 23, 2026, Part D, used verbatim. The only substitutions are the visitor's own
  * question, job description, resume and (when provided) writing sample.
  * No system message, no hidden instructions, no Aplyer rules.
  *
