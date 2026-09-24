@@ -11,14 +11,22 @@ import { countWords, missingSettings, spendAllows } from "./policy";
 import type { DemoStore, DemoRequestRow } from "./store";
 import type { DemoGenerator, DemoInput } from "./generate.server";
 import { DemoGenerationError } from "./generate.server";
-import { recordFailedCalls, recordGenerationCost } from "./handler.server";
+import { recordFailedCalls, recordGenerationCost, runChatgptSide, type ChatgptView } from "./handler.server";
+import type { ChatgptGenerator } from "./openai.server";
 
 const BACKOFF_MINUTES = [5, 15, 60, 180, 720];
 
 export interface DemoQueueDeps {
   store: DemoStore;
   generate: DemoGenerator;
-  sendResult: (to: string, input: DemoInput, answer: string) => Promise<{ ok: boolean; errorCode?: string }>;
+  /** ChatGPT side; omitted = single-sided. */
+  generateChatgpt?: ChatgptGenerator;
+  sendResult: (
+    to: string,
+    input: DemoInput,
+    answer: string,
+    chatgpt?: ChatgptView | null,
+  ) => Promise<{ ok: boolean; errorCode?: string }>;
   now?: () => number;
 }
 
@@ -90,19 +98,38 @@ async function runOne(
   }
 
   try {
+    // Each side runs at most once per successful result: an answer already
+    // persisted (e.g. an earlier attempt whose email failed) is never regenerated.
     let answer = job.answer;
-    if (!answer) {
-      const result = await deps.generate(input);
+    let chatgpt: ChatgptView | null =
+      job.chatgpt_status === "completed" && job.chatgpt_answer
+        ? { status: "completed", answer: job.chatgpt_answer, prompt: job.chatgpt_prompt ?? undefined }
+        : null;
+    const needGpt = !!deps.generateChatgpt && !chatgpt;
+    const [aplyerRes, gptRes] = await Promise.all([
+      answer
+        ? Promise.resolve(null)
+        : deps.generate(input).then(
+            (r) => ({ ok: true as const, r }),
+            (e: unknown) => ({ ok: false as const, e }),
+          ),
+      needGpt ? runChatgptSide(deps.generateChatgpt!, store, job.id, input, null) : Promise.resolve(null),
+    ]);
+    if (gptRes) chatgpt = gptRes.view;
+    if (aplyerRes) {
+      if (!aplyerRes.ok) throw aplyerRes.e;
+      const result = aplyerRes.r;
       const { cost } = await recordGenerationCost(store, job.id, result.side, result.calls);
       answer = result.text;
+      const total = cost === null || gptRes?.cost === null ? null : Math.round((cost + (gptRes?.cost ?? 0)) * 1e6) / 1e6;
       // Persist before emailing so a send retry never pays for a second generation.
       await store.update(job.id, {
         answer,
-        estimated_cost_usd: cost,
-        cost_status: cost === null ? "unpriced" : "priced",
+        estimated_cost_usd: total,
+        cost_status: total === null ? "unpriced" : "priced",
       });
     }
-    const sent = await deps.sendResult(job.email, input, answer);
+    const sent = await deps.sendResult(job.email, input, answer!, chatgpt);
     if (!sent.ok) throw new DemoGenerationError(`email_${sent.errorCode ?? "failed"}`);
     await store.update(job.id, {
       status: "completed",

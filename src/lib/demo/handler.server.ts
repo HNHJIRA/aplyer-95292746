@@ -18,7 +18,7 @@ import {
   normalizeEmail,
 } from "./policy";
 import type { DemoStore, DemoRequestRow } from "./store";
-import type { DemoAiCall, DemoGenerationResult, DemoGenerator, DemoInput } from "./generate.server";
+import type { DemoAiCall, DemoGenerator, DemoInput } from "./generate.server";
 import { DemoGenerationError } from "./generate.server";
 import type { ChatgptGenerator } from "./openai.server";
 
