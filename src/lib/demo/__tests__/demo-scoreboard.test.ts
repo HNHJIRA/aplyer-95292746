@@ -210,7 +210,7 @@ describe("demo request with scoreboard", () => {
     const { store, costs } = makeStore(CFG);
     const body = await (await handleDemoRequest(req(false, { idempotencyKey: "key-abcdefgh-1234" }), deps(store))).json();
     expect(generate).toHaveBeenCalledTimes(2);
-    expect(generate.mock.calls[1][1]).toMatchObject({ styleNote: expect.stringContaining("Contractions") });
+    expect(generate.mock.calls[1][1]).toMatchObject({ styleNote: expect.stringContaining("Match the candidate") });
     expect(chatgpt).toHaveBeenCalledTimes(1); // ChatGPT never regenerated
     expect(body.answer).toBe(CASUAL);
     expect(body.scoreboard.markers.map((m: { metric: string }) => m.metric)).toEqual(selectMarkers(SAMPLE, CFG)!.markers.map((m) => m.metric));
