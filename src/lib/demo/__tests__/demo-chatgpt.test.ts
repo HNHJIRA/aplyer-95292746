@@ -266,7 +266,9 @@ describe("OpenAI provider (server-side)", () => {
     const last = log.mock.calls.at(-1)!.join(" ");
     expect(last).toContain("returned_model=another-model-2026-03-01");
     expect(last).not.toContain("example-model-version");
-oor; // placeholder
+  });
+
+
 
   it("logs returned_model=unavailable (never a fabricated value) when OpenAI omits the model", async () => {
     setEnv();
