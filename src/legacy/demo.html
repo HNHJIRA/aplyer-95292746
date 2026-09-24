@@ -1092,6 +1092,12 @@
     resetGpt(); resetScoreboard(); resetHumanScore();
 
     let scrolled = false;
+    // Synchronized reveal: results are held until the single demo request has
+    // settled, then both columns are shown together. Nothing is delayed or retimed.
+    let heldGpt = null, heldScoreboard = null, heldHumanScore = null;
+    function revealHeldGpt() {
+      if (heldGpt) onGpt(heldGpt);
+    }
 
     try {
       const idempotencyKey = (window.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2)).replace(/[^A-Za-z0-9_-]/g, '');
@@ -1102,22 +1108,12 @@
         jobDescription: jobDesc,
         question: question,
         writingSample: writingSample,
-        onChatgpt: onGpt,
-        onScoreboard: onScoreboard,
-        onHumanScore: onHumanScore,
-        onChatgptDelta: onGptDelta,
-        onDelta: function (preview) {
-          document.getElementById('outputQ').textContent = question;
-          renderAnswer(preview);
-          if (preview) {
-            outputWrap.classList.add('show');
-            outputWrap.classList.add('writing');
-            if (!scrolled) {
-              scrolled = true;
-              outputWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-          }
-        }
+        onChatgpt: function (r) { heldGpt = r; },
+        onScoreboard: function (sb) { heldScoreboard = sb; },
+        onHumanScore: function (h) { heldHumanScore = h; },
+        // Partial drafts are never shown; both columns stay in the loading state.
+        onChatgptDelta: function () {},
+        onDelta: function () {}
       });
 
       if (result && typeof result === 'object') {
@@ -1133,16 +1129,21 @@
 
       document.getElementById('outputQ').textContent = question;
       renderAnswer(answer);
+      revealHeldGpt();
+      if (heldHumanScore) onHumanScore(heldHumanScore);
+      if (heldScoreboard) onScoreboard(heldScoreboard);
 
       outputWrap.classList.remove('writing');
       outputWrap.classList.add('show');
-      if (!scrolled) outputWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (!scrolled) { scrolled = true; outputWrap.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 
     } catch (err) {
       // Never keep an unvalidated preview on screen.
       outputWrap.classList.remove('writing');
       outputWrap.classList.remove('show');
       document.getElementById('outputText').innerHTML = '';
+      // The ChatGPT side keeps its own settled result (answer or unavailable notice).
+      revealHeldGpt();
       showError(err.message || 'Something went wrong. Please try again.');
     } finally {
       // A ChatGPT preview with no completed answer is never left on screen.
