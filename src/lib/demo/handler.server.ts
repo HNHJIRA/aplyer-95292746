@@ -413,9 +413,9 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
     }
 
     const r = await runBothSides(deps, row.id, input, null);
-    const body: Record<string, unknown> = r.aplyer.ok ? { answer: r.aplyer.text } : { error: r.aplyer.error };
-    if (r.chatgpt) body.chatgpt = r.chatgpt;
-    return respond(request, body, r.aplyer.ok ? 200 : 500, setCookie);
+    const out: Record<string, unknown> = r.aplyer.ok ? { answer: r.aplyer.text } : { error: r.aplyer.error };
+    if (r.chatgpt) out.chatgpt = r.chatgpt;
+    return respond(request, out, r.aplyer.ok ? 200 : 500, setCookie);
   } catch (err) {
     console.error("[demo]", err instanceof Error ? err.message : err);
     return respond(request, { error: DEMO_COPY.generic }, 500, setCookie);
