@@ -317,11 +317,11 @@ describe("queued two-sided demo", () => {
     const { store, rows } = makeStore(null);
     await handleDemoRequest(req({ ...INPUT, writingSample: "Sample text." }), deps(store));
     expect(rows[0].status).toBe("queued");
-    const settingsStore = { ...store, spendSnapshot: async () => ({ settings: OPEN, spend: { spent_today_usd: 0, unpriced_today: 0, inflight: 1, next_reset: null, day_start: null } }) };
+    const settingsStore = { ...store, spendSnapshot: async () => ({ settings: OPEN, spend: { spent_today_usd: 0, unpriced_today: 0, inflight: 1, next_reset: "2099-01-01T00:00:00Z", day_start: null } }) };
     const sendResult = vi.fn(async () => ({ ok: false, errorCode: "x" }));
     const q = { store: settingsStore, generate: generate as unknown as DemoGenerator, generateChatgpt: chatgpt as unknown as ChatgptGenerator, sendResult };
     const t1 = await drainDemoQueue(q);
-    console.log('T1', JSON.stringify(t1), JSON.stringify(rows[0]));
+    expect(t1.deferred).toBe(0);
     expect(generate.mock.calls[0][0]).toEqual(chatgpt.mock.calls[0][0]);
     expect(chatgpt.mock.calls[0][0].writingSample).toBe("Sample text.");
     expect(rows[0]).toMatchObject({ answer: "Aplyer answer.", chatgpt_answer: "ChatGPT answer." });
