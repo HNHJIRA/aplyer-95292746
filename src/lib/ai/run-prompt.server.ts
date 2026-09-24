@@ -6,6 +6,7 @@
 //    `model_unavailable` error and the feature stays unavailable.
 // 2. Invalid model output gets exactly ONE strict correction retry, then a
 //    controlled `invalid_output` error. No heuristic substitution.
+import { AsyncLocalStorage } from "node:async_hooks";
 import { isApprovedModel } from "./prompts/models";
 import type { PromptSpec } from "./prompts/types";
 
@@ -49,6 +50,36 @@ export interface RunPromptOptions {
    * every downstream validation step is unchanged.
    */
   onDelta?: (text: string) => void;
+}
+
+/** One billable provider call, reported to an optional usage collector. */
+export interface PromptUsageEvent {
+  provider: "anthropic";
+  model: string;
+  promptId: string;
+  inputTokens?: number;
+  outputTokens?: number;
+}
+
+const usageScope = new AsyncLocalStorage<(e: PromptUsageEvent) => void>();
+
+/**
+ * Runs `fn` and reports every provider call made inside it (including
+ * correction retries and parallel calls) to `onUsage`. Callers that do not use
+ * this see no behaviour change. Usage is server-side accounting only.
+ */
+export function withPromptUsage<T>(onUsage: (e: PromptUsageEvent) => void, fn: () => Promise<T>): Promise<T> {
+  return usageScope.run(onUsage, fn);
+}
+
+function reportUsage(spec: PromptSpec, usage: { inputTokens?: number; outputTokens?: number }) {
+  const sink = usageScope.getStore();
+  if (!sink) return;
+  try {
+    sink({ provider: "anthropic", model: spec.model, promptId: spec.id, ...usage });
+  } catch {
+    /* accounting must never break generation */
+  }
 }
 
 function isModelUnavailable(status: number, body: string): boolean {
@@ -115,6 +146,7 @@ async function callAnthropic(spec: PromptSpec, user: string, opts: RunPromptOpti
     if (streaming && res.ok && res.body) {
       const { consumeAnthropicStream } = await import("./anthropic-stream.server");
       const streamed = await consumeAnthropicStream(res.body, opts.onDelta);
+      reportUsage(spec, streamed.usage ?? {});
       const out = streamed.text.trim();
       if (!out || streamed.sawError) {
         throw new PromptError({
@@ -144,7 +176,11 @@ async function callAnthropic(spec: PromptSpec, user: string, opts: RunPromptOpti
           : `Provider error ${res.status} for ${spec.id}.`,
       });
     }
-    const data = JSON.parse(text) as { content?: Array<{ type: string; text?: string }> };
+    const data = JSON.parse(text) as {
+      content?: Array<{ type: string; text?: string }>;
+      usage?: { input_tokens?: number; output_tokens?: number };
+    };
+    reportUsage(spec, { inputTokens: data.usage?.input_tokens, outputTokens: data.usage?.output_tokens });
     const out = data.content?.find((c) => c.type === "text")?.text?.trim() ?? "";
     if (!out) {
       throw new PromptError({

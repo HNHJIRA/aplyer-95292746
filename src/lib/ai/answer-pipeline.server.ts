@@ -14,7 +14,15 @@
 // Raw resume text never enters this module. No fact, framework, model, prompt
 // version, voice card or user id is ever accepted from the browser.
 import { classifyQuestion, ClassificationError } from "./classify-question.server";
-import { requireReadyFactInventory, ensureReadyFactInventory, FactInventoryError, sha256Hex } from "./fact-inventory.server";
+import {
+  requireReadyFactInventory,
+  ensureReadyFactInventory,
+  extractGroundedInventory,
+  FactInventoryError,
+  MIN_RESUME_TEXT_CHARS,
+  sha256Hex,
+} from "./fact-inventory.server";
+import { GroundingError } from "./fact-inventory-grounding";
 import { flattenInventory, toPromptFacts, type FlattenedInventory } from "./answer-facts";
 import { runAnswerGuards, type GuardViolation } from "./answer-guards";
 import { PromptError, runPromptValidated } from "./run-prompt.server";
@@ -691,6 +699,87 @@ export async function generateValidatedAnswer(
         ? "Answer writing is temporarily unavailable."
         : "We couldn't produce an answer you can trust. Try again.",
     );
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Stateless entry point (Demo)                                        */
+/* ------------------------------------------------------------------ */
+
+export type StatelessStage = "reading_resume" | "writing";
+
+export interface StatelessAnswerInput {
+  resumeText: string;
+  question: string;
+  jobDescription: string;
+  /** Classification cache DB (read/write is best-effort, same as production). */
+  db: Db;
+  onDraftDelta?: ((text: string) => void) | null;
+  onStage?: ((stage: StatelessStage) => void) | null;
+}
+
+/**
+ * Same trusted pipeline as `generateValidatedAnswer`, for a visitor who has no
+ * stored profile: Prompt I -> P0 (shared `extractGroundedInventory`) ->
+ * `generateValidatedVariant` (Prompt A -> guards -> Prompt J -> repair ->
+ * final post-guard). Nothing is persisted here and there is no Voice Card, so
+ * it runs the resume-only single-answer path. Fails closed with
+ * AnswerPipelineError; only a fully validated answer is ever returned.
+ */
+export async function generateStatelessValidatedAnswer(
+  input: StatelessAnswerInput,
+): Promise<{ answer: string; wordCount: number }> {
+  const question = String(input.question ?? "").trim().slice(0, MAX_QUESTION_CHARS);
+  if (question.length < 5) throw new AnswerPipelineError("bad_question", "That question is too short to answer.");
+  const resumeText = String(input.resumeText ?? "").trim();
+  if (resumeText.length < MIN_RESUME_TEXT_CHARS) {
+    throw new AnswerPipelineError("empty_resume", "The resume has no usable text.");
+  }
+
+  let framework: QuestionFramework;
+  try {
+    framework = (await classifyQuestion(input.db, question)).framework;
+  } catch (e) {
+    if (e instanceof ClassificationError) throw new AnswerPipelineError(e.code, e.message);
+    throw e;
+  }
+
+  input.onStage?.("reading_resume");
+  let flat: FlattenedInventory;
+  try {
+    const sourceId = `demo:${(await sha256Hex(resumeText)).slice(0, 16)}`;
+    flat = flattenInventory(await extractGroundedInventory(resumeText, sourceId));
+  } catch (e) {
+    const code = e instanceof PromptError ? e.code : e instanceof GroundingError ? "grounding_failed" : "extraction_failed";
+    throw new AnswerPipelineError(code, "We couldn't prepare your profile context.");
+  }
+  if (flat.facts.length === 0) {
+    throw new AnswerPipelineError("inventory_empty", "Your profile context has no usable facts yet.");
+  }
+
+  input.onStage?.("writing");
+  const budget: Budget = { logicalScans: 0, providerCalls: 0, repairs: 0 };
+  try {
+    const one = await generateValidatedVariant({
+      question,
+      framework,
+      flat,
+      voiceCard: null,
+      jobContext: { description: String(input.jobDescription ?? "").slice(0, 8000) },
+      variant: null,
+      preferredStyleNote: null,
+      budget,
+      onDraftDelta: input.onDraftDelta
+        ? (t) => input.onDraftDelta?.(t)
+        : null,
+    });
+    return { answer: one.answer, wordCount: one.wordCount };
+  } catch (e) {
+    const code = e instanceof AnswerPipelineError ? e.code : e instanceof PromptError ? e.code : "pipeline_failed";
+    const reasonCodes = e instanceof AnswerPipelineError ? e.reasonCodes : [];
+    console.error(JSON.stringify({ evt: "answer_pipeline_failed", path: "stateless", code, reasonCodes, framework }));
+    if (e instanceof AnswerPipelineError) throw e;
+    throw new AnswerPipelineError(code, "We couldn't produce an answer you can trust. Try again.");
   }
 }
 

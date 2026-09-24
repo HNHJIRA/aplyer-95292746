@@ -1,10 +1,10 @@
 // Public demo answer endpoint, wrapped in server-side cost controls
 // (email gate, per-email/session/IP limits, hard daily cap, idempotency,
-// durable queue). The generation itself is unchanged in Step 1.
+// durable queue). Generation runs the real Aplyer answer pipeline.
 import { createFileRoute } from "@tanstack/react-router";
 import { preflight } from "@/lib/cors";
 import { handleDemoRequest } from "@/lib/demo/handler.server";
-import { generateLegacyDemoAnswer } from "@/lib/demo/generate.server";
+import { generateAplyerDemoAnswer } from "@/lib/demo/generate.server";
 import { dbDemoStore } from "@/lib/demo/store.server";
 
 export { wantsStream } from "@/lib/demo/handler.server";
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/public/demo")({
       POST: async ({ request }) =>
         handleDemoRequest(request, {
           store: dbDemoStore,
-          generate: generateLegacyDemoAnswer,
+          generate: generateAplyerDemoAnswer,
           salt: process.env.DEMO_HASH_SALT,
           checkEmail: zeroBounceAllows,
         }),
