@@ -19,6 +19,9 @@ export interface DemoRequestRow {
   attempts: number;
   max_attempts: number;
   queue_reason?: string | null;
+  chatgpt_answer?: string | null;
+  chatgpt_prompt?: string | null;
+  chatgpt_status?: "pending" | "completed" | "failed" | "not_configured" | null;
 }
 
 export interface AdmitInput {
