@@ -1,5 +1,5 @@
 // Aplyer content-script orchestrator — hardened for production.
-(function () {
+(async function () {
   const log = window.AplyerLog;
   const ORCH_VERSION = "1.3.1";
 
@@ -19,9 +19,17 @@
   });
 
   let adapter;
-  try { adapter = window.AplyerDetect(); }
+  try {
+    adapter = window.AplyerDetectAsync
+      ? await window.AplyerDetectAsync()
+      : window.AplyerDetect();
+  }
   catch (e) { log.warn("detector", "detect() threw", String(e)); return; }
   if (!adapter) return;
+  // Field Intelligence / Autofill on generic pages only act once detection
+  // has positively identified the application form, and only inside it.
+  window.__aplyerAdapterActive = true;
+  if (adapter.root) window.__aplyerScopeRoot = adapter.root;
 
   log.info("adapter", `Adapter loaded`, {
     name: adapter.name,

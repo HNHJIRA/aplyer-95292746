@@ -841,7 +841,7 @@
 </div>
 
 <footer>
-  <a href="https://aplyer.ai">aplyer.ai</a> · Founding member waitlist open · Stop Skipping Jobs
+  <a href="https://aplyer.ai">aplyer.ai</a> · Founding member waitlist open · Stop Skipping Jobs · <a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Service</a>
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -892,8 +892,12 @@
 
   async function loadFile(file) {
     if (!file) return;
-    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
-    showLoaded(file.name + (isPdf ? ' — reading…' : ' loaded'));
+    hideError();
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    // Decide by content, not name: a renamed PDF is still read as a PDF.
+    const isPdf = (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46)
+      || file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+    showLoaded(file.name + ' — reading…');
     try {
       let text;
       if (isPdf) {
@@ -901,7 +905,7 @@
         text = await extractPdfText(file);
         if (!text) throw new Error('No selectable text found in this PDF');
       } else {
-        text = await window.AplyerAnswer.extractResumeFromBytes(new Uint8Array(await file.arrayBuffer()));
+        text = await window.AplyerAnswer.extractResumeFromBytes(bytes);
         if (!text) throw new Error('This file could not be read as resume text');
       }
       resumeContent = text;
@@ -909,7 +913,9 @@
       document.getElementById('uploadName').textContent = file.name + ' loaded';
     } catch (err) {
       clearResume();
-      alert('Could not read ' + file.name + ': ' + err.message + '. Please paste your resume text instead.');
+      // Plain text only (textContent): never renders file content as HTML.
+      showError('We could not read ' + file.name + ' as resume text. Please paste your resume text into the box instead.');
+      document.getElementById('resumeText').focus();
     }
   }
 

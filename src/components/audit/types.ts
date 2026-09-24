@@ -72,3 +72,48 @@ export function overallTakeList(audit: Audit): { points: string[]; text: string 
   const text = audit.overallTake || audit.verdict || null;
   return { points: [], text: text && text.trim() ? text : null };
 }
+
+function partialStr(v: unknown): string {
+  return typeof v === "string" ? v : "";
+}
+
+function partialStrList(v: unknown): string[] {
+  return Array.isArray(v) ? v.map(partialStr).filter((s) => s.trim().length > 0) : [];
+}
+
+/**
+ * Normalises a partially generated audit document (the JSON the model is still
+ * writing) into the same `Audit` shape the result view renders, so the page
+ * fills in section by section in its final layout. Unvalidated: display only.
+ * Returns null until there is something to show.
+ */
+export function partialAuditFromJson(value: unknown): Audit | null {
+  if (!value || typeof value !== "object") return null;
+  const o = value as Record<string, unknown>;
+  const out: Audit = {};
+  const points = partialStrList(o["overallTakePoints"]);
+  if (points.length) out.overallTakePoints = points;
+  else if (partialStr(o["overallTake"]).trim()) out.overallTake = partialStr(o["overallTake"]);
+  const flags = (Array.isArray(o["redFlags"]) ? o["redFlags"] : [])
+    .map((f) => {
+      if (!f || typeof f !== "object") return null;
+      const g = f as Record<string, unknown>;
+      const rf: RedFlag = {
+        flag: partialStr(g["flag"]),
+        whyPoints: partialStrList(g["whyPoints"]),
+        fixPoints: partialStrList(g["fixPoints"]),
+        employer: partialStr(g["employer"]) || null,
+      };
+      return rf.flag!.trim() || rf.whyPoints!.length || rf.fixPoints!.length ? rf : null;
+    })
+    .filter((f): f is RedFlag => f !== null);
+  if (flags.length) out.redFlags = flags;
+  const strengths = (Array.isArray(o["strengths"]) ? o["strengths"] : [])
+    .map((s) => (typeof s === "string" ? s : partialStr((s as Record<string, unknown> | null)?.["point"])))
+    .filter((s) => s.trim().length > 0)
+    .map((point) => ({ point }));
+  if (strengths.length) out.strengths = strengths;
+  const top = partialStr(o["topPriority"]);
+  if (top.trim()) out.topPriority = top;
+  return Object.keys(out).length ? out : null;
+}

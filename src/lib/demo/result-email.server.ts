@@ -1,8 +1,9 @@
 /**
- * Delivers a queued demo result by email (Brevo transport) — SERVER ONLY.
+ * Delivers a queued demo result by email (Postmark transport) — SERVER ONLY.
  * Plain wording; final copy is a client decision.
  */
 import { WELCOME_SENDER } from "@/lib/email/welcome-email";
+import { fromHeader, sendPostmarkEmail } from "@/lib/email/postmark.server";
 import type { DemoInput } from "./generate.server";
 import type { ChatgptView } from "./handler.server";
 
@@ -16,8 +17,6 @@ export async function sendDemoResultEmail(
   answer: string,
   chatgpt?: ChatgptView | null,
 ): Promise<{ ok: boolean; errorCode?: string }> {
-  const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) return { ok: false, errorCode: "missing_api_key" };
   const subject = "Your Aplyer demo answer";
   // Two-sided result: the ChatGPT answer is appended only when it completed.
   const gpt = chatgpt?.status === "completed" && chatgpt.answer ? chatgpt.answer : null;
@@ -35,22 +34,16 @@ export async function sendDemoResultEmail(
           .join("")}`
       : ""
   }`;
-  try {
-    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: { accept: "application/json", "content-type": "application/json", "api-key": apiKey },
-      body: JSON.stringify({
-        sender: WELCOME_SENDER,
-        to: [{ email: to }],
-        subject,
-        htmlContent: html,
-        textContent: text,
-        tags: ["demo-result"],
-      }),
-      signal: AbortSignal.timeout(8000),
-    });
-    return res.ok ? { ok: true } : { ok: false, errorCode: `http_${res.status}` };
-  } catch (e) {
-    return { ok: false, errorCode: e instanceof Error ? e.name : "unknown" };
-  }
+  // Missing token => not delivered (never faked); the queue keeps its
+  // existing retry path and delivers once POSTMARK_SERVER_TOKEN exists.
+  const r = await sendPostmarkEmail({
+    from: fromHeader(WELCOME_SENDER),
+    to,
+    replyTo: WELCOME_SENDER.email,
+    subject,
+    html,
+    text,
+    tag: "demo-result",
+  });
+  return r.ok ? { ok: true } : { ok: false, errorCode: r.errorCode };
 }

@@ -15,6 +15,7 @@ import {
   runResumeAuditGuards,
   type ResumeAuditGuardViolation,
 } from "@/lib/ai/resume-audit-guards";
+import { partialAuditFromJson, type Audit } from "@/components/audit/types";
 
 function guardable(audit: ResumeAudit) {
   return {
@@ -33,6 +34,8 @@ export async function generateResumeAudit(
     onPreviewDelta?: (text: string) => void;
     /** Replaces the streamed preview with the text of the validated result. */
     onPreviewReplace?: (text: string) => void;
+    /** Structured partial audit (same shape as the result) as it is written. */
+    onPartial?: (audit: Audit) => void;
   } = {},
 ): Promise<ResumeAudit> {
   const baseUser = buildResumeAuditUser(resume, now);
@@ -42,9 +45,26 @@ export async function generateResumeAudit(
   // result is ready. It is unvalidated text: the audit itself is still produced
   // by the unchanged structure -> guards -> retry pipeline below.
   const preview = opts.onPreviewReplace ?? opts.onPreviewDelta;
-  const onDelta = preview
+  const previewDelta = preview
     ? makeJsonProgressPreview({ render: renderAuditProgress, onText: preview })
     : undefined;
+  const onPartial = opts.onPartial;
+  const partialDelta = onPartial
+    ? makeJsonProgressPreview({
+        render: (v) => {
+          const a = partialAuditFromJson(v);
+          return a ? JSON.stringify(a) : "";
+        },
+        onText: (json) => onPartial(JSON.parse(json) as Audit),
+      })
+    : undefined;
+  const onDelta =
+    previewDelta || partialDelta
+      ? (chunk: string) => {
+          previewDelta?.(chunk);
+          partialDelta?.(chunk);
+        }
+      : undefined;
 
   const first = await runPromptValidated(
     PROMPT_C_RESUME_AUDIT,
@@ -222,6 +242,8 @@ export async function handleResumeAudit(request: Request): Promise<Response> {
                 const audit = await generateResumeAudit(capped, new Date(), {
                   // Full preview text each time: the client replaces, never appends.
                   onPreviewReplace: (text) => send("draft", { text, replace: true }),
+                  // Structured sections for the result view to fill in live.
+                  onPartial: (partial) => send("partial", { audit: partial }),
                 });
                 send("final", buildAuditPayload(audit));
               } catch (err) {

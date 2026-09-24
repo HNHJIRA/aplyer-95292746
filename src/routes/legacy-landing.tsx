@@ -235,7 +235,7 @@ function Hero() {
           >
             {[
               { l: "Status", v: "● Early Access", green: true },
-              { l: "Works on", v: ["Workday", "Greenhouse", "Lever"] },
+              { l: "Works on", v: ["Workday", "Greenhouse", "Lever", "Employer careers pages"] },
               { l: "Requires", v: "Google Chrome" },
               { l: "Pricing", v: "Free to join" },
             ].map((m, i) => (

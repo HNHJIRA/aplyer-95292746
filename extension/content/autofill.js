@@ -115,7 +115,9 @@
       log?.info?.("autofill", "No profile saved yet");
       return { filled: 0, missing: true };
     }
-    const inputs = document.querySelectorAll(
+    const scope = (window.__aplyerScopeRoot && window.__aplyerScopeRoot.isConnected && window.__aplyerScopeRoot) || document;
+    if (window.__aplyerRequireAdapter && !window.__aplyerAdapterActive) return { filled: 0, skipped: 0, unsupported: true };
+    const inputs = scope.querySelectorAll(
       'input[type="text"], input[type="email"], input[type="tel"], input[type="url"], input:not([type]), textarea'
     );
     let filled = 0;

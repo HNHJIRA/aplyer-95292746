@@ -1,5 +1,6 @@
 /**
- * Brevo transactional transport — SERVER ONLY.
+ * Welcome-email dispatch — SERVER ONLY. (File name kept for import stability;
+ * delivery now uses Postmark. Brevo is still used for the waitlist contact list.)
  *
  * The API key is read from process.env inside the function body so it can
  * never be inlined into a client bundle. Nothing here is exported to the
@@ -12,7 +13,7 @@ import {
   buildWelcomeEmailText,
 } from "./welcome-email";
 
-const BREVO_SMTP_URL = "https://api.brevo.com/v3/smtp/email";
+import { fromHeader, postmarkConfigured, sendPostmarkEmail } from "./postmark.server";
 
 export interface SendResult {
   ok: boolean;
@@ -21,38 +22,49 @@ export interface SendResult {
   messageId?: string;
   errorCode?: string;
   httpStatus?: number;
+  provider?: "postmark" | "brevo";
 }
 
-function safeErrorCode(status: number, body: string): string {
-  try {
-    const parsed = JSON.parse(body) as { code?: string };
-    if (parsed?.code) return String(parsed.code).slice(0, 64);
-  } catch {
-    /* non-JSON body */
-  }
-  return `http_${status}`;
-}
-
-/** Low-level send. Never throws; always resolves with a safe result object. */
+/**
+ * Low-level send. Never throws; always resolves with a safe result object.
+ * Delivery goes through Postmark (client Addendum 8). Content, subject and
+ * sender are unchanged. With no POSTMARK_SERVER_TOKEN this is `skipped`.
+ */
 export async function sendWelcomeEmail(input: {
   email: string;
   firstName?: string | null;
   correlationId?: string;
 }): Promise<SendResult> {
-  const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) {
-    console.warn("[welcome-email] provider=brevo status=skipped reason=missing_api_key");
-    return { ok: false, status: "skipped", errorCode: "missing_api_key" };
+  // Transitional: until POSTMARK_SERVER_TOKEN is configured, keep the
+  // existing Brevo delivery so live welcome emails are not silently lost.
+  if (!postmarkConfigured()) {
+    const b = await sendViaBrevo(input);
+    console.log(`[welcome-email] provider=brevo status=${b.status}${b.errorCode ? ` code=${b.errorCode}` : ""} cid=${input.correlationId ?? "-"}`);
+    return { ...b, provider: "brevo" };
   }
+  const r = await sendPostmarkEmail({
+    from: fromHeader(WELCOME_SENDER),
+    to: input.email,
+    replyTo: WELCOME_SENDER.email,
+    subject: WELCOME_SUBJECT,
+    html: buildWelcomeEmailHtml(input.firstName),
+    text: buildWelcomeEmailText(input.firstName),
+    tag: "waitlist-welcome",
+  });
+  console.log(
+    `[welcome-email] provider=postmark status=${r.status}${r.errorCode ? ` code=${r.errorCode}` : ""} cid=${input.correlationId ?? "-"}`,
+  );
+  return { ...r, provider: "postmark" };
+}
 
+/** The previous Brevo transactional send, unchanged; fallback only. */
+async function sendViaBrevo(input: { email: string; firstName?: string | null }): Promise<SendResult> {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) return { ok: false, status: "skipped", errorCode: "missing_api_key" };
   try {
-    const res = await fetch(BREVO_SMTP_URL, {
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
-      headers: {
-        accept: "application/json",
-        "content-type": "application/json",
-        "api-key": apiKey,
-      },
+      headers: { accept: "application/json", "content-type": "application/json", "api-key": apiKey },
       body: JSON.stringify({
         sender: WELCOME_SENDER,
         to: [{ email: input.email }],
@@ -63,27 +75,11 @@ export async function sendWelcomeEmail(input: {
       }),
       signal: AbortSignal.timeout(8000),
     });
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      const errorCode = safeErrorCode(res.status, body);
-      console.warn(
-        `[welcome-email] provider=brevo status=failed http=${res.status} code=${errorCode} cid=${input.correlationId ?? "-"}`,
-      );
-      return { ok: false, status: "failed", errorCode, httpStatus: res.status };
-    }
-
+    if (!res.ok) return { ok: false, status: "failed", errorCode: `http_${res.status}`, httpStatus: res.status };
     const json = (await res.json().catch(() => ({}))) as { messageId?: string };
-    console.log(
-      `[welcome-email] provider=brevo status=sent http=${res.status} cid=${input.correlationId ?? "-"}`,
-    );
     return { ok: true, status: "sent", messageId: json.messageId, httpStatus: res.status };
   } catch (e) {
-    const errorCode = e instanceof Error ? e.name : "unknown_error";
-    console.warn(
-      `[welcome-email] provider=brevo status=failed code=${errorCode} cid=${input.correlationId ?? "-"}`,
-    );
-    return { ok: false, status: "failed", errorCode };
+    return { ok: false, status: "failed", errorCode: e instanceof Error ? e.name : "unknown_error" };
   }
 }
 
@@ -146,7 +142,7 @@ export async function sendWelcomeEmailOnce(input: {
       .from("welcome_email_events")
       .update({
         status: result.status,
-        provider: "brevo",
+        provider: result.provider ?? "postmark",
         provider_message_id: result.messageId ?? null,
         error_code: result.errorCode ?? null,
         attempts: (claimed?.attempts ?? 0) + 1,

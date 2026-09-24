@@ -69,6 +69,11 @@ export interface ToolRequestOptions {
   body: unknown;
   /** Called with the full preview text so far. Preview only — never final. */
   onPreview?: (preview: string) => void;
+  /**
+   * Called with each structured partial result (`partial` event) — the
+   * unvalidated document so far, in the final result's shape. Display only.
+   */
+  onPartial?: (partial: unknown) => void;
   fetchImpl?: typeof fetch;
   signal?: AbortSignal;
 }
@@ -76,6 +81,7 @@ export interface ToolRequestOptions {
 async function readStream<T>(
   response: Response,
   onPreview: (preview: string) => void,
+  onPartial: (partial: unknown) => void = () => {},
 ): Promise<T> {
   const reader = response.body!.getReader();
   const decoder = new TextDecoder();
@@ -95,6 +101,11 @@ async function readStream<T>(
       if (!data) continue;
       const payload = parseData(data);
       if (event === "open") continue;
+      if (event === "partial") {
+        const p = payload && typeof payload === "object" ? ((payload as Json)["audit"] ?? payload) : null;
+        if (p && typeof p === "object") onPartial(p);
+        continue;
+      }
       if (event === "draft" || event === "delta") {
         const piece = draftText(payload);
         const replace =
@@ -169,7 +180,7 @@ export async function requestToolResult<T>(opts: ToolRequestOptions): Promise<T>
       !!response.body &&
       typeof response.body.getReader === "function";
 
-    if (streamable) return await readStream<T>(response, onPreview);
+    if (streamable) return await readStream<T>(response, onPreview, opts.onPartial);
     // Backend answered with the normal JSON document.
     return await readJson<T>(response);
   } catch (err) {

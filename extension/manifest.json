@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Aplyer.ai",
-  "version": "1.15.0",
-  "description": "Detect supported ATS application questions and prepare to generate tailored answers.",
+  "version": "1.16.0",
+  "description": "Detect application questions on Workday, Greenhouse, Lever and employer careers pages, and prepare tailored answers.",
   "permissions": [
     "storage",
     "activeTab",
@@ -69,6 +69,48 @@
       ],
       "run_at": "document_idle",
       "all_frames": true
+    },
+    {
+      "matches": [
+        "https://*/*"
+      ],
+      "exclude_matches": [
+        "https://boards.greenhouse.io/*",
+        "https://job-boards.greenhouse.io/*",
+        "https://*.greenhouse.io/*",
+        "https://jobs.lever.co/*",
+        "https://*.lever.co/*",
+        "https://*.myworkdayjobs.com/*",
+        "https://*.workday.com/*",
+        "https://*.myworkdaysite.com/*",
+        "https://*.linkedin.com/*",
+        "https://*.indeed.com/*",
+        "https://www.aplyer.ai/*",
+        "https://aplyer.ai/*",
+        "https://aplyer.devssh.xyz/*",
+        "https://*.lovable.app/*",
+        "https://*.google.com/*"
+      ],
+      "js": [
+        "content/generic-gate.js",
+        "content/logger.js",
+        "content/fill.js",
+        "content/adapters/base.js",
+        "content/adapters/greenhouse.js",
+        "content/adapters/lever.js",
+        "content/adapters/generic.js",
+        "content/adapters/workday.js",
+        "content/detector.js",
+        "content/injector.js",
+        "content/autofill.js",
+        "content/field-intel.js",
+        "content/content.js"
+      ],
+      "css": [
+        "content/inject.css"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
     }
   ],
   "web_accessible_resources": [
@@ -77,11 +119,7 @@
         "icon.png"
       ],
       "matches": [
-        "https://*.greenhouse.io/*",
-        "https://*.lever.co/*",
-        "https://*.myworkdayjobs.com/*",
-        "https://*.workday.com/*",
-        "https://*.myworkdaysite.com/*"
+        "https://*/*"
       ]
     }
   ],
