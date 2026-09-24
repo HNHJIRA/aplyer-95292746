@@ -1,5 +1,6 @@
 /**
- * Brevo transactional transport — SERVER ONLY.
+ * Welcome-email dispatch — SERVER ONLY. (File name kept for import stability;
+ * delivery now uses Postmark. Brevo is still used for the waitlist contact list.)
  *
  * The API key is read from process.env inside the function body so it can
  * never be inlined into a client bundle. Nothing here is exported to the
@@ -12,7 +13,7 @@ import {
   buildWelcomeEmailText,
 } from "./welcome-email";
 
-const BREVO_SMTP_URL = "https://api.brevo.com/v3/smtp/email";
+import { fromHeader, sendPostmarkEmail } from "./postmark.server";
 
 export interface SendResult {
   ok: boolean;
@@ -23,68 +24,29 @@ export interface SendResult {
   httpStatus?: number;
 }
 
-function safeErrorCode(status: number, body: string): string {
-  try {
-    const parsed = JSON.parse(body) as { code?: string };
-    if (parsed?.code) return String(parsed.code).slice(0, 64);
-  } catch {
-    /* non-JSON body */
-  }
-  return `http_${status}`;
-}
-
-/** Low-level send. Never throws; always resolves with a safe result object. */
+/**
+ * Low-level send. Never throws; always resolves with a safe result object.
+ * Delivery goes through Postmark (client Addendum 8). Content, subject and
+ * sender are unchanged. With no POSTMARK_SERVER_TOKEN this is `skipped`.
+ */
 export async function sendWelcomeEmail(input: {
   email: string;
   firstName?: string | null;
   correlationId?: string;
 }): Promise<SendResult> {
-  const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) {
-    console.warn("[welcome-email] provider=brevo status=skipped reason=missing_api_key");
-    return { ok: false, status: "skipped", errorCode: "missing_api_key" };
-  }
-
-  try {
-    const res = await fetch(BREVO_SMTP_URL, {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        "content-type": "application/json",
-        "api-key": apiKey,
-      },
-      body: JSON.stringify({
-        sender: WELCOME_SENDER,
-        to: [{ email: input.email }],
-        subject: WELCOME_SUBJECT,
-        htmlContent: buildWelcomeEmailHtml(input.firstName),
-        textContent: buildWelcomeEmailText(input.firstName),
-        tags: ["waitlist-welcome"],
-      }),
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      const errorCode = safeErrorCode(res.status, body);
-      console.warn(
-        `[welcome-email] provider=brevo status=failed http=${res.status} code=${errorCode} cid=${input.correlationId ?? "-"}`,
-      );
-      return { ok: false, status: "failed", errorCode, httpStatus: res.status };
-    }
-
-    const json = (await res.json().catch(() => ({}))) as { messageId?: string };
-    console.log(
-      `[welcome-email] provider=brevo status=sent http=${res.status} cid=${input.correlationId ?? "-"}`,
-    );
-    return { ok: true, status: "sent", messageId: json.messageId, httpStatus: res.status };
-  } catch (e) {
-    const errorCode = e instanceof Error ? e.name : "unknown_error";
-    console.warn(
-      `[welcome-email] provider=brevo status=failed code=${errorCode} cid=${input.correlationId ?? "-"}`,
-    );
-    return { ok: false, status: "failed", errorCode };
-  }
+  const r = await sendPostmarkEmail({
+    from: fromHeader(WELCOME_SENDER),
+    to: input.email,
+    replyTo: WELCOME_SENDER.email,
+    subject: WELCOME_SUBJECT,
+    html: buildWelcomeEmailHtml(input.firstName),
+    text: buildWelcomeEmailText(input.firstName),
+    tag: "waitlist-welcome",
+  });
+  console.log(
+    `[welcome-email] provider=postmark status=${r.status}${r.errorCode ? ` code=${r.errorCode}` : ""} cid=${input.correlationId ?? "-"}`,
+  );
+  return r;
 }
 
 /**
@@ -146,7 +108,7 @@ export async function sendWelcomeEmailOnce(input: {
       .from("welcome_email_events")
       .update({
         status: result.status,
-        provider: "brevo",
+        provider: "postmark",
         provider_message_id: result.messageId ?? null,
         error_code: result.errorCode ?? null,
         attempts: (claimed?.attempts ?? 0) + 1,
