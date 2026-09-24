@@ -58,7 +58,7 @@ describe("demo answer streaming", () => {
     );
     await getAnswer({ ...input, fetch: fetchMock });
     expect(fetchMock.mock.calls[0][1].headers.Accept).toBe("text/event-stream");
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual(input);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ ...input, writingSample: null });
   });
 
   it("handles the open event without rendering anything", async () => {
