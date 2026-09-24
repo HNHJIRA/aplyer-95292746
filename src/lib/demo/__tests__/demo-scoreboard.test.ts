@@ -18,8 +18,7 @@ import type { DemoGenerator, DemoInput } from "../generate.server";
 import type { ChatgptGenerator } from "../openai.server";
 import type { AdmitInput, CostEventInput, DemoRequestRow, DemoStore } from "../store";
 import type { DemoSettings } from "../policy";
-// @ts-expect-error plain JS module
-import answerModule from "../../../legacy/demo-stream.js";
+import answerModule from "@/legacy/demo-stream.js";
 
 // ---- fixtures ---------------------------------------------------------------
 const CASUAL =
