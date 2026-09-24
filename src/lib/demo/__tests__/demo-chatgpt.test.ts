@@ -482,8 +482,11 @@ describe("static safety", () => {
       expect(s).not.toMatch(/OPENAI_API_KEY|api\.openai\.com|Here is a job I am applying to/);
     }
   });
-  it("OpenAI module logs no prompt/answer/input content", () => {
-    expect(read("src/lib/demo/openai.server.ts")).not.toMatch(/console\./);
+  it("OpenAI module logs only attempt, status and request id", () => {
+    const logs = read("src/lib/demo/openai.server.ts").match(/console\.[a-z]+\([^;]*;/g) ?? [];
+    expect(logs).toEqual([
+      "console.info(`[demo-openai] attempt=${attempt} status=${status} request_id=${requestId ?? \"none\"}`);",
+    ]);
   });
   it("Aplyer pipeline is unchanged and the old direct Claude demo path is not reintroduced", () => {
     const g = read("src/lib/demo/generate.server.ts");
