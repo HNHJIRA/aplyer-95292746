@@ -46,6 +46,8 @@ export interface DemoDeps {
   checkEmail?: (email: string) => Promise<boolean>;
   /** AI-detector clients (Copyleaks + Pangram). Omitted => Human Score unavailable. */
   detectors?: DetectorClient[];
+  /** Detector calls are refused until approved detector pricing exists. */
+  detectorPricingConfigured?: () => boolean;
 }
 
 async function sha256(v: string): Promise<string> {
@@ -347,7 +349,7 @@ export async function scoreAndMaybeRegenerate(
  * Returns the candidate-facing view, or null (hidden). Never throws.
  */
 export async function runHumanScore(
-  deps: Pick<DemoDeps, "store" | "detectors">,
+  deps: Pick<DemoDeps, "store" | "detectors"> & { detectorPricingConfigured?: () => boolean },
   id: string,
   aplyerText: string | null,
   chatgptText: string | null,
@@ -360,6 +362,7 @@ export async function runHumanScore(
   };
   try {
     if (!deps.detectors?.length || !store.getHumanScoreConfig) return await unavailable("not_configured");
+    if (deps.detectorPricingConfigured && !deps.detectorPricingConfigured()) return await unavailable("pricing_missing");
     const cfg = await store.getHumanScoreConfig().catch(() => null);
     if (!cfg) return await unavailable("no_config");
     if (!detectorGateOpen(aplyerText, chatgptText, cfg)) return await unavailable("length_gate");
