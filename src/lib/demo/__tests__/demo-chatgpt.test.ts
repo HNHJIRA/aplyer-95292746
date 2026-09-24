@@ -96,6 +96,7 @@ beforeEach(() => {
       text: "ChatGPT answer.",
       prompt: buildChatgptPrompt(input),
       calls: [{ provider: "openai", model: "cfg-model", operation: "chatgpt_answer", usage: { inputTokens: 200, outputTokens: 80 } }],
+      model: "cfg-model-served",
     };
   });
 });
@@ -196,6 +197,20 @@ describe("OpenAI provider (server-side)", () => {
     expect(r.calls).toEqual([
       { provider: "openai", model: "configured-model", operation: "chatgpt_answer", usage: { inputTokens: 42, outputTokens: 7 } },
     ]);
+    // No model reported by the provider: falls back to the configured id that was sent.
+    expect(r.model).toBe("configured-model");
+  });
+
+  it("reports the model id OpenAI says served the answer, and follows configuration changes", async () => {
+    process.env.OPENAI_API_KEY = "sk-test";
+    for (const [cfg, served] of [["model-a", "model-a-2026-01-01"], ["model-b", "model-b-2026-02-02"]]) {
+      process.env.DEMO_OPENAI_MODEL = cfg;
+      const frames = [`data: {"model":"${served}","choices":[{"delta":{"content":"Hi."}}]}`, "data: [DONE]"].join("\n\n");
+      vi.stubGlobal("fetch", vi.fn(async () => new Response(frames + "\n\n", { status: 200 })));
+      const r = await generateChatgptDemoAnswer(input);
+      expect(r.model).toBe(served);
+      expect(JSON.stringify(r)).not.toContain("sk-test");
+    }
   });
 
   it("maps provider errors and empty output to safe codes", async () => {
@@ -264,6 +279,8 @@ describe("two-sided demo request", () => {
     const fin = frames.find((f) => f.ev === "chatgpt_final")!.data;
     const sent = (await chatgpt.mock.results[0].value).prompt;
     expect(fin.prompt).toBe(sent);
+    expect(fin.model).toBe("cfg-model-served");
+    expect(Object.keys(fin).sort()).toEqual(["answer", "model", "prompt"]);
     expect(frames.find((f) => f.ev === "final")!.data.answer).toBe("Aplyer answer.");
   });
 
