@@ -33,7 +33,7 @@ function isBulletHeavy(content: string): boolean {
     .map((l) => l.trim())
     .filter((l) => l.length > 0);
   if (lines.length < 3) return false;
-  const bulletRe = /^(\-|\*|•|\d+\.)\s/;
+  const bulletRe = /^(-|\*|•|\d+\.)\s/;
   const bulletCount = lines.filter((l) => bulletRe.test(l)).length;
   return bulletCount / lines.length > BULLET_HEAVY_THRESHOLD;
 }
