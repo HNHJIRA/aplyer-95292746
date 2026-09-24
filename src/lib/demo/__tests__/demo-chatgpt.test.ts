@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { handleDemoRequest } from "../handler.server";
 import { drainDemoQueue } from "../queue.server";
-import { buildChatgptPrompt, generateChatgptDemoAnswer, type ChatgptGenerator } from "../openai.server";
+import { buildChatgptPrompt, DEMO_CHATGPT_PROMPT_TEMPLATE, generateChatgptDemoAnswer, type ChatgptGenerator } from "../openai.server";
 import { DemoGenerationError, type DemoGenerator, type DemoInput } from "../generate.server";
 import type { AdmitInput, CostEventInput, DemoRequestRow, DemoStore } from "../store";
 import type { DemoSettings } from "../policy";
@@ -126,31 +126,64 @@ async function sse(res: Response) {
     });
 }
 
-describe("exact ChatGPT prompt", () => {
+describe("exact ChatGPT prompt (September 23 spec, Part D)", () => {
   const input = { ...INPUT, writingSample: null };
-  it("uses the spec template verbatim with only the four substitutions", () => {
-    expect(buildChatgptPrompt(input)).toBe(
-      `Here is a job I am applying to and my resume.\nWrite my answer to this question: ${INPUT.question}\n${INPUT.jobDescription}\n${INPUT.resume}`,
+  it("matches the approved template with all four inputs, writing sample last", () => {
+    const ws = "  Hi team —\n\nI'd rather ship small.  ";
+    expect(buildChatgptPrompt({ ...input, writingSample: ws })).toBe(
+      "Here is a job I am applying to and my resume.\n" +
+        "Write my answer to this question:\n" +
+        `${INPUT.question}\n` +
+        `${INPUT.jobDescription}\n` +
+        `${INPUT.resume}\n` +
+        ws,
     );
   });
-  it("inserts question, job description and resume unchanged, in spec order", () => {
-    const p = buildChatgptPrompt(input);
-    const iq = p.indexOf(INPUT.question), ij = p.indexOf(INPUT.jobDescription), ir = p.indexOf(INPUT.resume);
-    expect([iq, ij, ir].every((i) => i > 0)).toBe(true);
-    expect(iq < ij && ij < ir).toBe(true);
+  it("matches the approved template without a writing sample", () => {
+    expect(buildChatgptPrompt(input)).toBe(
+      "Here is a job I am applying to and my resume.\n" +
+        "Write my answer to this question:\n" +
+        `${INPUT.question}\n` +
+        `${INPUT.jobDescription}\n` +
+        `${INPUT.resume}`,
+    );
   });
-  it("appends the writing sample exactly when supplied", () => {
-    const ws = "  Hi team —\n\nI'd rather ship small.  ";
-    expect(buildChatgptPrompt({ ...input, writingSample: ws }).endsWith(`\n${INPUT.resume}\n${ws}`)).toBe(true);
+  it("puts the question on its own line, not on the instruction line", () => {
+    const p = buildChatgptPrompt({ question: "Q", jobDescription: "J", resume: "R", writingSample: null });
+    const lines = p.split("\n");
+    expect(lines).toContain("Write my answer to this question:");
+    expect(lines[lines.indexOf("Write my answer to this question:") + 1]).toBe("Q");
+    expect(p).not.toContain(`Write my answer to this question: Q`);
   });
-  it("omits the writing-sample line entirely when empty/null", () => {
+  it("is built from the single exported template constant", () => {
+    expect(DEMO_CHATGPT_PROMPT_TEMPLATE).toBe(
+      "Here is a job I am applying to and my resume.\n" +
+        "Write my answer to this question:\n" +
+        "[question]\n" +
+        "[job description]\n" +
+        "[resume]\n" +
+        "[writing sample, when provided]",
+    );
+  });
+  it("omits the writing-sample line entirely when empty/null, with no placeholder text", () => {
     for (const ws of [null, "", "   "]) {
-      expect(buildChatgptPrompt({ ...input, writingSample: ws as string | null }).endsWith(INPUT.resume)).toBe(true);
+      const p = buildChatgptPrompt({ ...input, writingSample: ws as string | null });
+      expect(p.endsWith(INPUT.resume)).toBe(true);
+      expect(p).not.toMatch(/null|undefined|writing sample, when provided/i);
     }
+  });
+  it("inserts candidate text literally, even when it contains $ patterns", () => {
+    const p = buildChatgptPrompt({
+      question: "Q $& $`",
+      jobDescription: "J $$",
+      resume: "R $1",
+      writingSample: "S $'",
+    });
+    expect(p).toContain("Q $& $`\nJ $$\nR $1\nS $'");
   });
   it("contains no hidden instructions or Aplyer rules", () => {
     const p = buildChatgptPrompt({ question: "Q", jobDescription: "J", resume: "R", writingSample: null });
-    expect(p).toBe("Here is a job I am applying to and my resume.\nWrite my answer to this question: Q\nJ\nR");
+    expect(p).toBe("Here is a job I am applying to and my resume.\nWrite my answer to this question:\nQ\nJ\nR");
   });
 });
 
