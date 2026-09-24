@@ -1,4 +1,5 @@
 /** Storage contract for demo cost controls (implemented server-side; faked in tests). */
+import type { ScoreboardConfig } from "./scoreboard";
 import type { AdmissionCounts, DemoSettings, ModelPricing, SpendSnapshot } from "./policy";
 
 export type DemoStatus =
@@ -22,6 +23,8 @@ export interface DemoRequestRow {
   chatgpt_answer?: string | null;
   chatgpt_prompt?: string | null;
   chatgpt_status?: "pending" | "completed" | "failed" | "not_configured" | null;
+  scoreboard?: unknown;
+  scoreboard_status?: "shown" | "suppressed" | null;
 }
 
 export interface AdmitInput {
@@ -62,4 +65,6 @@ export interface DemoStore {
   spendSnapshot(): Promise<{ settings: DemoSettings | null; spend: SpendSnapshot | null }>;
   claimQueued(limit: number): Promise<DemoRequestRow[]>;
   requeueStale(): Promise<void>;
+  /** Scoreboard threshold + approved references. Absent/null => scoreboard suppressed. */
+  getScoreboardConfig?(): Promise<ScoreboardConfig | null>;
 }

@@ -54,6 +54,8 @@ export type DemoProgressStage = "reading_resume" | "writing";
 export interface DemoGenerateHooks {
   onDelta?: (text: string) => void;
   onProgress?: (stage: DemoProgressStage) => void;
+  /** Scoreboard regeneration only: existing Prompt A "preferred phrasing style" note. */
+  styleNote?: string | null;
 }
 
 export type DemoGenerator = (input: DemoInput, hooks?: DemoGenerateHooks) => Promise<DemoGenerationResult>;
@@ -101,6 +103,7 @@ export const generateAplyerDemoAnswer: DemoGenerator = async (input, hooks = {})
           db: supabaseAdmin,
           onDraftDelta: hooks.onDelta ?? null,
           onStage: hooks.onProgress ?? null,
+          styleNote: hooks.styleNote ?? null,
         }),
     );
     return { text: r.answer, side: DEMO_APLYER_SIDE, calls: usageToCalls(events) };

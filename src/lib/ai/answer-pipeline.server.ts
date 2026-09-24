@@ -716,6 +716,8 @@ export interface StatelessAnswerInput {
   db: Db;
   onDraftDelta?: ((text: string) => void) | null;
   onStage?: ((stage: StatelessStage) => void) | null;
+  /** Demo scoreboard regeneration: passed to Prompt A's existing preferred-style input. */
+  styleNote?: string | null;
 }
 
 /**
@@ -767,7 +769,7 @@ export async function generateStatelessValidatedAnswer(
       voiceCard: null,
       jobContext: { description: String(input.jobDescription ?? "").slice(0, 8000) },
       variant: null,
-      preferredStyleNote: null,
+      preferredStyleNote: input.styleNote ? String(input.styleNote).slice(0, 500) : null,
       budget,
       onDraftDelta: input.onDraftDelta
         ? (t) => input.onDraftDelta?.(t)
