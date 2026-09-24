@@ -5,6 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { preflight } from "@/lib/cors";
 import { handleDemoRequest } from "@/lib/demo/handler.server";
 import { generateAplyerDemoAnswer } from "@/lib/demo/generate.server";
+import { generateChatgptDemoAnswer } from "@/lib/demo/openai.server";
 import { dbDemoStore } from "@/lib/demo/store.server";
 
 export { wantsStream } from "@/lib/demo/handler.server";
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/api/public/demo")({
         handleDemoRequest(request, {
           store: dbDemoStore,
           generate: generateAplyerDemoAnswer,
+          generateChatgpt: generateChatgptDemoAnswer,
           salt: process.env.DEMO_HASH_SALT,
           checkEmail: zeroBounceAllows,
         }),
