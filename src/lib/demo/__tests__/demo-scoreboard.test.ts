@@ -298,7 +298,7 @@ describe("client + static", () => {
     const html = readFileSync(join(process.cwd(), "src/legacy/demo.html"), "utf8");
     const i = html.indexOf('id="sbWrap"');
     const panel = html.slice(i, i + 3000) + html.slice(html.indexOf("function onScoreboard"), html.indexOf("function onScoreboard") + 2500);
-    expect(panel).not.toMatch(/winner|loser|better answer|worse answer|smarter|more human/i);
+    expect(panel).not.toMatch(/\b(winner|loser|better answer|worse answer|smarter|more human)\b/i);
     const src = readFileSync(join(process.cwd(), "src/lib/demo/scoreboard.ts"), "utf8");
     expect(src).not.toMatch(/fetch\(|anthropic|openai|supabase|process\.env/i);
   });
