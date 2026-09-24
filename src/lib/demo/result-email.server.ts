@@ -34,7 +34,8 @@ export async function sendDemoResultEmail(
           .join("")}`
       : ""
   }`;
-  // Missing token => not delivered; the queue keeps its existing retry path.
+  // Missing token => not delivered (never faked); the queue keeps its
+  // existing retry path and delivers once POSTMARK_SERVER_TOKEN exists.
   const r = await sendPostmarkEmail({
     from: fromHeader(WELCOME_SENDER),
     to,

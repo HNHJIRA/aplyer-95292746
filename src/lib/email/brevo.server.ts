@@ -13,7 +13,7 @@ import {
   buildWelcomeEmailText,
 } from "./welcome-email";
 
-import { fromHeader, sendPostmarkEmail } from "./postmark.server";
+import { fromHeader, postmarkConfigured, sendPostmarkEmail } from "./postmark.server";
 
 export interface SendResult {
   ok: boolean;
@@ -22,6 +22,7 @@ export interface SendResult {
   messageId?: string;
   errorCode?: string;
   httpStatus?: number;
+  provider?: "postmark" | "brevo";
 }
 
 /**
@@ -34,6 +35,13 @@ export async function sendWelcomeEmail(input: {
   firstName?: string | null;
   correlationId?: string;
 }): Promise<SendResult> {
+  // Transitional: until POSTMARK_SERVER_TOKEN is configured, keep the
+  // existing Brevo delivery so live welcome emails are not silently lost.
+  if (!postmarkConfigured()) {
+    const b = await sendViaBrevo(input);
+    console.log(`[welcome-email] provider=brevo status=${b.status}${b.errorCode ? ` code=${b.errorCode}` : ""} cid=${input.correlationId ?? "-"}`);
+    return { ...b, provider: "brevo" };
+  }
   const r = await sendPostmarkEmail({
     from: fromHeader(WELCOME_SENDER),
     to: input.email,
@@ -46,7 +54,33 @@ export async function sendWelcomeEmail(input: {
   console.log(
     `[welcome-email] provider=postmark status=${r.status}${r.errorCode ? ` code=${r.errorCode}` : ""} cid=${input.correlationId ?? "-"}`,
   );
-  return r;
+  return { ...r, provider: "postmark" };
+}
+
+/** The previous Brevo transactional send, unchanged; fallback only. */
+async function sendViaBrevo(input: { email: string; firstName?: string | null }): Promise<SendResult> {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) return { ok: false, status: "skipped", errorCode: "missing_api_key" };
+  try {
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: { accept: "application/json", "content-type": "application/json", "api-key": apiKey },
+      body: JSON.stringify({
+        sender: WELCOME_SENDER,
+        to: [{ email: input.email }],
+        subject: WELCOME_SUBJECT,
+        htmlContent: buildWelcomeEmailHtml(input.firstName),
+        textContent: buildWelcomeEmailText(input.firstName),
+        tags: ["waitlist-welcome"],
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return { ok: false, status: "failed", errorCode: `http_${res.status}`, httpStatus: res.status };
+    const json = (await res.json().catch(() => ({}))) as { messageId?: string };
+    return { ok: true, status: "sent", messageId: json.messageId, httpStatus: res.status };
+  } catch (e) {
+    return { ok: false, status: "failed", errorCode: e instanceof Error ? e.name : "unknown_error" };
+  }
 }
 
 /**
@@ -108,7 +142,7 @@ export async function sendWelcomeEmailOnce(input: {
       .from("welcome_email_events")
       .update({
         status: result.status,
-        provider: "postmark",
+        provider: result.provider ?? "postmark",
         provider_message_id: result.messageId ?? null,
         error_code: result.errorCode ?? null,
         attempts: (claimed?.attempts ?? 0) + 1,
