@@ -213,7 +213,11 @@ describe("P0 canonical inventory is server-write-only", () => {
       .update({ inventory_json: { fake: "fact" } })
       .eq("user_id", "user-a")
       .maybeSingle();
-    const del = await db.from("resume_fact_inventories").delete().eq("user_id", "user-a").maybeSingle();
+    const del = await db
+      .from("resume_fact_inventories")
+      .delete()
+      .eq("user_id", "user-a")
+      .maybeSingle();
 
     for (const r of [ins, upd, del]) {
       expect((r.error as { code: string } | null)?.code).toBe("42501");
@@ -264,7 +268,9 @@ describe("requireReadyFactInventory gate", () => {
 
   it("fails closed when the inventory is missing", async () => {
     const db = makeDb();
-    await expect(requireReadyFactInventory(db, "user-a")).rejects.toBeInstanceOf(FactInventoryError);
+    await expect(requireReadyFactInventory(db, "user-a")).rejects.toBeInstanceOf(
+      FactInventoryError,
+    );
   });
 
   it("fails closed on a non-ready status", async () => {

@@ -40,7 +40,13 @@ interface VoiceCardData {
   do_and_avoid: { do: string[]; avoid: string[] };
 }
 
-export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onSkipToProfile?: () => void }) {
+export function VoiceCard({
+  onDone,
+  onSkipToProfile,
+}: {
+  onDone: () => void;
+  onSkipToProfile?: () => void;
+}) {
   const [status, setStatus] = useState<Status>("eligible");
   const [card, setCard] = useState<VoiceCardData | null>(null);
   const [rarity, setRarity] = useState<string | null>(null);
@@ -70,7 +76,11 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
     setStatus("generating");
     try {
       const res = (await startVoiceCardGenerationApi()) as
-        | { status: "generated"; voice_card: VoiceCardData; rarity?: { status: string; text?: string } }
+        | {
+            status: "generated";
+            voice_card: VoiceCardData;
+            rarity?: { status: string; text?: string };
+          }
         | { status: "in_progress" }
         | { status: "failed"; error?: string };
       if (res.status === "generated") {
@@ -101,7 +111,6 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
     void (async () => {
       await refresh();
     })();
-     
   }, []);
 
   useEffect(() => {
@@ -188,7 +197,9 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
         </p>
         {card.reads && (
           <p className="mt-2 text-[13px]">
-            <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Reads </span>
+            <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+              Reads{" "}
+            </span>
             {card.reads}
           </p>
         )}
@@ -202,13 +213,21 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
           <Chips label="Hooks & transitions" items={card.hooks_and_transitions} />
           <Chips label="Values signals" items={card.values_signals} />
           <div className="rounded-xl border border-border bg-paper p-3 text-[13px]">
-            <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Do</div>
+            <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+              Do
+            </div>
             <ul className="mt-1 list-disc space-y-0.5 pl-4">
-              {card.do_and_avoid.do.map((x, i) => <li key={i}>{x}</li>)}
+              {card.do_and_avoid.do.map((x, i) => (
+                <li key={i}>{x}</li>
+              ))}
             </ul>
-            <div className="mt-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Avoid</div>
+            <div className="mt-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+              Avoid
+            </div>
             <ul className="mt-1 list-disc space-y-0.5 pl-4">
-              {card.do_and_avoid.avoid.map((x, i) => <li key={i}>{x}</li>)}
+              {card.do_and_avoid.avoid.map((x, i) => (
+                <li key={i}>{x}</li>
+              ))}
             </ul>
           </div>
         </div>
@@ -232,14 +251,18 @@ export function VoiceCard({ onDone, onSkipToProfile }: { onDone: () => void; onS
 
 function Center({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center px-6 text-center">{children}</div>
+    <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+      {children}
+    </div>
   );
 }
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-border bg-paper px-3 py-2">
-      <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </div>
       <div className="mt-0.5 text-[14px]">{value}</div>
     </div>
   );
@@ -248,10 +271,15 @@ function Row({ label, value }: { label: string; value: string }) {
 function Chips({ label, items }: { label: string; items: string[] }) {
   return (
     <div>
-      <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </div>
       <div className="mt-1 flex flex-wrap gap-1">
         {items.map((it, i) => (
-          <span key={i} className="rounded-full border border-border bg-paper px-2 py-0.5 text-[10.5px]">
+          <span
+            key={i}
+            className="rounded-full border border-border bg-paper px-2 py-0.5 text-[10.5px]"
+          >
             {it}
           </span>
         ))}

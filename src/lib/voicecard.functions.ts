@@ -93,10 +93,16 @@ function parseJson<T>(raw: string): T {
 function validateVoiceCard(d: unknown): VoiceCardData {
   const o = d as VoiceCardData;
   const req = ["headline", "tone", "cadence", "formality", "vocabulary_bias"] as const;
-  for (const k of req) if (typeof o?.[k] !== "string" || !o[k]) throw new Error(`Missing field ${k}`);
+  for (const k of req)
+    if (typeof o?.[k] !== "string" || !o[k]) throw new Error(`Missing field ${k}`);
   const arr = ["distinctive_traits", "hooks_and_transitions", "values_signals"] as const;
-  for (const k of arr) if (!Array.isArray(o?.[k]) || o[k].length === 0) throw new Error(`Missing ${k}`);
-  if (!o.do_and_avoid || !Array.isArray(o.do_and_avoid.do) || !Array.isArray(o.do_and_avoid.avoid)) {
+  for (const k of arr)
+    if (!Array.isArray(o?.[k]) || o[k].length === 0) throw new Error(`Missing ${k}`);
+  if (
+    !o.do_and_avoid ||
+    !Array.isArray(o.do_and_avoid.do) ||
+    !Array.isArray(o.do_and_avoid.avoid)
+  ) {
     throw new Error("Missing do_and_avoid");
   }
   return o;
@@ -113,7 +119,13 @@ async function sha256Hex(input: string): Promise<string> {
 interface SourceSnapshot {
   resumeId: string | null;
   resumeText: string | null;
-  qualifyingSamples: Array<{ id: string; content: string; content_hash: string; type: string; title: string }>;
+  qualifyingSamples: Array<{
+    id: string;
+    content: string;
+    content_hash: string;
+    type: string;
+    title: string;
+  }>;
   sourceHash: string;
 }
 
@@ -168,11 +180,23 @@ async function fetchSourceSnapshot(supabase: any, userId: string): Promise<Sourc
 function isQualifyingProse(content: string, type: string): boolean {
   const trimmed = (content || "").trim();
   if (trimmed.length < 100) return false;
-  const allowed = ["cover_letter", "linkedin_post", "professional_email", "blog", "essay", "free_text", "career_summary", "other"];
+  const allowed = [
+    "cover_letter",
+    "linkedin_post",
+    "professional_email",
+    "blog",
+    "essay",
+    "free_text",
+    "career_summary",
+    "other",
+  ];
   if (!allowed.includes(type)) return false;
   const words = trimmed.split(/\s+/).filter(Boolean);
   if (words.length < 30) return false;
-  const lines = trimmed.split(/\n/).map((l) => l.trim()).filter((l) => l.length > 0);
+  const lines = trimmed
+    .split(/\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
   if (lines.length >= 3) {
     const bulletRe = /^(-|\*|•|\d+\.)\s/;
     const bullets = lines.filter((l) => bulletRe.test(l)).length;
@@ -183,19 +207,27 @@ function isQualifyingProse(content: string, type: string): boolean {
 
 function buildFastVoiceCard(snap: SourceSnapshot): VoiceCardData {
   const text = snap.qualifyingSamples.map((s) => s.content).join("\n\n");
-  const sentences = text.split(/[.!?]+/).map((s) => s.trim()).filter(Boolean);
+  const sentences = text
+    .split(/[.!?]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
   const words = text.toLowerCase().match(/[a-z][a-z'-]{2,}/g) ?? [];
   const avgSentenceWords = sentences.length ? Math.round(words.length / sentences.length) : 14;
   const traits = topTerms(words, 8);
   const transitions = findTransitions(text);
   const valueSignals = findValueSignals(words);
-  const cadence = avgSentenceWords <= 12
-    ? "Short, direct sentences with a practical rhythm."
-    : avgSentenceWords >= 22
-      ? "Longer explanatory sentences with reflective pacing."
-      : "Balanced sentence length with clear setup and follow-through.";
-  const formality = /\b(i'm|can't|don't|that's|you're)\b/i.test(text) ? "Conversational-professional" : "Polished-professional";
-  const vocabulary = traits.length ? `Leans on concrete terms like ${traits.slice(0, 5).join(", ")}.` : "Leans on concrete, role-focused language.";
+  const cadence =
+    avgSentenceWords <= 12
+      ? "Short, direct sentences with a practical rhythm."
+      : avgSentenceWords >= 22
+        ? "Longer explanatory sentences with reflective pacing."
+        : "Balanced sentence length with clear setup and follow-through.";
+  const formality = /\b(i'm|can't|don't|that's|you're)\b/i.test(text)
+    ? "Conversational-professional"
+    : "Polished-professional";
+  const vocabulary = traits.length
+    ? `Leans on concrete terms like ${traits.slice(0, 5).join(", ")}.`
+    : "Leans on concrete, role-focused language.";
 
   return {
     headline: "A clear, practical voice focused on evidence and contribution.",
@@ -210,7 +242,11 @@ function buildFastVoiceCard(snap: SourceSnapshot): VoiceCardData {
     ],
     hooks_and_transitions: transitions.length
       ? transitions.slice(0, 4)
-      : ["Start with the situation, then name the contribution.", "Use concise transitions between experience and impact.", "Close with a grounded next-step or value statement."],
+      : [
+          "Start with the situation, then name the contribution.",
+          "Use concise transitions between experience and impact.",
+          "Close with a grounded next-step or value statement.",
+        ],
     values_signals: valueSignals,
     do_and_avoid: {
       do: [
@@ -229,18 +265,69 @@ function buildFastVoiceCard(snap: SourceSnapshot): VoiceCardData {
 
 function topTerms(words: string[], limit: number): string[] {
   const stop = new Set([
-    "the", "and", "for", "with", "that", "this", "from", "have", "has", "was", "were", "are", "you", "your", "our", "their", "but", "not", "can", "will", "about", "into", "through", "they", "them", "then", "than", "also", "when", "where", "what", "how", "why", "who", "been", "being", "work", "role", "team",
+    "the",
+    "and",
+    "for",
+    "with",
+    "that",
+    "this",
+    "from",
+    "have",
+    "has",
+    "was",
+    "were",
+    "are",
+    "you",
+    "your",
+    "our",
+    "their",
+    "but",
+    "not",
+    "can",
+    "will",
+    "about",
+    "into",
+    "through",
+    "they",
+    "them",
+    "then",
+    "than",
+    "also",
+    "when",
+    "where",
+    "what",
+    "how",
+    "why",
+    "who",
+    "been",
+    "being",
+    "work",
+    "role",
+    "team",
   ]);
   const counts = new Map<string, number>();
   for (const word of words) {
     if (stop.has(word) || word.length < 4) continue;
     counts.set(word, (counts.get(word) ?? 0) + 1);
   }
-  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([word]) => word);
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([word]) => word);
 }
 
 function findTransitions(text: string): string[] {
-  const candidates = ["I learned", "I believe", "In my experience", "For example", "As a result", "This helped", "My approach", "I focus", "I bring"];
+  const candidates = [
+    "I learned",
+    "I believe",
+    "In my experience",
+    "For example",
+    "As a result",
+    "This helped",
+    "My approach",
+    "I focus",
+    "I bring",
+  ];
   return candidates
     .filter((phrase) => text.toLowerCase().includes(phrase.toLowerCase()))
     .map((phrase) => `Uses “${phrase}…” to move from context to impact.`);
@@ -249,7 +336,10 @@ function findTransitions(text: string): string[] {
 function findValueSignals(words: string[]): string[] {
   const values = [
     { label: "ownership", keys: ["own", "owned", "ownership", "responsible", "accountable"] },
-    { label: "collaboration", keys: ["collaborate", "collaboration", "partner", "team", "together"] },
+    {
+      label: "collaboration",
+      keys: ["collaborate", "collaboration", "partner", "team", "together"],
+    },
     { label: "learning", keys: ["learn", "learning", "improve", "growth", "curious"] },
     { label: "clarity", keys: ["clear", "clarity", "explain", "communicate", "align"] },
     { label: "impact", keys: ["impact", "result", "outcome", "deliver", "improve"] },
@@ -257,7 +347,9 @@ function findValueSignals(words: string[]): string[] {
   const set = new Set(words);
   const matched = values.filter((v) => v.keys.some((k) => set.has(k))).map((v) => v.label);
   const base = matched.length ? matched : ["clarity", "ownership", "impact"];
-  return base.slice(0, 4).map((v) => `${v[0].toUpperCase()}${v.slice(1)} shows up as a recurring writing signal.`);
+  return base
+    .slice(0, 4)
+    .map((v) => `${v[0].toUpperCase()}${v.slice(1)} shows up as a recurring writing signal.`);
 }
 
 // -------- Server functions --------
@@ -305,20 +397,27 @@ export const startVoiceCardGeneration = createServerFn({ method: "POST" })
     // 2. Refetch canonical profile row.
     const { data: prof } = await supabase
       .from("profiles")
-      .select("voice_card_status, voice_card_generation_id, voice_card_generation_started_at, voice_card_source_hash, voice_card_data")
+      .select(
+        "voice_card_status, voice_card_generation_id, voice_card_generation_started_at, voice_card_source_hash, voice_card_data",
+      )
       .eq("id", userId)
       .maybeSingle();
     if (!prof) throw new Error("Profile not found");
 
     // 3. Idempotent short-circuit: already generated with same source hash.
     const snap = await fetchSourceSnapshot(supabase, userId);
-    if (prof.voice_card_status === "generated" && prof.voice_card_source_hash === snap.sourceHash && prof.voice_card_data) {
+    if (
+      prof.voice_card_status === "generated" &&
+      prof.voice_card_source_hash === snap.sourceHash &&
+      prof.voice_card_data
+    ) {
       return { status: "generated" as const, voice_card: prof.voice_card_data };
     }
 
     // 4. Server-side eligibility recheck.
     if (!snap.resumeId) throw new Error("Resume required");
-    if (snap.qualifyingSamples.length < 2) throw new Error("At least 2 qualifying writing samples required");
+    if (snap.qualifyingSamples.length < 2)
+      throw new Error("At least 2 qualifying writing samples required");
 
     // 5. Atomic lock acquisition — only transition from eligible/failed/stale (or expired generating).
     const genId = crypto.randomUUID();
@@ -353,7 +452,10 @@ export const startVoiceCardGeneration = createServerFn({ method: "POST" })
     const resumeExcerpt = (snap.resumeText ?? "").slice(0, RESUME_EXCERPT_CHARS);
     const samplesText = snap.qualifyingSamples
       .slice(0, 2)
-      .map((s, i) => `# Sample ${i + 1} — ${s.type} — ${s.title}\n${s.content.slice(0, SAMPLE_EXCERPT_CHARS)}`)
+      .map(
+        (s, i) =>
+          `# Sample ${i + 1} — ${s.type} — ${s.title}\n${s.content.slice(0, SAMPLE_EXCERPT_CHARS)}`,
+      )
       .join("\n\n---\n\n");
     const userPrompt = `Resume:\n${resumeExcerpt}\n\nWriting samples:\n${samplesText}`;
 
@@ -402,7 +504,12 @@ export const retryVoiceCard = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await supabase
       .from("profiles")
-      .update({ voice_card_status: "eligible", voice_card_error: null, voice_card_generation_id: null, voice_card_generation_started_at: null })
+      .update({
+        voice_card_status: "eligible",
+        voice_card_error: null,
+        voice_card_generation_id: null,
+        voice_card_generation_started_at: null,
+      })
       .eq("id", userId)
       .in("voice_card_status", ["failed", "stale"]);
     return { ok: true };
@@ -431,7 +538,9 @@ export const generateAbDemo = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: rowRaw } = await supabase
       .from("profiles")
-      .select("ab_demo_completed, ab_demo_answer, ab_demo_generation_id, voice_card_data, voice_card_status, resume_only")
+      .select(
+        "ab_demo_completed, ab_demo_answer, ab_demo_generation_id, voice_card_data, voice_card_status, resume_only",
+      )
       .eq("id", userId)
       .maybeSingle();
     const row = rowRaw as AbDemoRow | null;
@@ -459,7 +568,11 @@ export const generateAbDemo = createServerFn({ method: "POST" })
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
     const res = await fetch(ANTHROPIC_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
       body: JSON.stringify({
         model: MODEL_OPUS,
         max_tokens: 400,

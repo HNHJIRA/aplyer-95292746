@@ -160,10 +160,7 @@ export function isValidResumeDate(value: string | null): boolean {
   if (/^\d{4}$/.test(v)) return Number(v) >= 1900 && Number(v) <= 2100;
   if (/^\d{4}-(0[1-9]|1[0-2])$/.test(v)) return true;
   if (/^(0?[1-9]|1[0-2])\/\d{4}$/.test(v)) return true;
-  if (
-    /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{4}$/i.test(v)
-  )
-    return true;
+  if (/^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{4}$/i.test(v)) return true;
   return false;
 }
 
@@ -247,7 +244,11 @@ export function validateFactInventoryShape(value: unknown): DraftInventory {
       location: nullableStr(r.location),
       startDate: normalizeDate(r.startDate),
       endDate: normalizeDate(r.endDate),
-      facts: withIds(parseFactList(r.facts, `Education — ${institution ?? "unknown"}`), entryKey, "fact"),
+      facts: withIds(
+        parseFactList(r.facts, `Education — ${institution ?? "unknown"}`),
+        entryKey,
+        "fact",
+      ),
     };
   });
 
@@ -263,7 +264,11 @@ export function validateFactInventoryShape(value: unknown): DraftInventory {
       startDate: normalizeDate(r.startDate),
       endDate: normalizeDate(r.endDate),
       technologies: withIds(parseFactList(r.technologies, where), entryKey, "tech"),
-      responsibilities: withIds(parseFactList(r.responsibilities, where), entryKey, "responsibility"),
+      responsibilities: withIds(
+        parseFactList(r.responsibilities, where),
+        entryKey,
+        "responsibility",
+      ),
       outcomes: withIds(parseFactList(r.outcomes, where), entryKey, "outcome"),
     };
   });
@@ -290,9 +295,17 @@ export function validateFactInventoryShape(value: unknown): DraftInventory {
     experience,
     education,
     skills,
-    certifications: withIds(parseFactList(o.certifications, "Certifications"), "certifications", "cert"),
+    certifications: withIds(
+      parseFactList(o.certifications, "Certifications"),
+      "certifications",
+      "cert",
+    ),
     projects,
-    achievements: withIds(parseFactList(o.achievements, "Achievements"), "achievements", "achievement"),
+    achievements: withIds(
+      parseFactList(o.achievements, "Achievements"),
+      "achievements",
+      "achievement",
+    ),
     otherFacts: withIds(parseFactList(o.otherFacts, "Other"), "other", "fact"),
   };
 }
@@ -300,12 +313,14 @@ export function validateFactInventoryShape(value: unknown): DraftInventory {
 // ---------------- deterministic ids ----------------
 
 export function slug(input: string | null | undefined): string {
-  return (input ?? "")
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40) || "unknown";
+  return (
+    (input ?? "")
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "unknown"
+  );
 }
 
 /** Small stable non-cryptographic hash (FNV-1a) — deterministic across runs. */
@@ -319,7 +334,11 @@ export function stableHash(input: string): string {
 }
 
 export function normalizeForId(value: string): string {
-  return value.toLowerCase().replace(/\s+/g, " ").replace(/[^a-z0-9 ]/g, "").trim();
+  return value
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/[^a-z0-9 ]/g, "")
+    .trim();
 }
 
 /** Deterministic id: canonical location + normalized content hash. */

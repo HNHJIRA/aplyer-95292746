@@ -30,7 +30,13 @@ const AB_DEMO_GENERIC =
 interface SourceSnapshot {
   resumeId: string | null;
   resumeText: string | null;
-  qualifyingSamples: Array<{ id: string; content: string; content_hash: string; type: string; title: string }>;
+  qualifyingSamples: Array<{
+    id: string;
+    content: string;
+    content_hash: string;
+    type: string;
+    title: string;
+  }>;
   sourceHash: string;
 }
 
@@ -84,7 +90,8 @@ export const Route = createFileRoute("/api/public/extension/voicecard")({
 
           if (action === "start") {
             const res = await startVoiceCardGeneration(supabaseAdmin, userId);
-            if (res.status === "generated") return jsonWithCors({ ...res, rarity: await voiceCardRarity(supabaseAdmin, userId) });
+            if (res.status === "generated")
+              return jsonWithCors({ ...res, rarity: await voiceCardRarity(supabaseAdmin, userId) });
             return jsonWithCors(res);
           }
 
@@ -103,7 +110,10 @@ export const Route = createFileRoute("/api/public/extension/voicecard")({
           return jsonWithCors({ error: "Unknown action" }, 400);
         } catch (e) {
           console.error("[extension.voicecard]", e);
-          return jsonWithCors({ error: e instanceof Error ? e.message : "Something went wrong" }, 500);
+          return jsonWithCors(
+            { error: e instanceof Error ? e.message : "Something went wrong" },
+            500,
+          );
         }
       },
     },
@@ -114,7 +124,9 @@ export const Route = createFileRoute("/api/public/extension/voicecard")({
 async function getVoiceCardState(supabase: any, userId: string) {
   const { data: p, error } = await supabase
     .from("profiles")
-    .select("voice_card_status, voice_card_data, voice_card_error, voice_card_generation_started_at")
+    .select(
+      "voice_card_status, voice_card_data, voice_card_error, voice_card_generation_started_at",
+    )
     .eq("id", userId)
     .maybeSingle();
   if (error) throw error;
@@ -143,13 +155,19 @@ async function startVoiceCardGeneration(supabase: any, userId: string) {
 
   const { data: prof } = await supabase
     .from("profiles")
-    .select("voice_card_status, voice_card_generation_id, voice_card_generation_started_at, voice_card_source_hash, voice_card_data")
+    .select(
+      "voice_card_status, voice_card_generation_id, voice_card_generation_started_at, voice_card_source_hash, voice_card_data",
+    )
     .eq("id", userId)
     .maybeSingle();
   if (!prof) throw new Error("Profile not found");
 
   const snap = await fetchSourceSnapshot(supabase, userId);
-  if (prof.voice_card_status === "generated" && prof.voice_card_source_hash === snap.sourceHash && prof.voice_card_data) {
+  if (
+    prof.voice_card_status === "generated" &&
+    prof.voice_card_source_hash === snap.sourceHash &&
+    prof.voice_card_data
+  ) {
     return { status: "generated" as const, voice_card: prof.voice_card_data };
   }
 
@@ -177,12 +195,16 @@ async function startVoiceCardGeneration(supabase: any, userId: string) {
     .maybeSingle();
 
   if (lockErr) throw new Error(`Lock failed: ${lockErr.message}`);
-  if (!locked || locked.voice_card_generation_id !== genId) return { status: "in_progress" as const };
+  if (!locked || locked.voice_card_generation_id !== genId)
+    return { status: "in_progress" as const };
 
   const resumeExcerpt = (snap.resumeText ?? "").slice(0, RESUME_EXCERPT_CHARS);
   const samplesText = snap.qualifyingSamples
     .slice(0, 2)
-    .map((s, i) => `# Sample ${i + 1} — ${s.type} — ${s.title}\n${s.content.slice(0, SAMPLE_EXCERPT_CHARS)}`)
+    .map(
+      (s, i) =>
+        `# Sample ${i + 1} — ${s.type} — ${s.title}\n${s.content.slice(0, SAMPLE_EXCERPT_CHARS)}`,
+    )
     .join("\n\n---\n\n");
 
   const userPrompt = buildVoiceCardUser(resumeExcerpt, samplesText);
@@ -252,10 +274,15 @@ async function generateAbDemo(supabase: any, userId: string) {
     .maybeSingle();
   if (!rowRaw) throw new Error("Profile not found");
   if (rowRaw.ab_demo_answer) {
-    return { question: AB_DEMO_QUESTION, generic: AB_DEMO_GENERIC, withVoice: rowRaw.ab_demo_answer };
+    return {
+      question: AB_DEMO_QUESTION,
+      generic: AB_DEMO_GENERIC,
+      withVoice: rowRaw.ab_demo_answer,
+    };
   }
   if (rowRaw.resume_only) throw new Error("Resume-only users skip the A/B demo");
-  if (rowRaw.voice_card_status !== "generated" || !rowRaw.voice_card_data) throw new Error("Voice Card not ready");
+  if (rowRaw.voice_card_status !== "generated" || !rowRaw.voice_card_data)
+    throw new Error("Voice Card not ready");
 
   const system =
     "You write short, authentic application answers in the candidate's exact voice. Match tone, cadence, and vocabulary. Never invent facts. 2-3 sentences. No preamble, no signoff. Plain text only.";
@@ -303,18 +330,43 @@ async function fetchSourceSnapshot(supabase: any, userId: string): Promise<Sourc
     title: string;
   }>;
   const qualifyingSamples = rawSamples.filter((s) => isQualifyingProse(s.content, s.type));
-  const sourceHash = await sha256Hex([resume?.id ?? "", "|", qualifyingSamples.map((s) => s.content_hash).join(","), "|", VOICE_CARD_SOURCE_HASH_VERSION].join(""));
-  return { resumeId: resume?.id ?? null, resumeText: resume?.resume_text ?? null, qualifyingSamples, sourceHash };
+  const sourceHash = await sha256Hex(
+    [
+      resume?.id ?? "",
+      "|",
+      qualifyingSamples.map((s) => s.content_hash).join(","),
+      "|",
+      VOICE_CARD_SOURCE_HASH_VERSION,
+    ].join(""),
+  );
+  return {
+    resumeId: resume?.id ?? null,
+    resumeText: resume?.resume_text ?? null,
+    qualifyingSamples,
+    sourceHash,
+  };
 }
 
 function isQualifyingProse(content: string, type: string): boolean {
   const trimmed = (content || "").trim();
   if (trimmed.length < 100) return false;
-  const allowed = ["cover_letter", "linkedin_post", "professional_email", "blog", "essay", "free_text", "career_summary", "other"];
+  const allowed = [
+    "cover_letter",
+    "linkedin_post",
+    "professional_email",
+    "blog",
+    "essay",
+    "free_text",
+    "career_summary",
+    "other",
+  ];
   if (!allowed.includes(type)) return false;
   const words = trimmed.split(/\s+/).filter(Boolean);
   if (words.length < 30) return false;
-  const lines = trimmed.split(/\n/).map((l) => l.trim()).filter((l) => l.length > 0);
+  const lines = trimmed
+    .split(/\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
   if (lines.length >= 3) {
     const bullets = lines.filter((l) => /^(-|\*|•|\d+\.)\s/.test(l)).length;
     if (bullets / lines.length > 0.6) return false;
@@ -325,23 +377,35 @@ function isQualifyingProse(content: string, type: string): boolean {
 async function sha256Hex(input: string): Promise<string> {
   const buf = new TextEncoder().encode(input);
   const digest = await crypto.subtle.digest("SHA-256", buf);
-  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
-
-
-
-
-
-async function callClaudeText(system: string, user: string, model: string, maxTokens: number): Promise<string> {
+async function callClaudeText(
+  system: string,
+  user: string,
+  model: string,
+  maxTokens: number,
+): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
   const res = await fetch(ANTHROPIC_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] }),
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: maxTokens,
+      system,
+      messages: [{ role: "user", content: user }],
+    }),
   });
-  if (!res.ok) throw new Error(`Claude ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+  if (!res.ok)
+    throw new Error(`Claude ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
   const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
   return data.content?.find((c) => c.type === "text")?.text?.trim() ?? "";
 }
@@ -355,11 +419,18 @@ async function callClaudeText(system: string, user: string, model: string, maxTo
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function voiceCardRarity(supabase: any, userId: string): Promise<Rarity> {
   try {
-    const { data } = await supabase.from("demo_settings").select("scoreboard_references").eq("id", true).maybeSingle();
+    const { data } = await supabase
+      .from("demo_settings")
+      .select("scoreboard_references")
+      .eq("id", true)
+      .maybeSingle();
     const refs = Array.isArray(data?.scoreboard_references) ? data.scoreboard_references : [];
     if (!refs.length) return { status: "unavailable" };
     const snap = await fetchSourceSnapshot(supabase, userId);
-    const text = snap.qualifyingSamples.slice(0, 2).map((s) => s.content).join("\n\n");
+    const text = snap.qualifyingSamples
+      .slice(0, 2)
+      .map((s) => s.content)
+      .join("\n\n");
     return computeRarity(text, refs);
   } catch {
     return { status: "unavailable" };

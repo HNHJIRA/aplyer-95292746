@@ -116,7 +116,8 @@ export async function runFraudScan(
       status: "unverified",
       genuineScore: null,
       label: "Unverified",
-      reason: "Hosted on a recognized applicant tracking platform; the employer and listing are not verified",
+      reason:
+        "Hosted on a recognized applicant tracking platform; the employer and listing are not verified",
       provider,
       scanMethod: "trusted_ats_allowlist",
       aiScanUsed: false,
@@ -124,14 +125,28 @@ export async function runFraudScan(
       hostname,
     };
     cacheSet(normalizedUrl, result, TRUSTED_TTL_MS);
-    log({ hostname, provider, trusted: true, scanMethod: result.scanMethod, startedAt, requestId: options.requestId });
+    log({
+      hostname,
+      provider,
+      trusted: true,
+      scanMethod: result.scanMethod,
+      startedAt,
+      requestId: options.requestId,
+    });
     return result;
   }
 
   const scanner = options.aiScanner ?? defaultAiScanner;
   const result = await scanner({ url: normalizedUrl, hostname });
   cacheSet(normalizedUrl, result, UNKNOWN_TTL_MS);
-  log({ hostname, provider: null, trusted: false, scanMethod: result.scanMethod, startedAt, requestId: options.requestId });
+  log({
+    hostname,
+    provider: null,
+    trusted: false,
+    scanMethod: result.scanMethod,
+    startedAt,
+    requestId: options.requestId,
+  });
   return result;
 }
 

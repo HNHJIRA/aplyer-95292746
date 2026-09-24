@@ -1,7 +1,16 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { ArrowLeft, Shield, LifeBuoy, FileText, PenLine, User as UserIcon, LogOut, RotateCcw } from "lucide-react";
+import {
+  ArrowLeft,
+  Shield,
+  LifeBuoy,
+  FileText,
+  PenLine,
+  User as UserIcon,
+  LogOut,
+  RotateCcw,
+} from "lucide-react";
 import { Button } from "../ui/Button";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
 
@@ -16,17 +25,25 @@ const SECTIONS: { id: Section; label: string; icon: React.ReactNode }[] = [
   { id: "privacy", label: "Privacy", icon: <Shield className="h-3.5 w-3.5" /> },
 ];
 
-export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: () => void | Promise<void> }) {
+export function Settings({
+  onBack,
+  onLogout,
+}: {
+  onBack: () => void;
+  onLogout?: () => void | Promise<void>;
+}) {
   const { state, update, reset } = useAplyerStore();
   const [section, setSection] = useState<Section>("account");
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
-
   return (
     <div className="relative flex h-full flex-col">
       <div className="flex items-center gap-2 border-b border-border bg-paper/60 px-4 py-3 backdrop-blur">
-        <button onClick={onBack} className="rounded-md p-1 text-muted-foreground hover:bg-field hover:text-foreground">
+        <button
+          onClick={onBack}
+          className="rounded-md p-1 text-muted-foreground hover:bg-field hover:text-foreground"
+        >
           <ArrowLeft className="h-4 w-4" />
         </button>
         <h2 className="text-[16px] font-bold">Settings</h2>
@@ -51,7 +68,14 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
             {section === "account" && (
               <Card title="Account">
                 <Row label="Plan" value={state.subscriptionStatus.tier.toUpperCase()} />
-                <Row label="Last sync" value={state.lastUpdated ? new Date(state.lastUpdated).toLocaleString() : "Not available"} />
+                <Row
+                  label="Last sync"
+                  value={
+                    state.lastUpdated
+                      ? new Date(state.lastUpdated).toLocaleString()
+                      : "Not available"
+                  }
+                />
                 <Row label="Storage" value="chrome.storage.local" />
                 <Button variant="outline" size="sm" className="mt-3 w-full" onClick={reset}>
                   <RotateCcw className="h-3.5 w-3.5" /> Reset Onboarding
@@ -62,7 +86,6 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
                 >
                   <LogOut className="h-3.5 w-3.5" /> Logout
                 </button>
-
               </Card>
             )}
 
@@ -71,8 +94,14 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
                 {state.resumeMetadata ? (
                   <>
                     <Row label="File" value={state.resumeMetadata.fileName} />
-                    <Row label="Size" value={`${(state.resumeMetadata.fileSize / 1024).toFixed(1)} KB`} />
-                    <Row label="Uploaded" value={new Date(state.resumeMetadata.uploadedAt).toLocaleDateString()} />
+                    <Row
+                      label="Size"
+                      value={`${(state.resumeMetadata.fileSize / 1024).toFixed(1)} KB`}
+                    />
+                    <Row
+                      label="Uploaded"
+                      value={new Date(state.resumeMetadata.uploadedAt).toLocaleDateString()}
+                    />
                     <Row label="Score" value={`${state.resumeScore?.score ?? 0}/100`} />
                   </>
                 ) : (
@@ -84,7 +113,9 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
             {section === "profile" && (
               <Card title="Profile">
                 {state.profile ? (
-                  Object.entries(state.profile).map(([k, v]) => <Row key={k} label={k} value={v || "Not available"} />)
+                  Object.entries(state.profile).map(([k, v]) => (
+                    <Row key={k} label={k} value={v || "Not available"} />
+                  ))
                 ) : (
                   <Empty>Profile not completed.</Empty>
                 )}
@@ -94,7 +125,10 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
             {section === "writing" && (
               <Card title="Writing Samples">
                 <Row label="Samples" value={String(state.writingSamples.length)} />
-                <Row label="Total words" value={String(state.writingSamples.reduce((a, s) => a + s.wordCount, 0))} />
+                <Row
+                  label="Total words"
+                  value={String(state.writingSamples.reduce((a, s) => a + s.wordCount, 0))}
+                />
                 {state.writingSamples.length === 0 && <Empty>None yet.</Empty>}
               </Card>
             )}
@@ -110,10 +144,25 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
 
             {section === "privacy" && (
               <Card title="Privacy">
-                <Toggle label="Anonymous telemetry" checked={state.settings.telemetry} onChange={(v) => update({ settings: { ...state.settings, telemetry: v } })} />
-                <Toggle label="Autofill enabled" checked={state.settings.autofillEnabled} onChange={(v) => update({ settings: { ...state.settings, autofillEnabled: v } })} />
-                <Toggle label="Notifications" checked={state.settings.notifications} onChange={(v) => update({ settings: { ...state.settings, notifications: v } })} />
-                <p className="mt-3 text-[13px] text-muted-foreground">Your resume is saved on this device and synchronized with your Aplyer account when you are signed in.</p>
+                <Toggle
+                  label="Anonymous telemetry"
+                  checked={state.settings.telemetry}
+                  onChange={(v) => update({ settings: { ...state.settings, telemetry: v } })}
+                />
+                <Toggle
+                  label="Autofill enabled"
+                  checked={state.settings.autofillEnabled}
+                  onChange={(v) => update({ settings: { ...state.settings, autofillEnabled: v } })}
+                />
+                <Toggle
+                  label="Notifications"
+                  checked={state.settings.notifications}
+                  onChange={(v) => update({ settings: { ...state.settings, notifications: v } })}
+                />
+                <p className="mt-3 text-[13px] text-muted-foreground">
+                  Your resume is saved on this device and synchronized with your Aplyer account when
+                  you are signed in.
+                </p>
               </Card>
             )}
           </motion.div>
@@ -141,7 +190,8 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
                 <h3 className="text-[17px] font-bold">Sign out?</h3>
               </div>
               <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground">
-                You'll be signed out of the extension. Your data remains safely stored in your Aplyer account.
+                You'll be signed out of the extension. Your data remains safely stored in your
+                Aplyer account.
               </p>
               <div className="mt-4 flex gap-2">
                 <Button
@@ -178,11 +228,12 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
   );
 }
 
-
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-border bg-paper p-3">
-      <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{title}</p>
+      <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+        {title}
+      </p>
       <div className="space-y-1.5">{children}</div>
     </div>
   );
@@ -210,12 +261,27 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-[13px] text-muted-foreground">{children}</p>;
 }
 
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
-    <button onClick={() => onChange(!checked)} className="flex w-full items-center justify-between py-2">
+    <button
+      onClick={() => onChange(!checked)}
+      className="flex w-full items-center justify-between py-2"
+    >
       <span className="text-[14px]">{label}</span>
-      <span className={`relative h-5 w-9 rounded-full transition ${checked ? "bg-brand-green" : "bg-field-2"}`}>
-        <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition ${checked ? "left-4" : "left-0.5"}`} />
+      <span
+        className={`relative h-5 w-9 rounded-full transition ${checked ? "bg-brand-green" : "bg-field-2"}`}
+      >
+        <span
+          className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition ${checked ? "left-4" : "left-0.5"}`}
+        />
       </span>
     </button>
   );

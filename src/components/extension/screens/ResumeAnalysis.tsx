@@ -12,7 +12,9 @@ export function ResumeAnalysis({ onNext, onBack }: { onNext: () => void; onBack:
     return (
       <div className="flex h-full flex-col items-center justify-center px-6">
         <p className="text-[15px] text-muted-foreground">No resume scored yet.</p>
-        <Button className="mt-4" onClick={onBack}>Back</Button>
+        <Button className="mt-4" onClick={onBack}>
+          Back
+        </Button>
       </div>
     );
   }
@@ -23,8 +25,12 @@ export function ResumeAnalysis({ onNext, onBack }: { onNext: () => void; onBack:
         <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-green/25 bg-brand-green/10 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.16em] text-brand-green">
           <Sparkles className="h-2.5 w-2.5" /> Resume Analysis
         </div>
-        <h2 className="mt-2 text-[20px] font-black tracking-tight text-foreground">Resume Readiness</h2>
-        <p className="text-[14px] text-muted-foreground">A snapshot of what a recruiter sees first.</p>
+        <h2 className="mt-2 text-[20px] font-black tracking-tight text-foreground">
+          Resume Readiness
+        </h2>
+        <p className="text-[14px] text-muted-foreground">
+          A snapshot of what a recruiter sees first.
+        </p>
       </div>
 
       <div className="popup-scroll -mx-6 flex-1 overflow-y-auto px-6">
@@ -42,7 +48,9 @@ export function ResumeAnalysis({ onNext, onBack }: { onNext: () => void; onBack:
         </div>
 
         <Section title="Strengths" tone="green">
-          {score.strengths.length === 0 && <Empty>Add core resume sections to unlock strengths.</Empty>}
+          {score.strengths.length === 0 && (
+            <Empty>Add core resume sections to unlock strengths.</Empty>
+          )}
           {score.strengths.map((s) => (
             <Row key={s}>
               <Check className="h-3.5 w-3.5 text-brand-green" />
@@ -80,8 +88,13 @@ function Metric({ label, value }: { label: string; value: number }) {
       animate={{ opacity: 1, y: 0 }}
       className="rounded-lg border border-border bg-paper p-3"
     >
-      <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
-      <div className="mt-1.5 text-[20px] font-black text-foreground">{value}<span className="text-[13px] font-medium text-muted-foreground">/100</span></div>
+      <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1.5 text-[20px] font-black text-foreground">
+        {value}
+        <span className="text-[13px] font-medium text-muted-foreground">/100</span>
+      </div>
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-field">
         <motion.div
           initial={{ width: 0 }}
@@ -94,12 +107,24 @@ function Metric({ label, value }: { label: string; value: number }) {
   );
 }
 
-function Section({ title, tone, children }: { title: string; tone: "green" | "amber"; children: React.ReactNode }) {
+function Section({
+  title,
+  tone,
+  children,
+}: {
+  title: string;
+  tone: "green" | "amber";
+  children: React.ReactNode;
+}) {
   return (
     <div className="mt-4">
       <div className="mb-2 flex items-center gap-2">
-        <span className={`h-1.5 w-1.5 rounded-full ${tone === "green" ? "bg-brand-green" : "bg-[#E5B73A]"}`} />
-        <span className="font-mono text-[12px] uppercase tracking-[0.16em] text-muted-foreground">{title}</span>
+        <span
+          className={`h-1.5 w-1.5 rounded-full ${tone === "green" ? "bg-brand-green" : "bg-[#E5B73A]"}`}
+        />
+        <span className="font-mono text-[12px] uppercase tracking-[0.16em] text-muted-foreground">
+          {title}
+        </span>
       </div>
       <div className="rounded-lg border border-border bg-paper p-3">
         <ul className="space-y-2">{children}</ul>

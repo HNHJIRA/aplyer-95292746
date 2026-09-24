@@ -44,10 +44,26 @@ const PLANS = [
 ];
 
 const CAPABILITIES = [
-  { icon: Wand2, title: "Answers from your own experience", body: "Every answer is written from the facts in your resume, never invented experience." },
-  { icon: Zap, title: "Autofill and Autofill All", body: "Aplyer fills the standard application details it already knows and asks you about anything new." },
-  { icon: FileText, title: "Resume Score", body: "See which sections your resume covers and what to improve, scored on your device." },
-  { icon: PenLine, title: "WriteDNA and Voice Card", body: "Your resume plus two qualifying writing samples teach Aplyer how you write." },
+  {
+    icon: Wand2,
+    title: "Answers from your own experience",
+    body: "Every answer is written from the facts in your resume, never invented experience.",
+  },
+  {
+    icon: Zap,
+    title: "Autofill and Autofill All",
+    body: "Aplyer fills the standard application details it already knows and asks you about anything new.",
+  },
+  {
+    icon: FileText,
+    title: "Resume Score",
+    body: "See which sections your resume covers and what to improve, scored on your device.",
+  },
+  {
+    icon: PenLine,
+    title: "WriteDNA and Voice Card",
+    body: "Your resume plus two qualifying writing samples teach Aplyer how you write.",
+  },
 ];
 
 function SubscriptionPage() {
@@ -55,7 +71,11 @@ function SubscriptionPage() {
     queryKey: ["subscription"],
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
-      const { data } = await supabase.from("subscriptions").select("*").eq("user_id", u.user!.id).maybeSingle();
+      const { data } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", u.user!.id)
+        .maybeSingle();
       return data;
     },
   });
@@ -71,7 +91,8 @@ function SubscriptionPage() {
           </p>
         </div>
         <div className="rounded-lg border border-border bg-paper px-4 py-2.5 text-[13px] text-muted-foreground">
-          Aplyer Pro is <span className="font-semibold text-foreground">$29 / month</span>. Billing is handled by Stripe.
+          Aplyer Pro is <span className="font-semibold text-foreground">$29 / month</span>. Billing
+          is handled by Stripe.
         </div>
       </div>
 
@@ -89,9 +110,13 @@ function SubscriptionPage() {
                 </span>
               )}
               <div className="flex items-baseline justify-between gap-3">
-                <span className="font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">{p.name}</span>
+                <span className="font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
+                  {p.name}
+                </span>
                 {active && (
-                  <span className="rounded-full bg-brand-green/15 px-2.5 py-0.5 text-[12px] font-semibold text-brand-green">Your plan</span>
+                  <span className="rounded-full bg-brand-green/15 px-2.5 py-0.5 text-[12px] font-semibold text-brand-green">
+                    Your plan
+                  </span>
                 )}
               </div>
               <div className="mt-1.5 flex items-baseline gap-1">
@@ -102,7 +127,8 @@ function SubscriptionPage() {
               <ul className="mt-3 grid flex-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-1">
                 {p.features.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-[15px] text-sub">
-                    <Check className="mt-1 h-3.5 w-3.5 flex-shrink-0 text-brand-green" /> <span>{f}</span>
+                    <Check className="mt-1 h-3.5 w-3.5 flex-shrink-0 text-brand-green" />{" "}
+                    <span>{f}</span>
                   </li>
                 ))}
               </ul>
@@ -118,7 +144,9 @@ function SubscriptionPage() {
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5">
-        <div className="font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">What Aplyer does</div>
+        <div className="font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
+          What Aplyer does
+        </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {CAPABILITIES.map((c) => (
             <div key={c.title} className="rounded-xl border border-border bg-paper p-4">

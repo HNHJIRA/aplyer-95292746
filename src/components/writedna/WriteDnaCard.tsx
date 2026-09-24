@@ -5,10 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import type { VoiceCardStatus, WriteDnaState } from "@/lib/storage/types";
 import { stageColor, stageLabel, voiceCardStatusLabel } from "@/lib/writedna";
 import { ProgressRing } from "./ProgressRing";
-import {
-  retryVoiceCard,
-  startVoiceCardGeneration,
-} from "@/lib/voicecard.functions";
+import { retryVoiceCard, startVoiceCardGeneration } from "@/lib/voicecard.functions";
 
 function statusTone(status: VoiceCardStatus): string {
   switch (status) {
@@ -92,29 +89,35 @@ export function WriteDnaCard({
         <ProgressRing value={writeDna.voiceConfidence} size={132} color={color} label="Voice" />
         <div className="min-w-0 flex-1">
           <div className="text-[15px] font-bold tracking-tight">{label}</div>
-          <p className="mt-1 text-[12px] text-muted-foreground">
-            {statusCopy(writeDna)}
-          </p>
+          <p className="mt-1 text-[12px] text-muted-foreground">{statusCopy(writeDna)}</p>
           <div className="mt-3 flex items-center gap-4 text-[11px] text-muted-foreground">
             <span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Resume</span>
-              <span className="ml-2 text-foreground">{writeDna.resumeUploaded ? "✓" : "Not added"}</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                Resume
+              </span>
+              <span className="ml-2 text-foreground">
+                {writeDna.resumeUploaded ? "✓" : "Not added"}
+              </span>
             </span>
             <span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Samples</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                Samples
+              </span>
               <span className="ml-2 text-foreground">{writeDna.qualifyingProseCount} / 2</span>
             </span>
           </div>
 
-          {onAddSample && (status === "locked" || status === "collecting_samples") && writeDna.resumeUploaded && (
-            <button
-              type="button"
-              onClick={onAddSample}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-brand-green px-3 py-2 text-[12px] font-semibold text-[#06140A]"
-            >
-              Add writing sample
-            </button>
-          )}
+          {onAddSample &&
+            (status === "locked" || status === "collecting_samples") &&
+            writeDna.resumeUploaded && (
+              <button
+                type="button"
+                onClick={onAddSample}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-brand-green px-3 py-2 text-[12px] font-semibold text-[#06140A]"
+              >
+                Add writing sample
+              </button>
+            )}
           {status === "failed" && (
             <button
               type="button"
@@ -139,7 +142,11 @@ export function WriteDnaCard({
       </div>
 
       {status === "generated" && writeDna.voiceCard && (
-        <StructuredVoiceCard card={writeDna.voiceCard} onRegenerate={handleRegenerate} busy={busy} />
+        <StructuredVoiceCard
+          card={writeDna.voiceCard}
+          onRegenerate={handleRegenerate}
+          busy={busy}
+        />
       )}
       {status === "failed" && writeDna.voiceCardError && (
         <div className="mt-3 rounded-lg border border-[#E5737A]/30 bg-[#E5737A]/10 p-3 text-[11px] text-[#E5737A]">
@@ -220,7 +227,9 @@ function StructuredVoiceCard({
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-border bg-paper px-3 py-2">
-      <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </div>
       <div className="mt-0.5 text-[12px]">{value}</div>
     </div>
   );
@@ -229,10 +238,15 @@ function Metric({ label, value }: { label: string; value: string }) {
 function ChipRow({ label, items }: { label: string; items: string[] }) {
   return (
     <div>
-      <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </div>
       <div className="mt-1 flex flex-wrap gap-1">
         {items.map((it, i) => (
-          <span key={i} className="rounded-full border border-border bg-paper px-2 py-0.5 text-[11px]">
+          <span
+            key={i}
+            className="rounded-full border border-border bg-paper px-2 py-0.5 text-[11px]"
+          >
             {it}
           </span>
         ))}
@@ -246,7 +260,9 @@ function DoAvoid({ label, items, tone }: { label: string; items: string[]; tone:
   const bg = tone === "ok" ? "bg-brand-green/5" : "bg-[#E5B73A]/5";
   return (
     <div className={`rounded-lg border ${border} ${bg} p-3`}>
-      <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </div>
       <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[11.5px]">
         {items.map((x, i) => (
           <li key={i}>{x}</li>

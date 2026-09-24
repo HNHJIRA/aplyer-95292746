@@ -1,4 +1,10 @@
-import type { WriteDnaState, WriteDnaStage, WritingSample, WritingSampleType, VoiceCardStatus } from "@/lib/storage/types";
+import type {
+  WriteDnaState,
+  WriteDnaStage,
+  WritingSample,
+  WritingSampleType,
+  VoiceCardStatus,
+} from "@/lib/storage/types";
 
 export const QUALIFYING_MIN_CHARS = 100;
 export const QUALIFYING_MIN_WORDS = 30;
@@ -22,7 +28,10 @@ export function countWords(text: string): number {
 }
 
 function isBulletHeavy(content: string): boolean {
-  const lines = content.split(/\n/).map((l) => l.trim()).filter((l) => l.length > 0);
+  const lines = content
+    .split(/\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
   if (lines.length < 3) return false;
   const bulletRe = /^(\-|\*|•|\d+\.)\s/;
   const bulletCount = lines.filter((l) => bulletRe.test(l)).length;
@@ -54,7 +63,6 @@ export function computeWriteDnaProgress(
   const samples = Math.max(0, Math.min(2, qualifyingProseCount));
   return [33, 67, 100][samples]!;
 }
-
 
 export function computeWriteDna(input: {
   resumeUploaded: boolean;
@@ -90,7 +98,6 @@ export function computeWriteDna(input: {
 
   const voiceCardStatus = input.voiceCardStatus ?? derivedStatus;
   if (voiceCardStatus === "generated") voiceConfidence = 100;
-
 
   return {
     stage,

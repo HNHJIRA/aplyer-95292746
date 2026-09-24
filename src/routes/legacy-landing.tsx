@@ -30,8 +30,7 @@ export const Route = createFileRoute("/legacy-landing")({
       { property: "og:title", content: "Aplyer.ai: Stop Skipping Jobs" },
       {
         property: "og:description",
-        content:
-          "Apply faster and sound like yourself on every job application.",
+        content: "Apply faster and sound like yourself on every job application.",
       },
     ],
   }),
@@ -105,8 +104,7 @@ function AmbientBackground() {
           backgroundImage:
             "linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px)",
           backgroundSize: "48px 48px",
-          maskImage:
-            "radial-gradient(ellipse at center, black 40%, transparent 75%)",
+          maskImage: "radial-gradient(ellipse at center, black 40%, transparent 75%)",
         }}
       />
     </div>
@@ -161,10 +159,42 @@ function LogoMark() {
         </linearGradient>
       </defs>
       <circle cx="44" cy="44" r="40" fill="#0D1829" stroke="url(#navG)" strokeWidth="2" />
-      <line x1="22" y1="28" x2="44" y2="44" stroke="#E5373A" strokeWidth="5" strokeLinecap="round" />
-      <line x1="22" y1="60" x2="44" y2="44" stroke="#E5373A" strokeWidth="5" strokeLinecap="round" />
-      <line x1="44" y1="44" x2="56" y2="56" stroke="#1DB954" strokeWidth="5" strokeLinecap="round" />
-      <line x1="56" y1="56" x2="72" y2="28" stroke="#1DB954" strokeWidth="5" strokeLinecap="round" />
+      <line
+        x1="22"
+        y1="28"
+        x2="44"
+        y2="44"
+        stroke="#E5373A"
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
+      <line
+        x1="22"
+        y1="60"
+        x2="44"
+        y2="44"
+        stroke="#E5373A"
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
+      <line
+        x1="44"
+        y1="44"
+        x2="56"
+        y2="56"
+        stroke="#1DB954"
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
+      <line
+        x1="56"
+        y1="56"
+        x2="72"
+        y2="28"
+        stroke="#1DB954"
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -194,18 +224,16 @@ function Hero() {
           >
             Stop <span className="text-brand-red">Skipping</span> Jobs.
             <br />
-            Apply and{" "}
-            <span className="text-brand-green">sound like yourself</span> on
-            every one.
+            Apply and <span className="text-brand-green">sound like yourself</span> on every one.
           </motion.h1>
 
           <motion.p
             variants={fadeUp}
             className="mx-auto mt-5 max-w-xl text-[16px] leading-relaxed text-sub lg:mx-0"
           >
-            Aplyer is a Chrome extension that fills long essay questions on job
-            applications in your own voice using your resume. Works inside
-            Workday, Greenhouse, Lever, and any employer careers page.
+            Aplyer is a Chrome extension that fills long essay questions on job applications in your
+            own voice using your resume. Works inside Workday, Greenhouse, Lever, and any employer
+            careers page.
           </motion.p>
 
           <motion.div
@@ -229,10 +257,7 @@ function Hero() {
             </button>
           </motion.div>
 
-          <motion.div
-            variants={fadeUp}
-            className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4"
-          >
+          <motion.div variants={fadeUp} className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
               { l: "Status", v: "● Early Access", green: true },
               { l: "Works on", v: ["Workday", "Greenhouse", "Lever", "Employer careers pages"] },
@@ -288,9 +313,7 @@ function Hero() {
                 Chrome Extension Preview
               </span>
             </div>
-            <p className="mt-2 text-[13px] text-sub">
-              See how Aplyer works while you apply.
-            </p>
+            <p className="mt-2 text-[13px] text-sub">See how Aplyer works while you apply.</p>
           </div>
 
           <div
@@ -332,15 +355,13 @@ function CompareSection() {
           Q.01: The Problem
         </span>
         <h2 className="mt-3 text-[28px] font-black leading-tight tracking-tight md:text-[40px]">
-          Why are you <span className="text-brand-red">skipping</span> so many
-          jobs, and can Aplyer help?
+          Why are you <span className="text-brand-red">skipping</span> so many jobs, and can Aplyer
+          help?
         </h2>
         <p className="mt-4 text-[15px] leading-relaxed text-sub">
-          You skip applications not because you're unqualified, but because
-          you're exhausted from 20 essay prompts in a day.{" "}
-          <span className="text-brand-green">
-            Aplyer was built for these moments.
-          </span>
+          You skip applications not because you're unqualified, but because you're exhausted from 20
+          essay prompts in a day.{" "}
+          <span className="text-brand-green">Aplyer was built for these moments.</span>
         </p>
       </motion.div>
 
@@ -374,9 +395,7 @@ function BrowserPane({ variant }: { variant: "bad" | "good" }) {
       whileHover={{ y: -4 }}
       transition={{ type: "spring", stiffness: 250, damping: 20 }}
       className={`overflow-hidden rounded-2xl border ${
-        bad
-          ? "border-brand-red/30 bg-red-dim"
-          : "border-brand-green/30 bg-green-dim"
+        bad ? "border-brand-red/30 bg-red-dim" : "border-brand-green/30 bg-green-dim"
       }`}
     >
       <div
@@ -392,23 +411,17 @@ function BrowserPane({ variant }: { variant: "bad" | "good" }) {
         </span>
       </div>
       <div className="flex flex-col gap-3 p-5">
-        <div className="font-mono text-[12px] text-sub">
-          Why do you want to work here?
-        </div>
+        <div className="font-mono text-[12px] text-sub">Why do you want to work here?</div>
         {bad ? (
           <div className="rounded-md border border-dashed border-brand-red/40 bg-red-dim p-4 text-[13px] italic text-brand-red/70">
             Start typing your answer...
           </div>
         ) : (
-          <Typewriter
-            text="I've spent the last 10 years in this industry and your team is doing the work I genuinely want to be part of. The problems you're solving are exactly what I've focused on. I know I can contribute from day one."
-          />
+          <Typewriter text="I've spent the last 10 years in this industry and your team is doing the work I genuinely want to be part of. The problems you're solving are exactly what I've focused on. I know I can contribute from day one." />
         )}
         <div
           className={`mt-1 rounded px-3 py-1.5 text-center font-mono text-[10px] uppercase tracking-[0.12em] ${
-            bad
-              ? "bg-brand-red/15 text-brand-red"
-              : "bg-brand-green/15 text-brand-green"
+            bad ? "bg-brand-red/15 text-brand-red" : "bg-brand-green/15 text-brand-green"
           }`}
         >
           {bad ? "✕ Page closed · Job skipped" : "✓ Application submitted"}
@@ -535,7 +548,6 @@ export function BenefitsRow() {
   );
 }
 
-
 /* ─────────────── Final CTA ─────────────── */
 function FinalCTA() {
   return (
@@ -552,12 +564,11 @@ function FinalCTA() {
           Ready when you are
         </span>
         <h2 className="relative mt-3 text-[30px] font-black tracking-tight md:text-[44px]">
-          Apply to the next job. {" "}
-          <span className="text-brand-green">don't skip it.</span>
+          Apply to the next job. <span className="text-brand-green">don't skip it.</span>
         </h2>
         <p className="relative mx-auto mt-3 max-w-xl text-[15px] text-sub">
-          Install the extension, upload your resume, and let Aplyer handle the
-          essay questions on every careers page.
+          Install the extension, upload your resume, and let Aplyer handle the essay questions on
+          every careers page.
         </p>
         <div className="relative mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
@@ -587,8 +598,12 @@ function Footer() {
           <span>© {new Date().getFullYear()} Aplyer.ai. Stop Skipping Jobs</span>
         </div>
         <div className="flex gap-5 text-[13px] text-sub">
-          <a href="#how" className="hover:text-foreground">How it works</a>
-          <a href="mailto:hello@aplyer.ai" className="hover:text-foreground">Contact</a>
+          <a href="#how" className="hover:text-foreground">
+            How it works
+          </a>
+          <a href="mailto:hello@aplyer.ai" className="hover:text-foreground">
+            Contact
+          </a>
         </div>
       </div>
     </footer>

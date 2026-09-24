@@ -7,7 +7,10 @@ export const AB_DEMO_QUESTION =
 export const AB_DEMO_GENERIC =
   "I am very interested in this role because it aligns with my skills and experience. I am a hard worker, a team player, and passionate about learning. I would bring dedication, strong communication, and a proven track record of delivering results to your team.";
 
-async function callVoiceCardApi<T>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
+async function callVoiceCardApi<T>(
+  action: string,
+  payload: Record<string, unknown> = {},
+): Promise<T> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new Error("Please sign in again.");
@@ -43,7 +46,9 @@ export function setResumeOnlyApi(resumeOnly: boolean) {
 }
 
 export function generateAbDemoApi() {
-  return callVoiceCardApi<{ question: string; generic: string; withVoice: string }>("generate_ab_demo");
+  return callVoiceCardApi<{ question: string; generic: string; withVoice: string }>(
+    "generate_ab_demo",
+  );
 }
 
 export function completeAbDemoApi() {

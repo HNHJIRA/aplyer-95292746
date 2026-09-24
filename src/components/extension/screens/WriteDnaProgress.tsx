@@ -3,12 +3,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Plus, ShieldCheck } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
-import {
-  computeWriteDna,
-  countQualifyingSamples,
-  stageColor,
-  stageLabel,
-} from "@/lib/writedna";
+import { computeWriteDna, countQualifyingSamples, stageColor, stageLabel } from "@/lib/writedna";
 import { ProgressRing } from "@/components/writedna/ProgressRing";
 import { setResumeOnlyApi } from "@/lib/extension/voicecard-api";
 
@@ -84,7 +79,10 @@ export function WriteDnaProgress({ onNext, onBack, onAddSample, onCelebrate }: P
 
         <div className="mt-4 grid gap-2">
           <Step done={dna.resumeUploaded} label="Resume uploaded" />
-          <Step done={dna.writingSampleCount >= 1} label="First qualifying sample (100+ chars, 30+ words)" />
+          <Step
+            done={dna.writingSampleCount >= 1}
+            label="First qualifying sample (100+ chars, 30+ words)"
+          />
           <Step done={dna.writingSampleCount >= 2} label="Second qualifying sample → Strong DNA" />
         </div>
 

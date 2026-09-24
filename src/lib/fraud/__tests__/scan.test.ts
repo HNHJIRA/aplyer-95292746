@@ -14,7 +14,12 @@ function makeScanner() {
     action: "run_fraud_scan" as const,
     hostname,
   }));
-  return { fn: fn as unknown as FraudAiScanner, get calls() { return fn.mock.calls.length; } };
+  return {
+    fn: fn as unknown as FraudAiScanner,
+    get calls() {
+      return fn.mock.calls.length;
+    },
+  };
 }
 
 describe("runFraudScan", () => {
@@ -54,7 +59,13 @@ describe("runFraudScan", () => {
 
   it("fails validation safely and never bypasses the scan", async () => {
     const ai = makeScanner();
-    for (const bad of ["", "javascript:alert(1)", "file:///etc/passwd", "nope", "https://x.example/" + "a".repeat(3000)]) {
+    for (const bad of [
+      "",
+      "javascript:alert(1)",
+      "file:///etc/passwd",
+      "nope",
+      "https://x.example/" + "a".repeat(3000),
+    ]) {
       const r = await runFraudScan(bad, { aiScanner: ai.fn });
       expect(r.status).toBe("invalid");
       expect(r.trustedAts).toBe(false);
