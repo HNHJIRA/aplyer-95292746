@@ -263,10 +263,10 @@ describe("OpenAI provider (server-side)", () => {
     const log = vi.spyOn(console, "info").mockImplementation(() => {});
     vi.stubGlobal("fetch", vi.fn(async () => okBody({ model: "another-model-2026-03-01" })));
     await generateChatgptDemoAnswer(input);
-    const logged = log.mock.calls.flat().join(" ");
-    expect(logged).toContain("returned_model=another-model-2026-03-01");
-    expect(logged).not.toContain("example-model-version");
-  });
+    const last = log.mock.calls.at(-1)!.join(" ");
+    expect(last).toContain("returned_model=another-model-2026-03-01");
+    expect(last).not.toContain("example-model-version");
+oor; // placeholder
 
   it("logs returned_model=unavailable (never a fabricated value) when OpenAI omits the model", async () => {
     setEnv();
