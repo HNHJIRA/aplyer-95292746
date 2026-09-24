@@ -782,6 +782,7 @@
       <div class="output-head">
         <div class="output-left">
           <div class="output-title">ChatGPT</div>
+          <div class="output-badge" id="gptModel" style="display:none;" aria-label="Model used"></div>
           <div class="output-badge" id="hsChatgpt" style="display:none;" aria-label="Human Score"></div>
         </div>
         <div class="output-actions">
@@ -1020,6 +1021,7 @@
     document.getElementById('gptRevealBtn').setAttribute('aria-expanded', 'false');
     document.getElementById('gptPrompt').textContent = '';
     document.getElementById('gptCopyBtn').style.visibility = 'hidden';
+    const gm = document.getElementById('gptModel'); gm.textContent = ''; gm.style.display = 'none';
     gptPromptText = '';
   }
   function renderGptText(text) {
@@ -1038,6 +1040,10 @@
     if (r && r.status === 'completed' && r.answer) {
       renderGptText(r.answer);
       document.getElementById('gptCopyBtn').style.visibility = 'visible';
+      // Exact model id reported for this generation; hidden when unknown.
+      const gm = document.getElementById('gptModel');
+      if (typeof r.model === 'string' && r.model.trim()) { gm.textContent = r.model.trim(); gm.style.display = ''; }
+      else { gm.textContent = ''; gm.style.display = 'none'; }
       if (r.prompt) {
         gptPromptText = String(r.prompt);
         document.getElementById('gptPrompt').textContent = gptPromptText;

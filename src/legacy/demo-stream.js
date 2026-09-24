@@ -121,7 +121,7 @@
         } else if (frame.event === 'chatgpt_final') {
           // The prompt comes from the server: the exact string sent to OpenAI.
           if (payload && typeof payload.answer === 'string' && payload.answer.trim()) {
-            onChatgpt({ status: 'completed', answer: payload.answer, prompt: typeof payload.prompt === 'string' ? payload.prompt : '' });
+            onChatgpt({ status: 'completed', answer: payload.answer, prompt: typeof payload.prompt === 'string' ? payload.prompt : '', model: typeof payload.model === 'string' ? payload.model : '' });
           }
         } else if (frame.event === 'chatgpt_error') {
           onChatgpt({
