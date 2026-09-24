@@ -159,8 +159,7 @@
       const label = labelFor(el);
       const attrs = attrText(el);
       if (type === "file") {
-        const accept = (el.getAttribute && el.getAttribute("accept")) || "";
-        if (RESUME_RE.test(label) || RESUME_RE.test(attrs) || (/\.(pdf|docx?)/i.test(accept) && !/image/i.test(accept) && RESUME_RE.test(root.textContent ? "" : ""))) signals.resume = true;
+        if (RESUME_RE.test(label) || RESUME_RE.test(attrs)) signals.resume = true;
         if (COVER_LETTER_RE.test(label) || COVER_LETTER_RE.test(attrs)) signals.coverLetter = true;
         continue;
       }
