@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { apiUrl } from "@/lib/api-base";
 import AuditResult from "@/components/audit/AuditResult";
-import { mergeStreamedOverallTake, type Audit } from "@/components/audit/types";
+import { mergeStreamedOverallTake, partialAuditFromJson, type Audit } from "@/components/audit/types";
 import { requestToolResult, ToolRequestError, GENERIC_TOOL_ERROR } from "@/lib/tool-stream";
 
 
@@ -97,7 +97,10 @@ function ResumeAuditPage() {
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MSGS[0]);
   const [error, setError] = useState<string | null>(null);
   const [audit, setAudit] = useState<Audit | null>(null);
-  const [preview, setPreview] = useState("");
+  const [partial, setPartial] = useState<Audit | null>(null);
+  // The validated audit is authoritative; while it is still being written the
+  // streamed sections render in the same result area and are never discarded.
+  const shown: Audit | null = audit ?? (loading ? partial : null);
   const inputRef = useRef<HTMLInputElement>(null);
   const runningRef = useRef(false);
 
@@ -163,7 +166,7 @@ function ResumeAuditPage() {
       }
       if (text.length > 20000) text = text.slice(0, 20000);
 
-      setPreview("");
+      setPartial(null);
       let streamed = "";
       try {
         const data = await requestToolResult<Audit>({
@@ -171,7 +174,10 @@ function ResumeAuditPage() {
           body: { resume: text },
           onPreview: (p) => {
             streamed = p;
-            setPreview(p);
+          },
+          onPartial: (p) => {
+            const next = partialAuditFromJson(p);
+            if (next) setPartial(next);
           },
         });
         // The validated result owns the overall take; the streamed text is
@@ -179,11 +185,11 @@ function ResumeAuditPage() {
         // watched is never lost on the completed page.
         setAudit(mergeStreamedOverallTake(data, streamed));
       } catch (e) {
-        setPreview("");
+        setPartial(null);
         setError(e instanceof ToolRequestError ? e.message : GENERIC_TOOL_ERROR);
       }
     } catch {
-      setPreview("");
+      setPartial(null);
       setError("Network error. Please try again.");
     } finally {
       runningRef.current = false;
@@ -299,7 +305,7 @@ function ResumeAuditPage() {
       </header>
 
       <style>{`
-        .ra-shell { max-width: ${audit ? 1180 : 820}px; }
+        .ra-shell { max-width: ${shown ? 1180 : 820}px; }
         .ra-h1 { font-size: 44px; }
         .ra-grid { grid-template-columns: minmax(0, 1fr) 380px; }
         @media (max-width: 980px) {
@@ -333,7 +339,7 @@ function ResumeAuditPage() {
         </p>
 
 
-        {!audit && (
+        {!shown && (
           <>
             {!file ? (
               <div
@@ -484,25 +490,6 @@ function ResumeAuditPage() {
               {loading && <span style={{ color: MUTED, fontSize: 14 }}>{loadingMsg}</span>}
             </div>
 
-            {loading && preview && (
-              <div
-                data-testid="audit-preview"
-                style={{
-                  marginTop: 20,
-                  padding: "16px 18px",
-                  background: SOFT,
-                  border: `1px solid ${BORDER}`,
-                  borderRadius: 12,
-                  color: TEXT,
-                  fontSize: 16,
-                  lineHeight: 1.65,
-                  whiteSpace: "pre-wrap",
-                }}
-              >
-                {preview}
-                <span style={{ color: GREEN_DARK, fontWeight: 700 }}>▌</span>
-              </div>
-            )}
 
             <p style={{ marginTop: 28, color: MUTED, fontSize: 13, fontStyle: "italic" }}>
               Verified against HR hiring sources, including LinkedIn, Indeed, and Harvard Business Review.
@@ -510,7 +497,7 @@ function ResumeAuditPage() {
           </>
         )}
 
-        {audit && (
+        {shown && (
           <section
             className="ra-grid"
             style={{
@@ -522,8 +509,18 @@ function ResumeAuditPage() {
           >
 
             <div style={{ minWidth: 0 }}>
-              <AuditResult audit={audit} />
+              {!audit && loading && (
+                <div
+                  data-testid="audit-streaming"
+                  role="status"
+                  style={{ color: MUTED, fontSize: 14, marginBottom: 14 }}
+                >
+                  {loadingMsg} Your audit fills in below as it is written.
+                </div>
+              )}
+              <AuditResult audit={shown} />
 
+              {audit && (
               <div style={{ marginTop: 28 }}>
                 <button
                   onClick={() => {
@@ -544,6 +541,7 @@ function ResumeAuditPage() {
                   Audit another resume
                 </button>
               </div>
+              )}
             </div>
 
 
