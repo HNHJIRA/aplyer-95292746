@@ -647,10 +647,10 @@ function ResumeAuditPage() {
             Powered by WriteDNA Technology™
           </div>
           <div style={{ display: "flex", gap: 16 }}>
-            <a href="#" style={{ fontSize: 13, color: "#333", textDecoration: "none", fontWeight: 400 }}>
+            <a href="/privacy" style={{ fontSize: 13, color: "#333", textDecoration: "none", fontWeight: 400 }}>
               Privacy Policy
             </a>
-            <a href="#" style={{ fontSize: 13, color: "#333", textDecoration: "none", fontWeight: 400 }}>
+            <a href="/terms" style={{ fontSize: 13, color: "#333", textDecoration: "none", fontWeight: 400 }}>
               Terms of Service
             </a>
           </div>
