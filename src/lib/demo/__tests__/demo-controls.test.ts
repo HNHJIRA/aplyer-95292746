@@ -2,7 +2,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { handleDemoRequest } from "../handler.server";
 import { drainDemoQueue } from "../queue.server";
-import { computeCost, decideAdmission, type DemoSettings } from "../policy";
+import { computeCost, countWords, decideAdmission, normalizeWritingSample, type DemoSettings } from "../policy";
+import { generateLegacyDemoAnswer } from "../generate.server";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import type { AdmitInput, DemoStore, DemoRequestRow, CostEventInput } from "../store";
 import type { DemoGenerator } from "../generate.server";
 
@@ -371,5 +374,131 @@ describe("policy", () => {
       reason: "unconfigured",
     });
     expect(store).toBeTruthy();
+  });
+});
+
+
+/* ---------------- Step 2: writing sample ---------------- */
+describe("writing sample (Step 2)", () => {
+  const SAMPLE = "  I wrote this myself.\n\nIt's got  odd   spacing, em-dash-free & <b>chars</b>.  ";
+
+  it("is optional: omitted sample still runs and stores null", async () => {
+    const { store, rows } = makeStore(OPEN);
+    const r = await call(store, base());
+    expect(r.status).toBe(200);
+    expect((rows[0].payload as any)?.writingSample ?? null).toBeNull();
+    expect(generate.mock.calls[0][0].writingSample).toBeNull();
+    expect(generate.mock.calls[0][0].writingSampleWordCount).toBe(0);
+  });
+
+  it("accepts empty and whitespace-only samples as null", async () => {
+    const { store } = makeStore(OPEN);
+    expect((await call(store, base({ writingSample: "" }))).status).toBe(200);
+    expect((await call(store, base({ writingSample: "   \n " }))).status).toBe(200);
+    expect(generate.mock.calls.map((c) => c[0].writingSample)).toEqual([null, null]);
+  });
+
+  it("rejects a non-string sample without storing anything", async () => {
+    const { store, rows } = makeStore(OPEN);
+    expect((await call(store, base({ writingSample: { x: 1 } }))).status).toBe(400);
+    expect(rows).toHaveLength(0);
+  });
+
+  it("stores the sample exactly (no trimming or rewriting) and passes it on", async () => {
+    const { store } = makeStore(OPEN);
+    await call(store, base({ writingSample: SAMPLE }));
+    const input = generate.mock.calls[0][0];
+    expect(input.writingSample).toBe(SAMPLE);
+    expect(input.writingSampleWordCount).toBe(countWords(SAMPLE));
+  });
+
+  it("queued request retains the exact sample and the queue passes it on", async () => {
+    const { store, rows, setSettings } = makeStore({ ...OPEN, daily_cap_usd: 0 });
+    const r = await call(store, base({ writingSample: SAMPLE }));
+    expect((await r.json()).status).toBe("queued");
+    expect((rows[0].payload as any).writingSample).toBe(SAMPLE);
+    setSettings({ daily_cap_usd: 10 });
+    const sendResult = vi.fn(async () => ({ ok: true }));
+    await drainDemoQueue({ store, generate: generate as unknown as DemoGenerator, sendResult });
+    expect(generate.mock.calls[0][0].writingSample).toBe(SAMPLE);
+    expect(rows[0].payload).toBeNull(); // retention: cleared once delivered
+  });
+
+  it("older queued rows without a sample are processed with null", async () => {
+    const { store, rows, setSettings } = makeStore({ ...OPEN, daily_cap_usd: 0 });
+    await call(store, base());
+    rows[0].payload = { resume: "r", jobDescription: "j", question: "q" };
+    setSettings({ daily_cap_usd: 10 });
+    await drainDemoQueue({ store, generate: generate as unknown as DemoGenerator, sendResult: async () => ({ ok: true }) });
+    expect(generate.mock.calls[0][0].writingSample).toBeNull();
+  });
+
+  it("duplicate/idempotent request keeps the original sample", async () => {
+    const { store, rows } = makeStore({ ...OPEN, daily_cap_usd: 0 });
+    const body = base({ writingSample: "original sample", idempotencyKey: "key-abcdefgh-123456" });
+    await call(store, body);
+    const again = await call(store, { ...body, writingSample: "changed sample" });
+    expect((await again.json()).status).toBe("queued");
+    expect(rows).toHaveLength(1);
+    expect((rows[0].payload as any).writingSample).toBe("original sample");
+  });
+
+  it("different samples with otherwise identical content are distinct requests", async () => {
+    const { store, rows } = makeStore({ ...OPEN, daily_cap_usd: 0 });
+    await call(store, { ...base(), question: "same", writingSample: "one" });
+    await call(store, { ...base(), question: "same", writingSample: "two" });
+    expect(rows).toHaveLength(2);
+  });
+
+  it("is not sent to any AI provider in this step", async () => {
+    const prev = process.env.ANTHROPIC_API_KEY;
+    process.env.ANTHROPIC_API_KEY = "test";
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("x", { status: 500 }));
+    await generateLegacyDemoAnswer({
+      resume: "r", jobDescription: "j", question: "q",
+      writingSample: "SECRET_SAMPLE_TEXT", writingSampleWordCount: 1,
+    }).catch(() => undefined);
+    expect(String((fetchSpy.mock.calls[0][1] as RequestInit).body)).not.toContain("SECRET_SAMPLE_TEXT");
+    fetchSpy.mockRestore();
+    process.env.ANTHROPIC_API_KEY = prev;
+  });
+
+  it("is never logged or echoed in error responses", async () => {
+    const logs = [vi.spyOn(console, "log"), vi.spyOn(console, "error"), vi.spyOn(console, "warn")];
+    generate.mockRejectedValueOnce(new Error("boom"));
+    const { store } = makeStore(OPEN);
+    const r = await call(store, base({ writingSample: "PRIVATE_SAMPLE_XYZ" }));
+    expect(await r.text()).not.toContain("PRIVATE_SAMPLE_XYZ");
+    for (const l of logs) {
+      expect(JSON.stringify(l.mock.calls)).not.toContain("PRIVATE_SAMPLE_XYZ");
+      l.mockRestore();
+    }
+  });
+
+  it("demo_requests is never granted to browser roles", () => {
+    const dir = join(process.cwd(), "supabase/migrations");
+    const sql = readdirSync(dir).map((f) => readFileSync(join(dir, f), "utf8")).join("\n");
+    expect(sql).toMatch(/demo_requests/);
+    expect(sql).not.toMatch(/GRANT[^;]*ON\s+(TABLE\s+)?public\.demo_requests[^;]*TO[^;]*(anon|authenticated)/i);
+    expect(sql).not.toMatch(/CREATE POLICY[^;]*ON\s+public\.demo_requests/i);
+  });
+});
+
+describe("word count (deterministic)", () => {
+  it("counts whitespace-separated tokens containing a letter or digit", () => {
+    expect(countWords(null)).toBe(0);
+    expect(countWords("")).toBe(0);
+    expect(countWords("   ")).toBe(0);
+    expect(countWords("Hello world")).toBe(2);
+    expect(countWords("  It's  a\n\ttest - ... ok 42 ")).toBe(5);
+    expect(countWords("naïve café résumé")).toBe(3);
+    const t = "one two three";
+    expect(countWords(t)).toBe(countWords(t));
+  });
+  it("normalizeWritingSample keeps exact text", () => {
+    expect(normalizeWritingSample(undefined)).toBeNull();
+    expect(normalizeWritingSample("  ")).toBeNull();
+    expect(normalizeWritingSample(5)).toBeUndefined();
+    expect(normalizeWritingSample(" a ")).toBe(" a ");
   });
 });

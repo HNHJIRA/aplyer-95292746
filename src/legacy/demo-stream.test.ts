@@ -202,3 +202,54 @@ describe("demo answer streaming", () => {
     expect(body.idempotencyKey).toBe("abcdefghijklmnop");
   });
 });
+
+describe("demo request body (writing sample)", () => {
+  it("includes the exact writing sample", async () => {
+    const f = vi.fn().mockResolvedValue(sseResponse(['event: final\ndata: {"answer":"A"}\n\n']));
+    await getAnswer({ ...input, writingSample: " My words.\n", fetch: f });
+    expect(JSON.parse(f.mock.calls[0][1].body).writingSample).toBe(" My words.\n");
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+  it("sends null when the sample is empty", async () => {
+    const f = vi.fn().mockResolvedValue(sseResponse(['event: final\ndata: {"answer":"A"}\n\n']));
+    await getAnswer({ ...input, writingSample: "  ", fetch: f });
+    expect(JSON.parse(f.mock.calls[0][1].body).writingSample).toBeNull();
+  });
+});
+
+describe("demo resume file reading", () => {
+  const { extractResumeFromBytes, docxXmlToText } = api as any;
+  const enc = (s: string) => new TextEncoder().encode(s);
+  const XML =
+    '<?xml version="1.0"?><w:document xmlns:w="x"><w:body><w:p><w:r><w:t>Jane Doe</w:t></w:r></w:p><w:p><w:r><w:t>Engineer &amp; Lead</w:t></w:r></w:p></w:body></w:document>';
+
+  it("reads a (renamed) .docx as readable text, not XML", async () => {
+    const { zipSync, strToU8 } = await import("fflate");
+    const zip = zipSync({ "word/document.xml": strToU8(XML), "[Content_Types].xml": strToU8("<x/>") });
+    const text = await extractResumeFromBytes(zip);
+    expect(text).toBe("Jane Doe\nEngineer & Lead");
+    expect(text).not.toMatch(/<w:|<\?xml/);
+  });
+
+  it("uses the same DOCX transform as the app's resume reader", async () => {
+    const { zipSync, strToU8 } = await import("fflate");
+    const { extractResumeText } = await import("@/lib/resume/extract");
+    const zip = zipSync({ "word/document.xml": strToU8(XML) });
+    expect(await extractResumeFromBytes(zip)).toBe(await extractResumeText(zip, "cv.docx"));
+    expect(docxXmlToText("<w:p>a</w:p>")).toBe("a\n");
+  });
+
+  it("refuses raw XML/HTML markup instead of showing code", async () => {
+    expect(await extractResumeFromBytes(enc(XML))).toBeNull();
+    expect(await extractResumeFromBytes(enc("<html><body><p>x</p></body></html>"))).toBeNull();
+  });
+
+  it("refuses binary content", async () => {
+    expect(await extractResumeFromBytes(new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0, 0, 1, 2, 3, 0, 0]))).toBeNull();
+  });
+
+  it("keeps a normal plain-text resume unchanged", async () => {
+    const t = "Jane Doe\nSenior Engineer at Acme (2019-2024)\n- Led a team of 5 <3 people";
+    expect(await extractResumeFromBytes(enc(t))).toBe(t);
+  });
+});
