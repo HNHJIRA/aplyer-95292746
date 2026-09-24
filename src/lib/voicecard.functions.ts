@@ -1,10 +1,11 @@
 // Server functions for Voice Card generation, A/B demo, retry, regenerate.
-// All Claude Haiku 4.5 calls stay server-side. ANTHROPIC_API_KEY never leaks.
+// Voice Card generation stays on its approved model; A/B answers use Opus.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { MODEL_HAIKU, MODEL_OPUS } from "@/lib/ai/prompts/models";
 
 const PROMPT_VERSION = "v1";
-const MODEL = "claude-haiku-4-5";
+const VOICE_CARD_MODEL = MODEL_HAIKU;
 const STALE_LOCK_MS = 45 * 1000;
 const AI_TIMEOUT_MS = 12 * 1000;
 const RESUME_EXCERPT_CHARS = 3000;
@@ -60,7 +61,7 @@ async function callClaudeJson<T>(system: string, user: string, maxTokens = 1500)
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: MODEL,
+        model: VOICE_CARD_MODEL,
         max_tokens: maxTokens,
         system: `${system}\n\nRespond with ONLY a valid JSON object. No prose, no markdown fences.`,
         messages: [{ role: "user", content: user }],
@@ -372,7 +373,7 @@ export const startVoiceCardGeneration = createServerFn({ method: "POST" })
       voice_card_status: "generated",
       voice_card_data: voiceCard as unknown as Record<string, unknown>,
       voice_card_generated_at: new Date().toISOString(),
-      voice_card_model: usedFallback ? `${MODEL}:fast-fallback` : MODEL,
+      voice_card_model: usedFallback ? `${VOICE_CARD_MODEL}:fast-fallback` : VOICE_CARD_MODEL,
       voice_card_source_hash: snap.sourceHash,
       voice_card_source_resume_id: snap.resumeId,
       voice_card_source_sample_ids: snap.qualifyingSamples.map((s) => s.id),
@@ -410,7 +411,7 @@ export const retryVoiceCard = createServerFn({ method: "POST" })
 // ------- A/B demo -------
 
 export const AB_DEMO_QUESTION =
-  "In 2–3 sentences, tell me why you're interested in this role and what you'd bring to the team.";
+  "In 2 to 3 sentences, tell me why you're interested in this role and what you'd bring to the team.";
 
 export const AB_DEMO_GENERIC =
   "I am very interested in this role because it aligns with my skills and experience. I am a hard worker, a team player, and passionate about learning. I would bring dedication, strong communication, and a proven track record of delivering results to your team.";
@@ -460,7 +461,7 @@ export const generateAbDemo = createServerFn({ method: "POST" })
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
-        model: MODEL,
+        model: MODEL_OPUS,
         max_tokens: 400,
         system,
         messages: [{ role: "user", content: prompt }],
@@ -476,7 +477,7 @@ export const generateAbDemo = createServerFn({ method: "POST" })
       .update({
         ab_demo_answer: answer,
         ab_demo_generation_id: crypto.randomUUID(),
-        ab_demo_model: MODEL,
+        ab_demo_model: MODEL_OPUS,
         ab_demo_created_at: new Date().toISOString(),
       })
       .eq("id", userId);

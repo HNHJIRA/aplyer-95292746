@@ -1,34 +1,19 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { ArrowLeft, Check, Crown, Lock, Shield, LifeBuoy, FileText, PenLine, User as UserIcon, Sparkles, LogOut, RotateCcw } from "lucide-react";
+import { ArrowLeft, Shield, LifeBuoy, FileText, PenLine, User as UserIcon, LogOut, RotateCcw } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useAplyerStore } from "@/lib/storage/useAplyerStore";
-import type { AIProviderId, SubscriptionTier } from "@/lib/storage/types";
 
-type Section = "account" | "resume" | "profile" | "writing" | "subscription" | "ai" | "support" | "privacy";
+type Section = "account" | "resume" | "profile" | "writing" | "support" | "privacy";
 
 const SECTIONS: { id: Section; label: string; icon: React.ReactNode }[] = [
   { id: "account", label: "Account", icon: <UserIcon className="h-3.5 w-3.5" /> },
   { id: "resume", label: "Resume", icon: <FileText className="h-3.5 w-3.5" /> },
   { id: "profile", label: "Profile", icon: <UserIcon className="h-3.5 w-3.5" /> },
   { id: "writing", label: "Writing", icon: <PenLine className="h-3.5 w-3.5" /> },
-  { id: "subscription", label: "Plan", icon: <Crown className="h-3.5 w-3.5" /> },
-  { id: "ai", label: "AI", icon: <Sparkles className="h-3.5 w-3.5" /> },
   { id: "support", label: "Support", icon: <LifeBuoy className="h-3.5 w-3.5" /> },
   { id: "privacy", label: "Privacy", icon: <Shield className="h-3.5 w-3.5" /> },
-];
-
-const PROVIDERS: { id: AIProviderId; name: string; status: "available" | "soon"; desc: string }[] = [
-  { id: "claude", name: "Claude Sonnet", status: "soon", desc: "Anthropic's nuanced writer. Great for cover letters." },
-  { id: "openai", name: "OpenAI GPT", status: "soon", desc: "Versatile, fast, broad knowledge." },
-  { id: "gemini", name: "Gemini", status: "soon", desc: "Google's multimodal model." },
-];
-
-const PLANS: { id: SubscriptionTier; name: string; price: string; features: string[]; highlighted?: boolean }[] = [
-  { id: "free", name: "Free", price: "$0", features: ["10 applications / month", "Basic resume scoring", "Local storage"] },
-  { id: "pro", name: "Pro", price: "$12/mo", features: ["Unlimited applications", "Advanced AI providers", "Priority autofill", "Writing voice training"], highlighted: true },
-  { id: "enterprise", name: "Enterprise", price: "Custom", features: ["Team workspaces", "SSO", "Dedicated support", "Custom integrations"] },
 ];
 
 export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: () => void | Promise<void> }) {
@@ -66,7 +51,7 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
             {section === "account" && (
               <Card title="Account">
                 <Row label="Plan" value={state.subscriptionStatus.tier.toUpperCase()} />
-                <Row label="Last sync" value={state.lastUpdated ? new Date(state.lastUpdated).toLocaleString() : "—"} />
+                <Row label="Last sync" value={state.lastUpdated ? new Date(state.lastUpdated).toLocaleString() : "Not available"} />
                 <Row label="Storage" value="chrome.storage.local" />
                 <Button variant="outline" size="sm" className="mt-3 w-full" onClick={reset}>
                   <RotateCcw className="h-3.5 w-3.5" /> Reset Onboarding
@@ -99,7 +84,7 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
             {section === "profile" && (
               <Card title="Profile">
                 {state.profile ? (
-                  Object.entries(state.profile).map(([k, v]) => <Row key={k} label={k} value={v || "—"} />)
+                  Object.entries(state.profile).map(([k, v]) => <Row key={k} label={k} value={v || "Not available"} />)
                 ) : (
                   <Empty>Profile not completed.</Empty>
                 )}
@@ -112,64 +97,6 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
                 <Row label="Total words" value={String(state.writingSamples.reduce((a, s) => a + s.wordCount, 0))} />
                 {state.writingSamples.length === 0 && <Empty>None yet.</Empty>}
               </Card>
-            )}
-
-            {section === "subscription" && (
-              <div className="space-y-2.5">
-                {PLANS.map((p) => (
-                  <div key={p.id} className={`rounded-xl border p-3 ${p.highlighted ? "border-brand-green/40 bg-brand-green/5" : "border-border bg-paper"}`}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-[15px] font-bold">{p.name}</p>
-                        <p className="text-[13px] text-muted-foreground">{p.price}</p>
-                      </div>
-                      {state.subscriptionStatus.tier === p.id ? (
-                        <span className="rounded-full bg-brand-green/15 px-2 py-0.5 font-mono text-[11px] uppercase text-brand-green">Current</span>
-                      ) : (
-                        <Button size="sm" variant={p.highlighted ? "primary" : "outline"} onClick={() => update({ subscriptionStatus: { tier: p.id } })}>
-                          Select
-                        </Button>
-                      )}
-                    </div>
-                    <ul className="mt-2 space-y-1">
-                      {p.features.map((f) => (
-                        <li key={f} className="flex items-center gap-1.5 text-[13px] text-sub">
-                          <Check className="h-3 w-3 text-brand-green" /> {f}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {section === "ai" && (
-              <div className="space-y-2.5">
-                <p className="text-[13px] text-muted-foreground">Aplyer selects the best model for each step automatically.</p>
-                {PROVIDERS.map((p) => {
-                  const active = state.settings.aiProvider === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => update({ settings: { ...state.settings, aiProvider: p.id } })}
-                      className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition ${active ? "border-brand-green/40 bg-brand-green/5" : "border-border bg-paper hover:border-border"}`}
-                    >
-                      <span className={`mt-0.5 flex h-4 w-4 items-center justify-center rounded-full border ${active ? "border-brand-green bg-brand-green" : "border-border"}`}>
-                        {active && <Check className="h-2.5 w-2.5 text-white" strokeWidth={4} />}
-                      </span>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-[14px] font-bold">{p.name}</p>
-                          <span className="inline-flex items-center gap-1 rounded-full bg-field px-1.5 py-0.5 font-mono text-[8.5px] uppercase tracking-[0.14em] text-muted-foreground">
-                            <Lock className="h-2.5 w-2.5" /> Coming soon
-                          </span>
-                        </div>
-                        <p className="mt-0.5 text-[13px] text-muted-foreground">{p.desc}</p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
             )}
 
             {section === "support" && (
@@ -186,7 +113,7 @@ export function Settings({ onBack, onLogout }: { onBack: () => void; onLogout?: 
                 <Toggle label="Anonymous telemetry" checked={state.settings.telemetry} onChange={(v) => update({ settings: { ...state.settings, telemetry: v } })} />
                 <Toggle label="Autofill enabled" checked={state.settings.autofillEnabled} onChange={(v) => update({ settings: { ...state.settings, autofillEnabled: v } })} />
                 <Toggle label="Notifications" checked={state.settings.notifications} onChange={(v) => update({ settings: { ...state.settings, notifications: v } })} />
-                <p className="mt-3 text-[13px] text-muted-foreground">Aplyer keeps your resume and profile on this device. Nothing is sent without your explicit action.</p>
+                <p className="mt-3 text-[13px] text-muted-foreground">Your resume is saved on this device and synchronized with your Aplyer account when you are signed in.</p>
               </Card>
             )}
           </motion.div>

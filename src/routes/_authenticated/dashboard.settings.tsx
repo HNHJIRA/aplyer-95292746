@@ -60,7 +60,7 @@ function SettingsPage() {
           <Section title="Account" desc="The account your extension and dashboard share.">
             <div className="rounded-lg border border-border bg-paper px-4 py-3">
               <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Signed in as</div>
-              <div className="mt-1 truncate text-[15px] font-semibold">{data?.email ?? "—"}</div>
+              <div className="mt-1 truncate text-[15px] font-semibold">{data?.email ?? "Not available"}</div>
             </div>
             <div className="flex items-center justify-between rounded-lg border border-border bg-paper px-4 py-3">
               <div className="pr-4">

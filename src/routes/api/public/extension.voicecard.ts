@@ -10,6 +10,7 @@ import {
   type VoiceCardData,
 } from "@/lib/ai/prompts/prompt-b-voice-card";
 import { PromptError, runPromptValidated } from "@/lib/ai/run-prompt.server";
+import { MODEL_OPUS } from "@/lib/ai/prompts/models";
 import { computeRarity, type Rarity } from "@/lib/stylometry/rarity";
 
 const PROMPT_VERSION = PROMPT_B_VOICE_CARD.version;
@@ -21,7 +22,7 @@ const MAX_VOICECARD_TOKENS = 900;
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
 const AB_DEMO_QUESTION =
-  "In 2–3 sentences, tell me why you're interested in this role and what you'd bring to the team.";
+  "In 2 to 3 sentences, tell me why you're interested in this role and what you'd bring to the team.";
 
 const AB_DEMO_GENERIC =
   "I am very interested in this role because it aligns with my skills and experience. I am a hard worker, a team player, and passionate about learning. I would bring dedication, strong communication, and a proven track record of delivering results to your team.";
@@ -259,7 +260,7 @@ async function generateAbDemo(supabase: any, userId: string) {
   const system =
     "You write short, authentic application answers in the candidate's exact voice. Match tone, cadence, and vocabulary. Never invent facts. 2-3 sentences. No preamble, no signoff. Plain text only.";
   const prompt = `Voice Card:\n${JSON.stringify(rowRaw.voice_card_data, null, 2)}\n\nQuestion:\n${AB_DEMO_QUESTION}\n\nWrite the answer.`;
-  const answer = await callClaudeText(system, prompt, 400);
+  const answer = await callClaudeText(system, prompt, MODEL_OPUS, 400);
   if (!answer) throw new Error("Empty demo answer");
 
   await supabase
@@ -267,7 +268,7 @@ async function generateAbDemo(supabase: any, userId: string) {
     .update({
       ab_demo_answer: answer,
       ab_demo_generation_id: crypto.randomUUID(),
-      ab_demo_model: MODEL,
+      ab_demo_model: MODEL_OPUS,
       ab_demo_created_at: new Date().toISOString(),
     })
     .eq("id", userId);
@@ -332,13 +333,13 @@ async function sha256Hex(input: string): Promise<string> {
 
 
 
-async function callClaudeText(system: string, user: string, maxTokens: number): Promise<string> {
+async function callClaudeText(system: string, user: string, model: string, maxTokens: number): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
   const res = await fetch(ANTHROPIC_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] }),
+    body: JSON.stringify({ model, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] }),
   });
   if (!res.ok) throw new Error(`Claude ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
   const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };

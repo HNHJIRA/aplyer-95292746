@@ -220,7 +220,7 @@ describe("Demo -> real Aplyer pipeline", () => {
       "prompt_j_quality_scan",
       "prompt_j_quality_scan_2",
     ]);
-    expect(r.calls[1]).toMatchObject({ provider: "anthropic", model: "claude-haiku-4-5", usage: { inputTokens: 100, outputTokens: 50 } });
+    expect(r.calls[1]).toMatchObject({ provider: "anthropic", model: "claude-opus-4-6", usage: { inputTokens: 100, outputTokens: 50 } });
     expect(r.calls[2]!.model).toBe("claude-opus-4-6");
   });
 

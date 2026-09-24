@@ -14,11 +14,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "How is my Resume Score calculated?",
-    a: "It is calculated on your device from the text of your resume. Six sections earn points when they are found — experience, contact information, skills, education, professional summary and certifications — plus a bonus for length and a bonus for numbers and percentages. The Resume page shows which sections were found.",
+    a: "It is calculated on your device from the text of your resume. Six sections earn points when they are found: experience, contact information, skills, education, professional summary and certifications. There is also a bonus for length and a bonus for numbers and percentages. The Resume page shows which sections were found.",
   },
   {
-    q: "How does Write DNA work?",
-    a: "Write DNA has three steps: upload your resume, add a first qualifying writing sample, then add a second. A sample qualifies when it is at least 100 characters and at least 30 words of prose. Your progress shows 33%, 67% and 100% as you complete each step.",
+    q: "How does WriteDNA work?",
+    a: "WriteDNA has three steps: upload your resume, add a first qualifying writing sample, then add a second. A sample qualifies when it is at least 100 characters and at least 30 words of prose. Your progress shows 33%, 67% and 100% as you complete each step.",
   },
   {
     q: "When does my Voice Card become available?",

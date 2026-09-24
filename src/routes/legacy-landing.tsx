@@ -21,13 +21,13 @@ import { downloadExtension } from "@/lib/download-extension";
 export const Route = createFileRoute("/legacy-landing")({
   head: () => ({
     meta: [
-      { title: "Aplyer.ai — Stop Skipping Jobs" },
+      { title: "Aplyer.ai: Stop Skipping Jobs" },
       {
         name: "description",
         content:
           "Aplyer is a Chrome extension that fills job application essay questions in your own voice using your resume. Works on Workday, Greenhouse, Lever and any careers page.",
       },
-      { property: "og:title", content: "Aplyer.ai — Stop Skipping Jobs" },
+      { property: "og:title", content: "Aplyer.ai: Stop Skipping Jobs" },
       {
         property: "og:description",
         content:
@@ -204,7 +204,7 @@ function Hero() {
             className="mx-auto mt-5 max-w-xl text-[16px] leading-relaxed text-sub lg:mx-0"
           >
             Aplyer is a Chrome extension that fills long essay questions on job
-            applications in your own voice — using your resume. Works inside
+            applications in your own voice using your resume. Works inside
             Workday, Greenhouse, Lever, and any employer careers page.
           </motion.p>
 
@@ -329,11 +329,11 @@ function CompareSection() {
     <Section className="mx-auto max-w-6xl px-6 py-20">
       <motion.div variants={fadeUp} className="mx-auto max-w-3xl text-center">
         <span className="font-mono text-[12px] uppercase tracking-[0.18em] text-brand-green">
-          Q.01 — The Problem
+          Q.01: The Problem
         </span>
         <h2 className="mt-3 text-[28px] font-black leading-tight tracking-tight md:text-[40px]">
           Why are you <span className="text-brand-red">skipping</span> so many
-          jobs — and can Aplyer help?
+          jobs, and can Aplyer help?
         </h2>
         <p className="mt-4 text-[15px] leading-relaxed text-sub">
           You skip applications not because you're unqualified, but because
@@ -401,7 +401,7 @@ function BrowserPane({ variant }: { variant: "bad" | "good" }) {
           </div>
         ) : (
           <Typewriter
-            text="I've spent the last 10 years in this industry and your team is doing the work I genuinely want to be part of. The problems you're solving are exactly what I've focused on — I know I can contribute from day one."
+            text="I've spent the last 10 years in this industry and your team is doing the work I genuinely want to be part of. The problems you're solving are exactly what I've focused on. I know I can contribute from day one."
           />
         )}
         <div
@@ -461,14 +461,14 @@ function HowItWorks() {
     {
       icon: Send,
       title: "Review and submit",
-      body: "You stay in control — read it, tweak it, hit submit. Job sent instead of skipped.",
+      body: "You stay in control. Read it, tweak it, and hit submit. Job sent instead of skipped.",
     },
   ];
   return (
     <Section id="how" className="mx-auto max-w-6xl px-6 py-20">
       <motion.div variants={fadeUp} className="mx-auto max-w-2xl text-center">
         <span className="font-mono text-[13px] uppercase tracking-[0.18em] text-brand-green">
-          Q.02 — How it works
+          Q.02: How it works
         </span>
         <h2 className="mt-3 text-[30px] font-black tracking-tight md:text-[44px]">
           Three steps to a sent application.
@@ -552,7 +552,7 @@ function FinalCTA() {
           Ready when you are
         </span>
         <h2 className="relative mt-3 text-[30px] font-black tracking-tight md:text-[44px]">
-          Apply to the next job —{" "}
+          Apply to the next job. {" "}
           <span className="text-brand-green">don't skip it.</span>
         </h2>
         <p className="relative mx-auto mt-3 max-w-xl text-[15px] text-sub">
@@ -584,7 +584,7 @@ function Footer() {
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-6 sm:flex-row">
         <div className="flex items-center gap-2 text-[13px] text-sub">
           <LogoMark />
-          <span>© {new Date().getFullYear()} Aplyer.ai — Stop Skipping Jobs</span>
+          <span>© {new Date().getFullYear()} Aplyer.ai. Stop Skipping Jobs</span>
         </div>
         <div className="flex gap-5 text-[13px] text-sub">
           <a href="#how" className="hover:text-foreground">How it works</a>

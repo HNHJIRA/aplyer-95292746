@@ -101,7 +101,7 @@ export function Dashboard({ onResume, onProfile, onSettings }: { onResume: () =>
         <div className="rounded-xl border border-border bg-paper p-3">
           <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">On job pages</div>
           <p className="mt-1 text-[13px] leading-snug text-foreground">
-            Open a job application on a supported site and Aplyer's side panel appears — use{" "}
+            Open a job application on a supported site and Aplyer's side panel appears. Use{" "}
             <span className="font-semibold">Autofill All</span> for your details and{" "}
             <span className="font-semibold">Generate Answer</span> for written questions.
           </p>
@@ -144,7 +144,7 @@ export function Dashboard({ onResume, onProfile, onSettings }: { onResume: () =>
                 <Crown className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-bold">Aplyer Pro — $29 / month</p>
+                <p className="text-[14px] font-bold">Aplyer Pro, $29 / month</p>
                 <p className="mt-0.5 text-[12px] text-muted-foreground">AI answer generation, Voice Card and Autofill All.</p>
               </div>
             </div>
@@ -158,10 +158,10 @@ export function Dashboard({ onResume, onProfile, onSettings }: { onResume: () =>
 }
 
 function getReadinessLabel(score: number) {
-  if (score >= 85) return "Excellent — ready to apply";
-  if (score >= 65) return "Solid — minor improvements";
-  if (score >= 40) return "Needs work — fix the basics";
-  if (score > 0) return "Limited — add core sections";
+  if (score >= 85) return "Excellent. Ready to apply";
+  if (score >= 65) return "Solid. Minor improvements";
+  if (score >= 40) return "Needs work. Fix the basics";
+  if (score > 0) return "Limited. Add core sections";
   return "Upload a resume to begin";
 }
 

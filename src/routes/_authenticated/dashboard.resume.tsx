@@ -95,7 +95,7 @@ function ResumePage() {
     <div className="space-y-5">
       <div>
         <h1 className="text-[32px] font-black tracking-tight">Resume</h1>
-        <p className="mt-1 text-[15px] text-muted-foreground">Upload PDF or DOCX. We score it locally — your file is private.</p>
+        <p className="mt-1 text-[15px] text-muted-foreground">Upload PDF or DOCX. Your resume is saved to your Aplyer account.</p>
       </div>
 
       <div className="grid gap-3 lg:grid-cols-3">
@@ -232,8 +232,7 @@ function ScoreExplainer({ sections }: { sections: Record<string, boolean> }) {
         <span className="font-mono text-[12px] uppercase tracking-[0.18em] text-muted-foreground">How your score works</span>
       </div>
       <p className="text-[14px] text-sub">
-        Your resume is scored on your device from the text in your file — nothing is sent anywhere to
-        produce it. Six sections earn points when they're found, and two bonuses are added on top.
+        Your resume score is calculated on your device from the text in your file. Your resume is also saved to your Aplyer account. Six sections earn points when they are found, and two bonuses are added on top.
       </p>
       <ul className="mt-3 space-y-1.5">
         {SCORE_SECTIONS.map((s) => {
@@ -260,8 +259,8 @@ function ScoreExplainer({ sections }: { sections: Record<string, boolean> }) {
       </button>
       {open && (
         <div className="mt-2 space-y-2 border-t border-border pt-2 text-[13px] text-muted-foreground">
-          <p><span className="text-sub">Length bonus — up to 12 points.</span> Longer, more detailed resumes earn more, one point per 600 characters.</p>
-          <p><span className="text-sub">Quantified achievements — up to 8 points.</span> One point for each number or percentage found in your resume.</p>
+          <p><span className="text-sub">Length bonus, up to 12 points.</span> Longer, more detailed resumes earn more, one point per 600 characters.</p>
+          <p><span className="text-sub">Quantified achievements, up to 8 points.</span> One point for each number or percentage found in your resume.</p>
           <p><span className="text-sub">Complete</span> is how many of the six sections were found. <span className="text-sub">Strength</span> combines your score with how many quantified achievements you included.</p>
         </div>
       )}

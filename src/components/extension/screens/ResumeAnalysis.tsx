@@ -24,7 +24,7 @@ export function ResumeAnalysis({ onNext, onBack }: { onNext: () => void; onBack:
           <Sparkles className="h-2.5 w-2.5" /> Resume Analysis
         </div>
         <h2 className="mt-2 text-[20px] font-black tracking-tight text-foreground">Resume Readiness</h2>
-        <p className="text-[14px] text-muted-foreground">A snapshot of how your resume performs across ATS basics.</p>
+        <p className="text-[14px] text-muted-foreground">A snapshot of what a recruiter sees first.</p>
       </div>
 
       <div className="popup-scroll -mx-6 flex-1 overflow-y-auto px-6">

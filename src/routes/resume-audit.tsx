@@ -9,13 +9,13 @@ import { requestToolResult, ToolRequestError, GENERIC_TOOL_ERROR } from "@/lib/t
 export const Route = createFileRoute("/resume-audit")({
   head: () => ({
     meta: [
-      { title: "Resume Red Flag Audit — Aplyer.ai" },
+      { title: "Resume Red Flag Audit | Aplyer.ai" },
       {
         name: "description",
         content:
           "Upload your resume and get a fast recruiter-style red flag audit. Free, no sign-up, results in seconds.",
       },
-      { property: "og:title", content: "Resume Red Flag Audit — Aplyer.ai" },
+      { property: "og:title", content: "Resume Red Flag Audit | Aplyer.ai" },
       {
         property: "og:description",
         content:

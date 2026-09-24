@@ -98,7 +98,7 @@ function WritingPage() {
       <div className="grid gap-3 md:grid-cols-3">
         <Stat label="Documents" value={samples.length.toString()} />
         <Stat label="Total words" value={totalWords.toLocaleString()} />
-        <Stat label="Last updated" value={samples[0] ? new Date(samples[0].updated_at).toLocaleDateString() : "—"} />
+        <Stat label="Last updated" value={samples[0] ? new Date(samples[0].updated_at).toLocaleDateString() : "Not available"} />
       </div>
 
       {open && (

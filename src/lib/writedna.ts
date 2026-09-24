@@ -116,11 +116,11 @@ export function stageLabel(stage: WriteDnaStage): string {
     case "idle":
       return "Waiting for your resume";
     case "building":
-      return "Building your Write DNA";
+      return "Building your WriteDNA";
     case "good":
-      return "Good — one more to make it Strong";
+      return "Good. One more to make it Strong";
     case "strong":
-      return "Strong Write DNA";
+      return "Strong WriteDNA";
   }
 }
 

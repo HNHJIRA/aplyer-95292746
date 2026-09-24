@@ -92,7 +92,7 @@ function DashboardHome() {
 
       <div className="grid gap-3 md:grid-cols-4">
         <Stat label="Resume" value={data.resume ? "Uploaded" : "Missing"} icon={<FileText className="h-4 w-4" />} tone={data.resume ? "green" : "muted"} />
-        <Stat label="Resume score" value={data.score ? `${data.score.score}/100` : "—"} icon={<TrendingUp className="h-4 w-4" />} tone={data.score ? "green" : "muted"} />
+        <Stat label="Resume score" value={data.score ? `${data.score.score}/100` : "Not available"} icon={<TrendingUp className="h-4 w-4" />} tone={data.score ? "green" : "muted"} />
         <Stat label="Profile" value={`${profileCompletion}%`} icon={<UserIcon className="h-4 w-4" />} tone={profileCompletion >= 80 ? "green" : "amber"} />
         <Stat label="Writing samples" value={String(data.samplesCount)} icon={<BookOpen className="h-4 w-4" />} tone={data.samplesCount > 0 ? "green" : "muted"} />
       </div>

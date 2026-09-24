@@ -11,13 +11,13 @@ export const Route = createFileRoute("/resume-match")({
       {
         name: "description",
         content:
-          "See how closely your resume matches a job description using AI-powered ATS and recruiter analysis.",
+          "See how closely your resume matches a job description with a focused resume comparison.",
       },
       { property: "og:title", content: "Resume Score vs the Job | Aplyer" },
       {
         property: "og:description",
         content:
-          "See how closely your resume matches a job description using AI-powered ATS and recruiter analysis.",
+          "See how closely your resume matches a job description with a focused resume comparison.",
       },
     ],
     links: [
@@ -66,7 +66,7 @@ const LOADING_MSGS = [
   "Reading your resume...",
   "Parsing the job description...",
   "Comparing keywords and skills...",
-  "Running ATS evaluation...",
+  "Comparing resume details...",
   "Building your match report...",
 ];
 
@@ -474,7 +474,7 @@ function ResumeMatchPage() {
           Resume Score vs the Job
         </h1>
         <p style={{ color: MUTED, fontSize: 17, lineHeight: 1.5, margin: "0 0 28px" }}>
-          A free tool. See how your resume matches a job description, the way an ATS reads it. No signup.
+          A free tool. See how your resume compares with a job description. No signup.
         </p>
 
         {!report && (
@@ -692,7 +692,7 @@ function ResumeMatchPage() {
             )}
 
             <p style={{ marginTop: 28, color: MUTED, fontSize: 13, fontStyle: "italic" }}>
-              Modeled on how ATS systems and recruiters evaluate resumes for a specific role.
+              Compares the information in your resume with the requirements in the job description.
             </p>
           </>
         )}
@@ -736,7 +736,7 @@ function ResumeMatchPage() {
               >
                 <ScoreCircle value={report.overallMatch} label="Overall Match" />
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                  <Bar value={report.atsScore} label="ATS Compatibility" />
+                  <Bar value={report.atsScore} label="Resume Compatibility" />
                   <Bar value={report.keywordCoverage} label="Keyword Coverage" />
                 </div>
               </div>

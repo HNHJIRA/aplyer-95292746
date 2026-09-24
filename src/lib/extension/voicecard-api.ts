@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { APP_WEB_URL } from "@/lib/extension/runtime";
 
 export const AB_DEMO_QUESTION =
-  "In 2–3 sentences, tell me why you're interested in this role and what you'd bring to the team.";
+  "In 2 to 3 sentences, tell me why you're interested in this role and what you'd bring to the team.";
 
 export const AB_DEMO_GENERIC =
   "I am very interested in this role because it aligns with my skills and experience. I am a hard worker, a team player, and passionate about learning. I would bring dedication, strong communication, and a proven track record of delivering results to your team.";

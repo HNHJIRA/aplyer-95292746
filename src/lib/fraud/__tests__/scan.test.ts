@@ -20,7 +20,7 @@ function makeScanner() {
 describe("runFraudScan", () => {
   beforeEach(() => clearFraudScanCache());
 
-  it("short-circuits trusted ATS urls with Safe / 100 and no AI call", async () => {
+  it("short-circuits trusted ATS urls without certifying the listing or assigning a score", async () => {
     const ai = makeScanner();
     for (const url of [
       "https://boards.greenhouse.io/acme/jobs/1",
@@ -28,9 +28,9 @@ describe("runFraudScan", () => {
       "https://acme.wd5.myworkdayjobs.com/en-US/careers/job/1",
     ]) {
       const r = await runFraudScan(url, { aiScanner: ai.fn });
-      expect(r.status).toBe("safe");
-      expect(r.genuineScore).toBe(100);
-      expect(r.label).toBe("Safe");
+      expect(r.status).toBe("unverified");
+      expect(r.genuineScore).toBeNull();
+      expect(r.label).toBe("Unverified");
       expect(r.aiScanUsed).toBe(false);
       expect(r.scanMethod).toBe("trusted_ats_allowlist");
     }

@@ -148,7 +148,7 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
           Optional
         </div>
         <h2 className="mt-2 text-[20px] font-black tracking-tight">Help Aplyer Learn Your Voice</h2>
-        <p className="mt-1 text-[14px] text-muted-foreground">Paste 2 short pieces you actually wrote — we read your writing style, not your files.</p>
+        <p className="mt-1 text-[14px] text-muted-foreground">Paste 2 short pieces you actually wrote. We read your writing style, not your files.</p>
       </div>
 
       <div className="popup-scroll -mx-6 flex-1 overflow-y-auto px-6">
@@ -196,7 +196,7 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
                 <span>
                   {content.length.toLocaleString()} / {MAX.toLocaleString()} chars · {wordCount} words ·{" "}
                   <span className={qualifies ? "text-brand-green" : "text-[#E5B73A]"}>
-                    {qualifies ? "Qualifies for Write DNA" : `Need ${MIN_CHARS}+ chars & ${MIN_WORDS}+ words`}
+                    {qualifies ? "Qualifies for WriteDNA" : `Need ${MIN_CHARS}+ chars & ${MIN_WORDS}+ words`}
                   </span>
                 </span>
                 <div className="flex gap-2">
@@ -212,7 +212,7 @@ export function WritingSamples({ onNext, onBack }: { onNext: () => void; onBack:
             <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 space-y-2">
               {samples.length === 0 && (
                 <div className="rounded-xl border border-dashed border-border bg-paper p-5 text-center">
-                  <p className="text-[14px] text-muted-foreground">No samples yet — totally optional.</p>
+                  <p className="text-[14px] text-muted-foreground">No samples yet. This is optional.</p>
                 </div>
               )}
               {samples.map((s) => (

@@ -76,7 +76,7 @@ export function WriteDnaCard({
     >
       <div className="flex items-center justify-between">
         <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-paper px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
-          <Sparkles className="h-2.5 w-2.5" /> Write DNA
+          <Sparkles className="h-2.5 w-2.5" /> WriteDNA
         </div>
         <div
           className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.16em]"
@@ -98,7 +98,7 @@ export function WriteDnaCard({
           <div className="mt-3 flex items-center gap-4 text-[11px] text-muted-foreground">
             <span>
               <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Resume</span>
-              <span className="ml-2 text-foreground">{writeDna.resumeUploaded ? "✓" : "—"}</span>
+              <span className="ml-2 text-foreground">{writeDna.resumeUploaded ? "✓" : "Not added"}</span>
             </span>
             <span>
               <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Samples</span>
@@ -155,19 +155,19 @@ function statusCopy(w: WriteDnaState): string {
     case "locked":
       return w.resumeUploaded
         ? "Add one qualifying writing sample to keep unlocking your Voice Card."
-        : "Upload your resume first — it's the base layer of your DNA.";
+        : "Upload your resume first. It is the base layer of your WriteDNA.";
     case "collecting_samples":
       return "One more qualifying sample and you'll be ready to generate your Voice Card.";
     case "eligible":
       return "You have enough writing. Your Voice Card is ready to generate.";
     case "generating":
-      return "Analyzing your writing DNA with Claude Haiku 4.5.";
+      return "Analyzing your writing.";
     case "generated":
       return "Your Voice Card is live. Aplyer personalizes answers using this tone.";
     case "failed":
       return "Generation didn't complete. You can retry safely.";
     case "stale":
-      return "You added new writing — regenerate to refresh your Voice Card.";
+      return "You added new writing. Regenerate to refresh your Voice Card.";
     default:
       return "";
   }

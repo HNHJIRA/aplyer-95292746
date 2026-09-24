@@ -277,7 +277,7 @@ describe("requireReadyFactInventory gate", () => {
 
   it("fails closed when the model differs from the approved P0 model", async () => {
     const db = makeDb();
-    await seedReady(db, { model: "claude-opus-4-6" });
+    await seedReady(db, { model: "claude-haiku-4-5" });
     await expect(requireReadyFactInventory(db, "user-a")).rejects.toMatchObject({
       code: "inventory_stale",
     });

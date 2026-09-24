@@ -107,7 +107,7 @@ function DownloadExtensionButton() {
       {state === "working"
         ? "Preparing download…"
         : state === "error"
-          ? "Download failed — try again"
+          ? "Download failed. Try again"
           : "Download Extension"}
     </button>
   );

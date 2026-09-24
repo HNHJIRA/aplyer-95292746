@@ -62,7 +62,7 @@ export function WriteDnaProgress({ onNext, onBack, onAddSample, onCelebrate }: P
     <div className="flex h-full flex-col px-6 pt-2">
       <div>
         <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-field px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-          Write DNA
+          WriteDNA
         </div>
         <h2 className="mt-2 text-[20px] font-black tracking-tight">{stageLabel(dna.stage)}</h2>
         <p className="mt-1 text-[14px] text-muted-foreground">

@@ -22,7 +22,7 @@ const PLANS = [
     features: [
       "Resume upload and version history",
       "Resume Score with strengths and suggestions",
-      "Write DNA setup and writing samples",
+      "WriteDNA setup and writing samples",
       "Chrome extension with job page detection",
     ],
   },
@@ -44,10 +44,10 @@ const PLANS = [
 ];
 
 const CAPABILITIES = [
-  { icon: Wand2, title: "Answers from your own experience", body: "Every answer is written from the facts in your resume — never invented experience." },
+  { icon: Wand2, title: "Answers from your own experience", body: "Every answer is written from the facts in your resume, never invented experience." },
   { icon: Zap, title: "Autofill and Autofill All", body: "Aplyer fills the standard application details it already knows and asks you about anything new." },
   { icon: FileText, title: "Resume Score", body: "See which sections your resume covers and what to improve, scored on your device." },
-  { icon: PenLine, title: "Write DNA and Voice Card", body: "Your resume plus two qualifying writing samples teach Aplyer how you write." },
+  { icon: PenLine, title: "WriteDNA and Voice Card", body: "Your resume plus two qualifying writing samples teach Aplyer how you write." },
 ];
 
 function SubscriptionPage() {
