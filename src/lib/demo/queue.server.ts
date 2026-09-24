@@ -7,7 +7,7 @@
  * otherwise it goes back to 'queued' until the next reset without using up
  * a retry attempt.
  */
-import { missingSettings, spendAllows } from "./policy";
+import { countWords, missingSettings, spendAllows } from "./policy";
 import type { DemoStore, DemoRequestRow } from "./store";
 import type { DemoGenerator, DemoInput } from "./generate.server";
 import { DemoGenerationError } from "./generate.server";
@@ -22,9 +22,19 @@ export interface DemoQueueDeps {
   now?: () => number;
 }
 
-function isInput(p: unknown): p is DemoInput {
+function toInput(p: unknown): DemoInput | null {
   const o = p as Record<string, unknown> | null;
-  return !!o && typeof o.resume === "string" && typeof o.jobDescription === "string" && typeof o.question === "string";
+  if (!o || typeof o.resume !== "string" || typeof o.jobDescription !== "string" || typeof o.question !== "string") {
+    return null;
+  }
+  const ws = typeof o.writingSample === "string" && o.writingSample.trim() ? o.writingSample : null;
+  return {
+    resume: o.resume,
+    jobDescription: o.jobDescription,
+    question: o.question,
+    writingSample: ws,
+    writingSampleWordCount: countWords(ws),
+  };
 }
 
 export async function drainDemoQueue(
@@ -72,12 +82,12 @@ async function runOne(
     return;
   }
 
-  if (!isInput(job.payload)) {
+  const input = toInput(job.payload);
+  if (!input) {
     await store.update(job.id, { status: "failed", locked_at: null, last_error: "missing_payload" });
     tally.failed += 1;
     return;
   }
-  const input = job.payload;
 
   try {
     let answer = job.answer;

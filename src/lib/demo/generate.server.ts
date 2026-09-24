@@ -14,6 +14,11 @@ export interface DemoInput {
   resume: string;
   jobDescription: string;
   question: string;
+  /** Optional writing sample, exact text as submitted, or null. Both future
+   * comparison sides receive this same value. Not sent to any AI in Step 2. */
+  writingSample: string | null;
+  /** Deterministic word count of writingSample (0 when null). */
+  writingSampleWordCount: number;
 }
 
 export interface DemoGenerationResult {

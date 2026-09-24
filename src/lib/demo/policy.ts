@@ -169,3 +169,26 @@ export const DEMO_COPY = {
   generic: "Something went wrong. Please try again.",
   unavailable: "The demo is temporarily unavailable. Please try again later.",
 } as const;
+
+/**
+ * Deterministic word count for the optional writing sample.
+ * A word is any whitespace-separated token containing at least one letter or
+ * digit (so stray punctuation like "-" or "..." is not counted).
+ */
+export function countWords(text: string | null | undefined): number {
+  if (!text) return 0;
+  let n = 0;
+  for (const tok of text.split(/\s+/)) if (/[\p{L}\p{N}]/u.test(tok)) n += 1;
+  return n;
+}
+
+/**
+ * Optional writing sample: kept EXACTLY as typed (no trimming, rewriting or
+ * cleaning). Missing, null, or whitespace-only becomes null. Any non-string
+ * value is invalid (returns undefined).
+ */
+export function normalizeWritingSample(v: unknown): string | null | undefined {
+  if (v === undefined || v === null) return null;
+  if (typeof v !== "string") return undefined;
+  return v.trim() ? v : null;
+}
