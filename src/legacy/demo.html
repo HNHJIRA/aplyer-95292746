@@ -649,14 +649,14 @@
     <div class="panel-head">
       <div class="panel-num">1</div>
       <div class="panel-title">Your Resume</div>
-      <div class="panel-sub">paste or upload .pdf / .txt</div>
+      <div class="panel-sub">paste or upload .pdf / .docx / .txt</div>
     </div>
     <div class="panel-body">
       <div class="upload-zone" id="uploadZone">
-        <input type="file" accept=".txt,.pdf" onchange="handleFile(event)" id="fileInput"/>
+        <input type="file" accept=".txt,.pdf,.docx" onchange="handleFile(event)" id="fileInput"/>
         <div class="upload-icon">📄</div>
         <div class="upload-title">Drop your resume here</div>
-        <div class="upload-hint">.pdf or .txt file · or paste below</div>
+        <div class="upload-hint">.pdf, .docx or .txt file · or paste below</div>
       </div>
       <div class="upload-success" id="uploadSuccess">
         <span style="color:var(--green);font-size:18px">✓</span>
@@ -714,6 +714,18 @@
         </div>
       </div>
       <textarea id="customQ" class="custom-q" placeholder="Type your application question here..." rows="3" style="display:none;"></textarea>
+    </div>
+  </div>
+
+  <!-- WRITING SAMPLE (optional) -->
+  <div class="panel" style="grid-column: 1 / -1;">
+    <div class="panel-head">
+      <div class="panel-title">4, Something you have written</div>
+      <div class="panel-sub">paste a cover letter or a few sentences from anything.</div>
+    </div>
+    <div class="panel-body">
+      <textarea id="writingSample" aria-label="4, Something you have written" placeholder="Paste a cover letter, an email you sent, a post, anything you actually wrote." rows="8"></textarea>
+      <div class="upload-hint" style="margin-top:8px;">This is how Aplyer learns your voice. Skip it and you still get an answer, it just will not sound like you.</div>
     </div>
   </div>
 
@@ -836,7 +848,8 @@
         text = await extractPdfText(file);
         if (!text) throw new Error('No selectable text found in this PDF');
       } else {
-        text = await file.text();
+        text = await window.AplyerAnswer.extractResumeFromBytes(new Uint8Array(await file.arrayBuffer()));
+        if (!text) throw new Error('This file could not be read as resume text');
       }
       resumeContent = text;
       document.getElementById('resumeText').value = text;
@@ -912,6 +925,7 @@
     const resume = document.getElementById('resumeText').value.trim();
     const jobDesc = document.getElementById('jobDesc').value.trim();
     const question = getQuestion();
+    const writingSample = document.getElementById('writingSample').value;
 
     const email = (document.getElementById('demoEmail').value || '').trim();
     if (!email) { showError('Please enter your email address to run the demo.'); return; }
@@ -940,6 +954,7 @@
         resume: resume,
         jobDescription: jobDesc,
         question: question,
+        writingSample: writingSample,
         onDelta: function (preview) {
           document.getElementById('outputQ').textContent = question;
           renderAnswer(preview);

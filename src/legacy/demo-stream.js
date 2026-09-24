@@ -131,6 +131,8 @@
       resume: opts.resume,
       jobDescription: opts.jobDescription,
       question: opts.question,
+      // Optional; sent exactly as typed, null when empty.
+      writingSample: typeof opts.writingSample === 'string' && opts.writingSample.trim() ? opts.writingSample : null,
     });
   }
 
@@ -181,7 +183,107 @@
     }
   }
 
+  /* ---------- Resume file reading (readable text only, never markup) ---------- */
+
+  // Same DOCX -> text transform as src/lib/resume/extract.ts (extractDocx).
+  function docxXmlToText(xml) {
+    return String(xml)
+      .replace(/<\/w:p>/g, '\n')
+      .replace(/<w:tab[^>]*\/>/g, ' ')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+  }
+
+  // Same cleanup as src/lib/resume/extract.ts.
+  function cleanupText(text) {
+    return String(text)
+      .replace(/\r\n?/g, '\n')
+      .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, ' ')
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  function isZip(b) { return b.length > 3 && b[0] === 0x50 && b[1] === 0x4b && b[2] === 3 && b[3] === 4; }
+
+  // Text that is really markup or a binary container, never shown as a resume.
+  function looksLikeMarkupOrBinary(text) {
+    var head = String(text || '').slice(0, 4000);
+    if (!head.trim()) return true;
+    if (/^\s*%PDF-/.test(head) || head.indexOf('PK\u0003\u0004') === 0) return true;
+    if (/<\?xml|<w:document|<w:body|<\/w:p>|xmlns:w=/.test(head)) return true;
+    if (/<(html|body|div|p|span|table)[\s>]/i.test(head) && /<\/(html|body|div|p|span|table)>/i.test(head)) return true;
+    var bad = 0;
+    for (var i = 0; i < head.length; i++) {
+      var c = head.charCodeAt(i);
+      if (c === 0xfffd || (c < 32 && c !== 9 && c !== 10 && c !== 13)) bad++;
+    }
+    return bad / head.length > 0.02;
+  }
+
+  async function inflateRaw(data) {
+    var ds = new DecompressionStream('deflate-raw');
+    var stream = new Blob([data]).stream().pipeThrough(ds);
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+
+  // Minimal ZIP reader (central directory) for word/document.xml.
+  async function readZipEntry(bytes, name) {
+    var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    var eocd = -1;
+    for (var i = bytes.length - 22; i >= Math.max(0, bytes.length - 66000); i--) {
+      if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) return null;
+    var count = dv.getUint16(eocd + 10, true);
+    var p = dv.getUint32(eocd + 16, true);
+    var dec = new TextDecoder();
+    for (var n = 0; n < count && p + 46 <= bytes.length; n++) {
+      if (dv.getUint32(p, true) !== 0x02014b50) return null;
+      var method = dv.getUint16(p + 10, true);
+      var csize = dv.getUint32(p + 20, true);
+      var nlen = dv.getUint16(p + 28, true);
+      var elen = dv.getUint16(p + 30, true);
+      var clen = dv.getUint16(p + 32, true);
+      var lho = dv.getUint32(p + 42, true);
+      var fname = dec.decode(bytes.subarray(p + 46, p + 46 + nlen));
+      if (fname === name) {
+        var start = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true);
+        var data = bytes.subarray(start, start + csize);
+        if (method === 0) return dec.decode(data);
+        if (method === 8) return dec.decode(await inflateRaw(data));
+        return null;
+      }
+      p += 46 + nlen + elen + clen;
+    }
+    return null;
+  }
+
+  /**
+   * Turns a non-PDF resume file's bytes into readable text.
+   * DOCX (even when renamed) is unzipped and its text extracted; plain text is
+   * decoded; anything that is still markup/binary is refused (null) so the
+   * visitor never sees code in the resume box.
+   */
+  async function extractResumeFromBytes(bytes) {
+    if (isZip(bytes)) {
+      var xml = await readZipEntry(bytes, 'word/document.xml');
+      if (xml == null) return null;
+      var t = cleanupText(docxXmlToText(xml));
+      return t && !looksLikeMarkupOrBinary(t) ? t : null;
+    }
+    var text = cleanupText(new TextDecoder().decode(bytes));
+    return looksLikeMarkupOrBinary(text) ? null : text;
+  }
+
   var api = {
+    extractResumeFromBytes: extractResumeFromBytes,
+    looksLikeMarkupOrBinary: looksLikeMarkupOrBinary,
+    docxXmlToText: docxXmlToText,
     streamAnswer: streamAnswer,
     fetchAnswerJson: fetchAnswerJson,
     getAnswer: getAnswer,
