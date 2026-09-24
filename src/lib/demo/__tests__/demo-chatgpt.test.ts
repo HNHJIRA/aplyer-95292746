@@ -204,55 +204,144 @@ describe("OpenAI provider (server-side)", () => {
     expect(f).not.toHaveBeenCalled();
   });
 
-  it("sends the configured model and the exact prompt as the only message, streams, and records usage", async () => {
+  const okBody = (o: Record<string, unknown> = {}) =>
+    new Response(
+      JSON.stringify({
+        model: "served-model-2026",
+        output: [{ type: "message", content: [{ type: "output_text", text: "Hello." }] }],
+        usage: { input_tokens: 42, output_tokens: 7 },
+        ...o,
+      }),
+      { status: 200, headers: { "x-request-id": "req_abc" } },
+    );
+  const errBody = (status: number, code = "", headers: Record<string, string> = {}) =>
+    new Response(JSON.stringify({ error: { code, message: "secret detail" } }), { status, headers: { "x-request-id": "req_err", ...headers } });
+  const setEnv = () => {
     process.env.DEMO_OPENAI_MODEL = "configured-model";
     process.env.OPENAI_API_KEY = "sk-test";
-    const frames = [
-      'data: {"choices":[{"delta":{"content":"Hel"}}]}',
-      'data: {"choices":[{"delta":{"content":"lo."}}]}',
-      'data: {"choices":[],"usage":{"prompt_tokens":42,"completion_tokens":7}}',
-      "data: [DONE]",
-    ].join("\n\n");
-    const f = vi.fn(async () => new Response(frames + "\n\n", { status: 200 }));
+  };
+
+  it("uses the Responses API with exactly model, input and max_output_tokens 500", async () => {
+    setEnv();
+    const log = vi.spyOn(console, "info").mockImplementation(() => {});
+    const f = vi.fn(async () => okBody());
     vi.stubGlobal("fetch", f);
-    const deltas: string[] = [];
-    const r = await generateChatgptDemoAnswer(input, { onDelta: (t) => deltas.push(t) });
+    const r = await generateChatgptDemoAnswer(input);
     const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toBe("https://api.openai.com/v1/chat/completions");
+    expect(url).toBe("https://api.openai.com/v1/responses");
     const body = JSON.parse(init.body as string);
-    expect(body.model).toBe("configured-model");
-    expect(body.messages).toEqual([{ role: "user", content: buildChatgptPrompt(input) }]);
-    expect(body.stream).toBe(true);
-    expect((init.headers as Record<string, string>).Authorization).toBe("Bearer sk-test");
+    expect(body).toEqual({ model: "configured-model", input: buildChatgptPrompt(input), max_output_tokens: 500 });
+    expect(init.signal).toBeInstanceOf(AbortSignal);
     expect(r.text).toBe("Hello.");
-    expect(r.prompt).toBe(body.messages[0].content);
-    expect(deltas.join("")).toBe("Hello.");
+    expect(r.prompt).toBe(body.input);
+    expect(r.model).toBe("served-model-2026");
     expect(r.calls).toEqual([
       { provider: "openai", model: "configured-model", operation: "chatgpt_answer", usage: { inputTokens: 42, outputTokens: 7 } },
     ]);
-    // No model reported by the provider: falls back to the configured id that was sent.
-    expect(r.model).toBe("configured-model");
+    const logged = log.mock.calls.flat().join(" ");
+    expect(logged).toContain("request_id=req_abc");
+    expect(logged).not.toContain("sk-test");
+    expect(logged).not.toContain("Bearer");
+    expect(logged).not.toContain(body.input);
+    expect(JSON.stringify(r)).not.toContain("sk-test");
+    expect(JSON.stringify(r)).not.toContain("req_abc");
   });
 
-  it("reports the model id OpenAI says served the answer, and follows configuration changes", async () => {
+  it("falls back to the configured model and follows configuration changes", async () => {
+    vi.spyOn(console, "info").mockImplementation(() => {});
     process.env.OPENAI_API_KEY = "sk-test";
-    for (const [cfg, served] of [["model-a", "model-a-2026-01-01"], ["model-b", "model-b-2026-02-02"]]) {
-      process.env.DEMO_OPENAI_MODEL = cfg;
-      const frames = [`data: {"model":"${served}","choices":[{"delta":{"content":"Hi."}}]}`, "data: [DONE]"].join("\n\n");
-      vi.stubGlobal("fetch", vi.fn(async () => new Response(frames + "\n\n", { status: 200 })));
-      const r = await generateChatgptDemoAnswer(input);
-      expect(r.model).toBe(served);
-      expect(JSON.stringify(r)).not.toContain("sk-test");
+    process.env.DEMO_OPENAI_MODEL = "model-a";
+    vi.stubGlobal("fetch", vi.fn(async () => okBody({ model: undefined })));
+    expect((await generateChatgptDemoAnswer(input)).model).toBe("model-a");
+    process.env.DEMO_OPENAI_MODEL = "model-b";
+    vi.stubGlobal("fetch", vi.fn(async () => okBody({ model: "model-b-2026-02-02" })));
+    expect((await generateChatgptDemoAnswer(input)).model).toBe("model-b-2026-02-02");
+  });
+
+  it("retries a server error exactly once and returns the retry's answer", async () => {
+    setEnv();
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    const f = vi.fn().mockResolvedValueOnce(errBody(500)).mockResolvedValueOnce(okBody());
+    vi.stubGlobal("fetch", f);
+    const r = await generateChatgptDemoAnswer(input);
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(r.text).toBe("Hello.");
+    expect(r.calls).toHaveLength(1);
+  });
+
+  it("stops after two failed attempts (never three)", async () => {
+    setEnv();
+    const log = vi.spyOn(console, "info").mockImplementation(() => {});
+    const f = vi.fn(async () => errBody(503));
+    vi.stubGlobal("fetch", f);
+    await expect(generateChatgptDemoAnswer(input)).rejects.toMatchObject({ code: "provider_error", busy: true });
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(log.mock.calls.flat().join(" ")).toContain("request_id=req_err");
+  });
+
+  it("rate limit retries once honouring retry-after", async () => {
+    setEnv();
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    vi.useFakeTimers();
+    const f = vi.fn().mockResolvedValueOnce(errBody(429, "rate_limit_exceeded", { "retry-after": "2" })).mockResolvedValueOnce(okBody());
+    vi.stubGlobal("fetch", f);
+    const p = generateChatgptDemoAnswer(input);
+    await vi.advanceTimersByTimeAsync(1900);
+    expect(f).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(200);
+    expect((await p).text).toBe("Hello.");
+    expect(f).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
+
+  it("does not retry quota exhaustion, input too long, or other 4xx", async () => {
+    setEnv();
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    for (const [status, code] of [[429, "insufficient_quota"], [400, "context_length_exceeded"], [401, ""]] as const) {
+      const f = vi.fn(async () => errBody(status, code));
+      vi.stubGlobal("fetch", f);
+      await expect(generateChatgptDemoAnswer(input)).rejects.toMatchObject({ code: "provider_error", busy: false });
+      expect(f).toHaveBeenCalledTimes(1);
     }
   });
 
-  it("maps provider errors and empty output to safe codes", async () => {
-    process.env.DEMO_OPENAI_MODEL = "m";
-    process.env.OPENAI_API_KEY = "k";
-    vi.stubGlobal("fetch", vi.fn(async () => new Response('{"error":{"message":"secret detail"}}', { status: 500 })));
-    await expect(generateChatgptDemoAnswer(input)).rejects.toMatchObject({ code: "provider_error", busy: true });
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("data: [DONE]\n\n", { status: 200 })));
-    await expect(generateChatgptDemoAnswer(input)).rejects.toMatchObject({ code: "empty_output" });
+  it("times out at 25 seconds, does not retry, and records the possibly-billed attempt", async () => {
+    setEnv();
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    vi.useFakeTimers();
+    const f = vi.fn((_u: string, init: RequestInit) =>
+      new Promise<Response>((_, rej) => init.signal!.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError")))),
+    );
+    vi.stubGlobal("fetch", f);
+    const p = generateChatgptDemoAnswer(input);
+    const assertion = expect(p).rejects.toMatchObject({ code: "provider_error", calls: [{ usage: {} }] });
+    await vi.advanceTimersByTimeAsync(24_999);
+    expect(vi.getTimerCount()).toBe(1);
+    await vi.advanceTimersByTimeAsync(1);
+    await assertion;
+    expect(f).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+    vi.useRealTimers();
+  });
+
+  it("clears the timeout after a successful response", async () => {
+    setEnv();
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    vi.useFakeTimers();
+    vi.stubGlobal("fetch", vi.fn(async () => okBody()));
+    await generateChatgptDemoAnswer(input);
+    expect(vi.getTimerCount()).toBe(0);
+    vi.useRealTimers();
+  });
+
+  it("treats an empty answer as a safe failure but still accounts for the paid call", async () => {
+    setEnv();
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    vi.stubGlobal("fetch", vi.fn(async () => okBody({ output: [] })));
+    await expect(generateChatgptDemoAnswer(input)).rejects.toMatchObject({
+      code: "empty_output",
+      calls: [{ usage: { inputTokens: 42, outputTokens: 7 } }],
+    });
   });
 });
 
@@ -393,8 +482,11 @@ describe("static safety", () => {
       expect(s).not.toMatch(/OPENAI_API_KEY|api\.openai\.com|Here is a job I am applying to/);
     }
   });
-  it("OpenAI module logs no prompt/answer/input content", () => {
-    expect(read("src/lib/demo/openai.server.ts")).not.toMatch(/console\./);
+  it("OpenAI module logs only attempt, status and request id", () => {
+    const logs = read("src/lib/demo/openai.server.ts").match(/console\.[a-z]+\([^;]*;/g) ?? [];
+    expect(logs).toEqual([
+      "console.info(`[demo-openai] attempt=${attempt} status=${status} request_id=${requestId ?? \"none\"}`);",
+    ]);
   });
   it("Aplyer pipeline is unchanged and the old direct Claude demo path is not reintroduced", () => {
     const g = read("src/lib/demo/generate.server.ts");
