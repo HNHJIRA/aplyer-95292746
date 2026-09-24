@@ -229,8 +229,9 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
       return respond(request, { status: "queued", message: DEMO_COPY.queued }, 202, setCookie);
     }
 
-    // 5. Run now. The payload is not kept once generation starts.
-    await deps.store.update(row.id, { status: "running", payload: null });
+    // 5. Run now. The original inputs stay in the secure request row until
+    // processing ends (completed or failed), then are cleared.
+    await deps.store.update(row.id, { status: "running" });
 
     const finish = async (result: DemoGenerationResult) => {
       let cost: number | null = null;
@@ -241,6 +242,7 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
       }
       await deps.store.update(row.id, {
         status: "completed",
+        payload: null,
         answer: result.text,
         estimated_cost_usd: cost,
         cost_status: cost === null ? "unpriced" : "priced",
@@ -251,7 +253,7 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
       const code = e instanceof DemoGenerationError ? e.code : e instanceof Error ? e.name : "unknown";
       await recordFailedCalls(deps.store, row.id, e);
       await deps.store
-        .update(row.id, { status: "failed", last_error: code.slice(0, 200) })
+        .update(row.id, { status: "failed", payload: null, last_error: code.slice(0, 200) })
         .catch(() => undefined);
       return e instanceof DemoGenerationError && e.busy
         ? "The demo is busy. Please try again in a moment."

@@ -9,7 +9,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { drainWaitlistJobs } from "@/lib/waitlist/jobs.server";
 import { drainDemoQueue } from "@/lib/demo/queue.server";
 import { dbDemoStore } from "@/lib/demo/store.server";
-import { generateLegacyDemoAnswer } from "@/lib/demo/generate.server";
+import { generateAplyerDemoAnswer } from "@/lib/demo/generate.server";
 import { sendDemoResultEmail } from "@/lib/demo/result-email.server";
 
 function authorized(request: Request): boolean {
@@ -34,7 +34,7 @@ async function handle(request: Request): Promise<Response> {
   // Same schedule also drains held demo requests (cap/limit/unconfigured).
   const demo = await drainDemoQueue({
     store: dbDemoStore,
-    generate: generateLegacyDemoAnswer,
+    generate: generateAplyerDemoAnswer,
     sendResult: sendDemoResultEmail,
   });
   return new Response(JSON.stringify({ ok: true, ...result, demo }), {
