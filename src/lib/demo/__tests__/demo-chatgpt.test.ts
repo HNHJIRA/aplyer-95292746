@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { handleDemoRequest } from "../handler.server";
 import { drainDemoQueue } from "../queue.server";
-import { buildChatgptPrompt, generateChatgptDemoAnswer, type ChatgptGenerator } from "../openai.server";
+import { buildChatgptPrompt, DEMO_CHATGPT_PROMPT_TEMPLATE, generateChatgptDemoAnswer, type ChatgptGenerator } from "../openai.server";
 import { DemoGenerationError, type DemoGenerator, type DemoInput } from "../generate.server";
 import type { AdmitInput, CostEventInput, DemoRequestRow, DemoStore } from "../store";
 import type { DemoSettings } from "../policy";
