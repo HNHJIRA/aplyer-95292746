@@ -318,7 +318,7 @@ describe("queued two-sided demo", () => {
     await handleDemoRequest(req({ ...INPUT, writingSample: "Sample text." }), deps(store));
     expect(rows[0].status).toBe("queued");
     const settingsStore = { ...store, spendSnapshot: async () => ({ settings: OPEN, spend: { spent_today_usd: 0, unpriced_today: 0, inflight: 1, next_reset: "2099-01-01T00:00:00Z", day_start: null } }) };
-    const sendResult = vi.fn(async () => ({ ok: false, errorCode: "x" }));
+    const sendResult = vi.fn(async (..._a: unknown[]): Promise<{ ok: boolean; errorCode?: string }> => ({ ok: false, errorCode: "x" }));
     const q = { store: settingsStore, generate: generate as unknown as DemoGenerator, generateChatgpt: chatgpt as unknown as ChatgptGenerator, sendResult };
     const t1 = await drainDemoQueue(q);
     expect(t1.deferred).toBe(0);
