@@ -43,7 +43,7 @@ export function buildChatgptPrompt(input: Pick<DemoInput, "question" | "jobDescr
     .replace("[question]", () => input.question)
     .replace("[job description]", () => input.jobDescription)
     .replace("[resume]", () => input.resume)
-    .replace("\n[writing sample, when provided]", hasSample ? () => "\n" + (input.writingSample as string) : "");
+    .replace("\n[writing sample, when provided]", () => (hasSample ? "\n" + (input.writingSample as string) : ""));
 }
 
 export interface ChatgptResult {
