@@ -180,6 +180,8 @@ export interface ChatgptView {
   answer?: string;
   /** Exact string that was sent to OpenAI (only when completed). */
   prompt?: string;
+  /** Non-secret OpenAI model id that produced this answer (only when completed, when known). */
+  model?: string;
   error?: string;
 }
 
@@ -269,8 +271,9 @@ export async function runChatgptSide(
       console.error(`[demo] openai cost record failed request=${id}`, e instanceof Error ? e.name : "unknown");
     }
     await store.update(id, { chatgpt_answer: r.text, chatgpt_prompt: r.prompt, chatgpt_status: "completed" });
-    const view: ChatgptView = { status: "completed", answer: r.text, prompt: r.prompt };
-    send?.("chatgpt_final", { answer: r.text, prompt: r.prompt });
+    const model = typeof r.model === "string" && r.model ? r.model : undefined;
+    const view: ChatgptView = { status: "completed", answer: r.text, prompt: r.prompt, ...(model ? { model } : {}) };
+    send?.("chatgpt_final", { answer: r.text, prompt: r.prompt, ...(model ? { model } : {}) });
     return { view, cost, calls: r.calls.length };
   } catch (e) {
     const notConfigured = e instanceof DemoGenerationError && e.code === "not_configured";

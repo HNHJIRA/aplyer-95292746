@@ -36,6 +36,8 @@ export interface ChatgptResult {
   text: string;
   prompt: string;
   calls: DemoAiCall[];
+  /** Model that served this answer: OpenAI's reported id, else the configured id sent. */
+  model: string;
 }
 
 export interface ChatgptHooks {
@@ -87,6 +89,7 @@ export const generateChatgptDemoAnswer: ChatgptGenerator = async (input, hooks =
   }
 
   let text = "";
+  let servedModel = "";
   let sawError = false;
   const reader = res.body.getReader();
   const dec = new TextDecoder();
@@ -105,6 +108,7 @@ export const generateChatgptDemoAnswer: ChatgptGenerator = async (input, hooks =
         if (!data || data === "[DONE]") continue;
         let j: {
           error?: unknown;
+          model?: unknown;
           choices?: Array<{ delta?: { content?: string } }>;
           usage?: { prompt_tokens?: number; completion_tokens?: number } | null;
         };
@@ -114,6 +118,7 @@ export const generateChatgptDemoAnswer: ChatgptGenerator = async (input, hooks =
           continue;
         }
         if (j.error) sawError = true;
+        if (!servedModel && typeof j.model === "string" && j.model.trim()) servedModel = j.model.trim().slice(0, 100);
         const piece = j.choices?.[0]?.delta?.content;
         if (typeof piece === "string" && piece) {
           text += piece;
@@ -129,5 +134,5 @@ export const generateChatgptDemoAnswer: ChatgptGenerator = async (input, hooks =
   record();
   if (sawError) throw new DemoGenerationError("provider_error", true, calls);
   if (!text.trim()) throw new DemoGenerationError("empty_output", false, calls);
-  return { text, prompt, calls };
+  return { text, prompt, calls, model: servedModel || cfg.model };
 };
