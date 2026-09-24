@@ -128,11 +128,21 @@ export function extractResponsesText(body: unknown): string {
   return out;
 }
 
+/** The model identifier OpenAI reports in its response body, or "" when absent. */
+function readReturnedModel(body: unknown): string {
+  const m = (body as { model?: unknown } | null)?.model;
+  return typeof m === "string" && m.trim() ? m.trim().slice(0, 100) : "";
+}
+
 function logAttempt(attempt: number, a: Attempt) {
-  // Request id + status only. Never the key, headers, prompt or candidate text.
+  // Attempt number, status, request id and the model OpenAI actually returned.
+  // Never the key, Authorization header, prompt, candidate text or answer.
   const requestId = a.kind === "ok" || a.kind === "http" ? a.requestId : null;
   const status = a.kind === "ok" ? 200 : a.kind === "http" ? a.status : a.kind;
-  console.info(`[demo-openai] attempt=${attempt} status=${status} request_id=${requestId ?? "none"}`);
+  const returnedModel = a.kind === "ok" ? readReturnedModel(a.body) : "";
+  console.info(
+    `[demo-openai] attempt=${attempt} status=${status} request_id=${requestId ?? "none"} returned_model=${returnedModel || "unavailable"}`,
+  );
 }
 
 const QUOTA_CODES = new Set(["insufficient_quota", "billing_hard_limit_reached"]);
