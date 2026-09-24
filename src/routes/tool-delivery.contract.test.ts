@@ -25,7 +25,8 @@ describe("/resume-audit delivery contract", () => {
 
   it("requests progressive delivery through the shared helper", () => {
     expect(audit).toContain("requestToolResult<Audit>");
-    expect(audit).toContain("setPreview(p)");
+    expect(audit).toContain("onPartial:");
+    expect(audit).toContain("setAudit(mergeStreamedOverallTake(data, streamed))");
   });
 
   it("only sets the audit from the final result", () => {
