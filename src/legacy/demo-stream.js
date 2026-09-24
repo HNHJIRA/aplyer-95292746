@@ -57,6 +57,7 @@
     var onDelta = opts.onDelta || function () {};
     var onChatgpt = opts.onChatgpt || function () {};
     var onChatgptDelta = opts.onChatgptDelta || function () {};
+    var onScoreboard = opts.onScoreboard || function () {};
     var gptPreview = '';
 
     var response = await fetchImpl(base + '/api/public/demo?stream=1', {
@@ -122,6 +123,9 @@
             status: payload && payload.status === 'not_configured' ? 'not_configured' : 'failed',
             error: (payload && typeof payload.error === 'string' && payload.error) || 'The ChatGPT answer could not be generated this time.',
           });
+        } else if (frame.event === 'scoreboard') {
+          // Sent once, complete, after both answers. Never partial.
+          if (payload && payload.status === 'shown' && Array.isArray(payload.markers) && payload.markers.length) onScoreboard(payload);
         } else if (frame.event === 'final') {
           var answer = textOf(payload);
           if (answer && answer.trim()) final = answer;
@@ -168,6 +172,9 @@
     }
     if (data && data.chatgpt && typeof data.chatgpt === 'object' && opts && opts.onChatgpt) {
       opts.onChatgpt(data.chatgpt);
+    }
+    if (data && data.scoreboard && data.scoreboard.status === 'shown' && Array.isArray(data.scoreboard.markers) && opts && opts.onScoreboard) {
+      opts.onScoreboard(data.scoreboard);
     }
     if (response.ok && data && data.answer) return String(data.answer);
     if (data && (data.status === 'queued' || data.status === 'processing') && data.message) {

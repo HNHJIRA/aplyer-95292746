@@ -812,6 +812,30 @@
     </div>
   </div>
 
+  <!-- MEASURED COMPARISON (only when valid; never streamed) -->
+  <div class="output-wrap" id="sbWrap">
+    <div class="output-panel">
+      <div class="output-head">
+        <div class="output-left">
+          <div class="output-title">How each answer compares with your writing</div>
+        </div>
+      </div>
+      <div class="output-body">
+        <p id="sbWhy" style="font-size:14px;color:#555555;margin:0 0 14px;">These markers were picked from the writing you pasted, before either answer was written, because they are where your writing stands out most from a typical writer. The same markers were then measured on both answers. A smaller distance means closer to how you write.</p>
+        <div style="overflow-x:auto;">
+          <table id="sbTable" style="width:100%;border-collapse:collapse;font-size:14px;">
+            <thead><tr style="text-align:left;border-bottom:1px solid var(--border);">
+              <th style="padding:8px 6px;">Marker</th><th style="padding:8px 6px;">Your writing</th><th style="padding:8px 6px;">Aplyer</th><th style="padding:8px 6px;">ChatGPT</th>
+            </tr></thead>
+            <tbody id="sbBody"></tbody>
+          </table>
+        </div>
+        <p id="sbResult" style="margin:16px 0 0;font-size:15px;font-weight:600;"></p>
+        <p id="sbMethod" style="margin:6px 0 0;font-size:12px;color:#555555;">Overall distance is the average gap across the markers above, scaled so markers in different units count equally.</p>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <footer>
@@ -946,6 +970,34 @@
     document.getElementById('outputText').innerHTML = formatted || `<p>${escapeHtml(value)}</p>`;
   }
 
+
+  // Measured comparison. Rendered only from a complete server scoreboard.
+  function resetScoreboard() {
+    document.getElementById('sbWrap').classList.remove('show');
+    document.getElementById('sbBody').innerHTML = '';
+    document.getElementById('sbResult').textContent = '';
+  }
+  function fmtNum(n) { return (Math.round(Number(n) * 100) / 100).toString(); }
+  function onScoreboard(sb) {
+    if (!sb || sb.status !== 'shown' || !Array.isArray(sb.markers) || !sb.markers.length) return resetScoreboard();
+    const rows = sb.markers.map(function (m) {
+      const u = m.unit ? ' <span style="color:#555555;font-size:12px;">' + escapeHtml(m.unit) + '</span>' : '';
+      return '<tr style="border-bottom:1px solid var(--border);vertical-align:top;">' +
+        '<td style="padding:10px 6px;"><div style="font-weight:600;">' + escapeHtml(m.label) + '</div><div style="font-size:12px;color:#555555;margin-top:2px;">' + escapeHtml(m.explanation) + '</div></td>' +
+        '<td style="padding:10px 6px;white-space:nowrap;">' + fmtNum(m.candidateValue) + u + '</td>' +
+        '<td style="padding:10px 6px;white-space:nowrap;">' + fmtNum(m.aplyerValue) + u + '<div style="font-size:12px;color:#555555;">distance ' + fmtNum(m.aplyerDistance) + '</div></td>' +
+        '<td style="padding:10px 6px;white-space:nowrap;">' + fmtNum(m.chatgptValue) + u + '<div style="font-size:12px;color:#555555;">distance ' + fmtNum(m.chatgptDistance) + '</div></td>' +
+        '</tr>';
+    }).join('');
+    document.getElementById('sbBody').innerHTML = rows;
+    const a = sb.aggregate || {};
+    const closer = a.closer === 'aplyer' ? 'The Aplyer answer is closer to your writing profile on these markers.'
+      : a.closer === 'chatgpt' ? 'The ChatGPT answer is closer to your writing profile on these markers.'
+      : 'Both answers are the same distance from your writing profile on these markers.';
+    document.getElementById('sbResult').textContent = closer + ' Overall distance: Aplyer ' + fmtNum(a.aplyerDistance) + ', ChatGPT ' + fmtNum(a.chatgptDistance) + '.';
+    document.getElementById('sbWrap').classList.add('show');
+  }
+
   // ChatGPT side. The prompt shown is exactly the string the server sent.
   let gptPromptText = '';
   function resetGpt() {
@@ -1040,6 +1092,7 @@
         question: question,
         writingSample: writingSample,
         onChatgpt: onGpt,
+        onScoreboard: onScoreboard,
         onChatgptDelta: onGptDelta,
         onDelta: function (preview) {
           document.getElementById('outputQ').textContent = question;
