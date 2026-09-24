@@ -68,6 +68,10 @@ export default function AuditResult({ audit }: { audit: Audit }) {
   const redFlags = audit.redFlags ?? [];
   const strengths = strengthPoints(audit);
   const overall = overallTakeList(audit);
+  // `closing` is only a legacy alias of `topPriority`. It used to render a
+  // second grey box repeating the Top Priority text; now it only fills the
+  // single Top Priority section when an old payload has no canonical value.
+  const priority = (audit.topPriority && audit.topPriority.trim()) || (audit.closing && audit.closing.trim()) || "";
 
   return (
     <div style={{ minWidth: 0, fontFamily: "'Lato', Arial, sans-serif" }}>
@@ -170,7 +174,7 @@ export default function AuditResult({ audit }: { audit: Audit }) {
         </section>
       )}
 
-      {audit.topPriority && (
+      {priority && (
         <section data-testid="top-priority">
           <h2 style={sectionHeading}>Top Priority</h2>
           <div
@@ -185,27 +189,11 @@ export default function AuditResult({ audit }: { audit: Audit }) {
               color: TEXT,
             }}
           >
-            {audit.topPriority}
+            {priority}
           </div>
         </section>
       )}
 
-      {audit.closing && (
-        <p
-          data-testid="closing"
-          style={{
-            marginTop: 36,
-            padding: "22px 24px",
-            background: "#f4f6f9",
-            borderRadius: 12,
-            color: TEXT,
-            fontSize: 17,
-            lineHeight: 1.65,
-          }}
-        >
-          {audit.closing}
-        </p>
-      )}
     </div>
   );
 }
