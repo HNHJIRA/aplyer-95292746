@@ -1080,6 +1080,8 @@
       document.getElementById('outputText').innerHTML = '';
       showError(err.message || 'Something went wrong. Please try again.');
     } finally {
+      // A ChatGPT preview with no completed answer is never left on screen.
+      if (document.getElementById('gptWrap').classList.contains('writing')) resetGpt();
       btn.classList.remove('loading');
       btn.disabled = false;
       document.getElementById('loadingOverlay').classList.remove('show');
