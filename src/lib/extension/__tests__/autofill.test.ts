@@ -231,7 +231,7 @@ describe("background autofill routing", () => {
   });
 
   it("restricts autofill to supported adapters", () => {
-    expect(bg).toMatch(/SUPPORTED_ADAPTERS = new Set\(\["greenhouse", "lever", "workday"\]\)/);
+    expect(bg).toMatch(/SUPPORTED_ADAPTERS = new Set\(\["greenhouse", "lever", "workday", "generic"\]\)/);
   });
 
   it("clears the stored target when the tab closes", () => {
