@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { toReadableParagraphs } from "@/lib/text/paragraphs";
 import { useEffect, useRef, useState } from "react";
 import { apiUrl } from "@/lib/api-base";
 import { requestToolResult, ToolRequestError, GENERIC_TOOL_ERROR } from "@/lib/tool-stream";
@@ -741,16 +742,21 @@ function ResumeMatchPage() {
               </div>
 
               {report.summary && (
-                <p
-                  style={{
-                    marginTop: 18,
-                    fontSize: 17,
-                    lineHeight: 1.55,
-                    color: TEXT,
-                  }}
-                >
-                  {report.summary}
-                </p>
+                <div data-testid="match-summary" style={{ marginTop: 18 }}>
+                  {toReadableParagraphs(report.summary).map((para, i) => (
+                    <p
+                      key={i}
+                      style={{
+                        margin: i === 0 ? 0 : "14px 0 0",
+                        fontSize: 17,
+                        lineHeight: 1.55,
+                        color: TEXT,
+                      }}
+                    >
+                      {para}
+                    </p>
+                  ))}
+                </div>
               )}
 
               {/* Matching skills */}
