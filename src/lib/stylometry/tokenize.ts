@@ -59,7 +59,7 @@ const TOKEN_RE = new RegExp(
   String.raw`(?<url>\u0000U\d+\u0000)|(?<email>\u0000E\d+\u0000)|(?<num>\p{N}+(?:[.,]\p{N}+)*%?)|(?<word>${WORD_PART}(?:-${WORD_PART})*)|(?<end>[.!?…]+)|(?<nl>\n)`,
   "gu",
 );
-const ABBREV = new Set(["mr", "mrs", "ms", "dr", "prof", "sr", "jr", "st", "vs", "etc", "e.g", "i.e", "inc", "ltd", "co", "no", "approx", "dept"]);
+const ABBREV = new Set(["mr", "mrs", "ms", "dr", "prof", "sr", "jr", "st", "vs", "etc", "e.g", "i.e", "inc", "ltd", "co", "no", "approx", "dept", "e", "g"]);
 
 export function normWord(s: string): string {
   return s.normalize("NFC").toLowerCase().replace(APOS, "'");
@@ -131,7 +131,7 @@ export function tokenize(input: string): Tokenized {
       } else if (g.end) {
         const prev = cur[cur.length - 1];
         const next = line.slice(m.index + g.end.length);
-        const isAbbrev = g.end === "." && prev && ABBREV.has(prev.norm) && !/^\s*$/.test(next) && !/^\s+\p{Lu}/u.test(next) === true;
+        const isAbbrev = g.end === "." && !!prev && ABBREV.has(prev.norm) && !/^\s*$/.test(next);
         const boundary = /^(?:["'”’)\]]*)(?:\s|$)/u.test(next);
         if (boundary && !isAbbrev) closeSentence(g.end);
       }
