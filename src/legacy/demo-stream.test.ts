@@ -176,6 +176,7 @@ describe("demo answer streaming", () => {
     expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({
       ...input,
       email: "a@b.co",
+      writingSample: null,
       idempotencyKey: "k".repeat(20),
     });
   });
