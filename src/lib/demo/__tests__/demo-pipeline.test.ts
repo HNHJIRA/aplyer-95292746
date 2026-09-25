@@ -457,12 +457,13 @@ describe("Demo handler with the real pipeline", () => {
     expect(rows[0]).toMatchObject({ status: "completed", answer: CLEAN });
   });
 
-  it("duplicate submissions do not start another generation", async () => {
+  it("duplicate submissions (same submission key) do not start another generation", async () => {
     script();
     const { store } = makeStore(OPEN);
-    await post(store, body());
+    const key = "dup-key-abcdefgh-1234";
+    await post(store, body({ idempotencyKey: key }));
     const n = runPromptValidated.mock.calls.length;
-    await post(store, body());
+    await post(store, body({ idempotencyKey: key }));
     expect(runPromptValidated.mock.calls.length).toBe(n);
   });
 
