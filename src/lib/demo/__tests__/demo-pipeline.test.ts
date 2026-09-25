@@ -374,7 +374,7 @@ const post = (store: DemoStore, b: Record<string, unknown>, stream = false) =>
     new Request(`https://x.dev/api/public/demo${stream ? "?stream=1" : ""}`, {
       method: "POST",
       headers: { "content-type": "application/json", "cf-connecting-ip": "1.1.1.1" },
-      body: JSON.stringify(b),
+      body: JSON.stringify({ idempotencyKey: `test-${crypto.randomUUID()}`, ...b }),
     }),
     { store, generate: generateAplyerDemoAnswer, salt: "salt" },
   );
