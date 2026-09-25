@@ -270,7 +270,18 @@ export async function runChatgptSide(
     } catch (e) {
       console.error(`[demo] openai cost record failed request=${id}`, e instanceof Error ? e.name : "unknown");
     }
-    await store.update(id, { chatgpt_answer: r.text, chatgpt_prompt: r.prompt, chatgpt_status: "completed" });
+    // Comparison-row evidence: raw requested/returned model and the successful
+    // response's usage only. Missing facts stay NULL — never guessed.
+    const nn = <T,>(v: T | null | undefined): T | null => (v === undefined ? null : v);
+    await store.update(id, {
+      chatgpt_answer: r.text,
+      chatgpt_prompt: r.prompt,
+      chatgpt_status: "completed",
+      chatgpt_model_returned: nn(r.returnedModel),
+      chatgpt_model_requested: nn(r.requestedModel),
+      chatgpt_input_tokens: nn(r.inputTokens),
+      chatgpt_output_tokens: nn(r.outputTokens),
+    });
     const model = typeof r.model === "string" && r.model ? r.model : undefined;
     const view: ChatgptView = { status: "completed", answer: r.text, prompt: r.prompt, ...(model ? { model } : {}) };
     send?.("chatgpt_final", { answer: r.text, prompt: r.prompt, ...(model ? { model } : {}) });
