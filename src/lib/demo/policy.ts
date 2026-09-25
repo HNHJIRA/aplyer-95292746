@@ -193,3 +193,28 @@ export function normalizeWritingSample(v: unknown): string | null | undefined {
   if (typeof v !== "string") return undefined;
   return v.trim() ? v : null;
 }
+
+/* ------------------------------------------------------------------ */
+/* Weekly per-email allowance (mirror of demo_admit's period walk)     */
+/* ------------------------------------------------------------------ */
+
+/** "The allowance resets seven days after the first run, per address." */
+export const ALLOWANCE_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Counted runs (status <> 'rejected', by created_at) in the CURRENT allowance
+ * period. Walks runs in submission order; a run at or after anchor + 7 days
+ * starts a new period anchored at that run. Returns 0 once the period expired.
+ * Not a rolling window and not calendar weeks. Mirrors the SQL in demo_admit.
+ */
+export function currentAllowanceCount(createdAtMs: number[], nowMs: number): number {
+  let anchor: number | null = null;
+  let count = 0;
+  for (const t of [...createdAtMs].sort((a, b) => a - b)) {
+    if (anchor === null || t >= anchor + ALLOWANCE_PERIOD_MS) {
+      anchor = t;
+      count = 1;
+    } else count += 1;
+  }
+  return anchor !== null && nowMs < anchor + ALLOWANCE_PERIOD_MS ? count : 0;
+}

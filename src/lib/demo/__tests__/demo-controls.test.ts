@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { handleDemoRequest } from "../handler.server";
 import { drainDemoQueue } from "../queue.server";
-import { computeCost, countWords, decideAdmission, normalizeWritingSample, type DemoSettings } from "../policy";
+import { computeCost, countWords, currentAllowanceCount, decideAdmission, normalizeWritingSample, type DemoSettings } from "../policy";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { AdmitInput, DemoStore, DemoRequestRow, CostEventInput } from "../store";
@@ -58,7 +58,10 @@ function makeStore(settings: Partial<DemoSettings> | null, opts: { spent?: numbe
       if (byContent) return { duplicate: true, request: byContent };
       const live = rows.filter((r) => r.status !== "rejected");
       const counts = {
-        email_total: live.filter((r) => r.email === i.email).length,
+        email_total: currentAllowanceCount(
+          live.filter((r) => r.email === i.email).map((r) => r.created_at),
+          Date.now(),
+        ),
         session_recent: live.filter((r) => r.session_hash === i.sessionHash).length,
         ip_recent: live.filter((r) => r.ip_hash === i.ipHash).length,
       };
@@ -566,5 +569,109 @@ describe("word count (deterministic)", () => {
     expect(normalizeWritingSample("  ")).toBeNull();
     expect(normalizeWritingSample(5)).toBeUndefined();
     expect(normalizeWritingSample(" a ")).toBe(" a ");
+  });
+});
+
+describe("weekly per-email allowance (7 days after the first run)", () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  const T0 = Date.parse("2026-09-01T12:00:00Z");
+  const LIMIT2 = { ...OPEN, max_runs_per_email: 2 };
+  const at = (d: number) => vi.setSystemTime(T0 + d * DAY);
+  beforeEach(() => vi.useFakeTimers({ toFake: ["Date"] }));
+  const afterAll_ = () => vi.useRealTimers();
+  const status = async (store: DemoStore, over: Record<string, unknown> = {}) => (await call(store, base(over))).status;
+
+  it("pure helper: periods follow the actual run sequence", () => {
+    expect(currentAllowanceCount([], T0)).toBe(0);
+    expect(currentAllowanceCount([T0], T0)).toBe(1);
+    expect(currentAllowanceCount([T0, T0 + 5 * DAY], T0 + 6 * DAY)).toBe(2);
+    expect(currentAllowanceCount([T0, T0 + 5 * DAY], T0 + 7 * DAY)).toBe(0); // not sliding
+    expect(currentAllowanceCount([T0, T0 + 5 * DAY], T0 + 7 * DAY - 1)).toBe(2);
+    expect(currentAllowanceCount([T0, T0 + 5 * DAY, T0 + 7 * DAY], T0 + 8 * DAY)).toBe(1);
+    expect(currentAllowanceCount([T0, T0 + 20 * DAY], T0 + 26 * DAY)).toBe(1);
+    expect(currentAllowanceCount([T0, T0 + 20 * DAY], T0 + 27 * DAY)).toBe(0);
+    afterAll_();
+  });
+  it("A/B/C: first allowed, second allowed, third blocked at limit 2", async () => {
+    const { store } = makeStore(LIMIT2);
+    at(0);
+    expect(await status(store)).toBe(200);
+    expect(await status(store)).toBe(200);
+    expect(await status(store)).toBe(429);
+    afterAll_();
+  });
+  it("D/E/F: Day 0 + Day 5 block until Day 7, then the whole allowance resets (not sliding)", async () => {
+    const { store } = makeStore(LIMIT2);
+    at(0); expect(await status(store)).toBe(200);
+    at(5); expect(await status(store)).toBe(200);
+    at(6.99); expect(await status(store)).toBe(429);
+    at(7); expect(await status(store)).toBe(200); // new period anchored at Day 7
+    at(8); expect(await status(store)).toBe(200); // Day 5 run no longer blocks
+    at(13); expect(await status(store)).toBe(429);
+    at(14); expect(await status(store)).toBe(200);
+    afterAll_();
+  });
+  it("G: long absence starts a new period at the return date, not fixed buckets", async () => {
+    const { store } = makeStore(LIMIT2);
+    at(0); await status(store); await status(store);
+    at(20); expect(await status(store)).toBe(200);
+    at(21); expect(await status(store)).toBe(200); // fixed buckets would reset at Day 21
+    at(26.9); expect(await status(store)).toBe(429);
+    at(27); expect(await status(store)).toBe(200);
+    afterAll_();
+  });
+  it("H: rejected rows neither start a period nor consume a run", async () => {
+    const { store, rows } = makeStore(LIMIT2);
+    at(0); await status(store); await status(store);
+    at(1); expect(await status(store)).toBe(429); // rejected row at Day 1
+    expect(rows.some((r) => r.status === "rejected")).toBe(true);
+    at(7); expect(await status(store)).toBe(200);
+    expect(await status(store)).toBe(200);
+    afterAll_();
+  });
+  it("I/J: failed and queued rows still count, by submission time", async () => {
+    const { store, rows } = makeStore(LIMIT2);
+    at(0); await status(store);
+    rows[0].status = "failed";
+    at(1); await status(store);
+    rows[1].status = "queued";
+    at(2); expect(await status(store)).toBe(429);
+    at(7); expect(await status(store)).toBe(200);
+    afterAll_();
+  });
+  it("K: same-key duplicate does not use an allowance slot", async () => {
+    const { store, rows } = makeStore(LIMIT2);
+    at(0);
+    const key = "same-key-weekly-000001";
+    await call(store, base({ idempotencyKey: key, question: "k" }));
+    await call(store, base({ idempotencyKey: key, question: "k" }));
+    expect(rows).toHaveLength(1);
+    expect(await status(store)).toBe(200);
+    afterAll_();
+  });
+  it("L/M: identical new submission counts; email case/spaces share one allowance", async () => {
+    const { store } = makeStore(LIMIT2);
+    at(0);
+    expect(await status(store, { question: "same" })).toBe(200);
+    expect(await status(store, { question: "same", email: "  A@B.CO " })).toBe(200);
+    expect(await status(store, { question: "same", email: "a@b.co" })).toBe(429);
+    afterAll_();
+  });
+  it("N/migration: weekly walk sits inside the lock, uses created_at, no sliding window", () => {
+    vi.useRealTimers();
+    const dir = join(process.cwd(), "supabase/migrations");
+    const latest = readdirSync(dir).sort().map((f) => readFileSync(join(dir, f), "utf8"))
+      .filter((x) => x.includes("FUNCTION public.demo_admit")).pop()!;
+    const lock = latest.indexOf("pg_advisory_xact_lock(hashtext('aplyer_demo_admit'))");
+    const walk = latest.indexOf("ORDER BY created_at, id LOOP");
+    const insert = latest.indexOf("INSERT INTO public.demo_requests");
+    expect(lock).toBeGreaterThan(-1);
+    expect(walk).toBeGreaterThan(lock);
+    expect(insert).toBeGreaterThan(walk);
+    expect(latest).toContain("r.created_at >= period_anchor + interval '7 days'");
+    expect(latest).toContain("now() < period_anchor + interval '7 days'");
+    expect(latest).toMatch(/WHERE email = _email AND status <> 'rejected' ORDER BY created_at/);
+    expect(latest).not.toMatch(/now\(\) - interval '7 days'/);
+    expect(latest).not.toMatch(/completed_at|delivered_at/);
   });
 });
