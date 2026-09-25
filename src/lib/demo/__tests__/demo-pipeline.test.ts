@@ -312,7 +312,9 @@ function makeStore(settings: DemoSettings) {
   const store: DemoStore = {
     async admit(i: AdmitInput) {
       const dup = rows.find(
-        (r) => r.idempotency_key === i.idempotencyKey || r.content_hash === i.contentHash,
+        (r) =>
+          r.idempotency_key === i.idempotencyKey ||
+          (r.content_hash === i.contentHash && ["admitting", "running", "queued", "processing"].includes(r.status)),
       );
       if (dup) return { duplicate: true, request: dup };
       const row: DemoRequestRow & Record<string, unknown> = {
@@ -372,7 +374,7 @@ const post = (store: DemoStore, b: Record<string, unknown>, stream = false) =>
     new Request(`https://x.dev/api/public/demo${stream ? "?stream=1" : ""}`, {
       method: "POST",
       headers: { "content-type": "application/json", "cf-connecting-ip": "1.1.1.1" },
-      body: JSON.stringify(b),
+      body: JSON.stringify({ idempotencyKey: `test-${crypto.randomUUID()}`, ...b }),
     }),
     { store, generate: generateAplyerDemoAnswer, salt: "salt" },
   );
@@ -455,12 +457,13 @@ describe("Demo handler with the real pipeline", () => {
     expect(rows[0]).toMatchObject({ status: "completed", answer: CLEAN });
   });
 
-  it("duplicate submissions do not start another generation", async () => {
+  it("duplicate submissions (same submission key) do not start another generation", async () => {
     script();
     const { store } = makeStore(OPEN);
-    await post(store, body());
+    const key = "dup-key-abcdefgh-1234";
+    await post(store, body({ idempotencyKey: key }));
     const n = runPromptValidated.mock.calls.length;
-    await post(store, body());
+    await post(store, body({ idempotencyKey: key }));
     expect(runPromptValidated.mock.calls.length).toBe(n);
   });
 

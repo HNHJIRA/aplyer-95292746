@@ -160,6 +160,7 @@ export const DEMO_COPY = {
   emailRequired: "Please enter your email address to run the demo.",
   emailInvalid: "Please enter a valid email address.",
   fieldsRequired: "resume, jobDescription, and question are all required.",
+  submissionKeyRequired: "A valid idempotencyKey is required for each submission.",
   queued:
     "Your comparison has been received. We will generate it and deliver it to your email.",
   processing: "Your answer is already being generated. Please wait a moment.",

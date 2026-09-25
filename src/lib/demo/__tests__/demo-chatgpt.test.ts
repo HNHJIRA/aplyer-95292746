@@ -33,7 +33,7 @@ function makeStore(settings: DemoSettings | null = OPEN, priced = true) {
   });
   const store: DemoStore = {
     async admit(i: AdmitInput) {
-      const dup = rows.find((r) => r.idempotency_key === i.idempotencyKey || (r.email === i.email && r.content_hash === i.contentHash));
+      const dup = rows.find((r) => r.idempotency_key === i.idempotencyKey || (r.email === i.email && r.content_hash === i.contentHash && ["admitting", "running", "queued", "processing"].includes(r.status)));
       if (dup) return { duplicate: true, request: dup };
       const row: Row = {
         id: `r${rows.length + 1}`,
@@ -105,7 +105,7 @@ function req(body: Record<string, unknown>, stream = false) {
   return new Request(`https://x.dev/api/public/demo${stream ? "?stream=1" : ""}`, {
     method: "POST",
     headers: { "content-type": "application/json", "cf-connecting-ip": "1.1.1.1" },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ idempotencyKey: `test-${crypto.randomUUID()}`, ...body }),
   });
 }
 const deps = (store: DemoStore) => ({

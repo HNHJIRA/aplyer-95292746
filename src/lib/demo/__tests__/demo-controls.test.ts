@@ -46,12 +46,14 @@ function makeStore(settings: Partial<DemoSettings> | null, opts: { spent?: numbe
   const store: DemoStore = {
     async admit(i: AdmitInput) {
       const byKey = rows.find((r) => r.idempotency_key === i.idempotencyKey);
-      if (byKey) return { duplicate: true, request: byKey };
+      // Mirrors demo_admit: failed/rejected rows retire their key and allow a retry.
+      if (byKey && ["failed", "rejected"].includes(byKey.status)) byKey.idempotency_key = `${byKey.idempotency_key}:retired:${byKey.id}`;
+      else if (byKey) return { duplicate: true, request: byKey };
       const byContent = rows.find(
         (r) =>
           r.email === i.email &&
           r.content_hash === i.contentHash &&
-          ["admitting", "running", "queued", "processing", "completed"].includes(r.status),
+          ["admitting", "running", "queued", "processing"].includes(r.status),
       );
       if (byContent) return { duplicate: true, request: byContent };
       const live = rows.filter((r) => r.status !== "rejected");
@@ -130,7 +132,7 @@ function req(body: Record<string, unknown>, headers: Record<string, string> = {}
   return new Request("https://x.dev/api/public/demo", {
     method: "POST",
     headers: { "content-type": "application/json", "cf-connecting-ip": "1.1.1.1", ...headers },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ idempotencyKey: `test-${crypto.randomUUID()}`, ...body }),
   });
 }
 const base = (over: Record<string, unknown> = {}) => ({
@@ -280,12 +282,93 @@ describe("idempotency", () => {
     expect(rows).toHaveLength(1);
     expect(generate).toHaveBeenCalledTimes(1);
   });
-  it("new key with identical content (refresh / other tab) returns existing state", async () => {
+  it("C/E/F: new key, identical content, previous COMPLETED -> new comparison, one more run", async () => {
     const { store, rows } = makeStore(OPEN);
     await call(store, base({ question: "same", idempotencyKey: "a".repeat(20) }));
-    await call(store, base({ question: "same", idempotencyKey: "b".repeat(20) }));
+    expect(rows[0].status).toBe("completed");
+    // new session cookie / other device: nothing shared except email + inputs
+    const r = await call(store, base({ question: "same", idempotencyKey: "b".repeat(20) }), { "cf-connecting-ip": "9.9.9.9" });
+    expect(r.status).toBe(200);
+    expect(rows).toHaveLength(2);
+    expect(generate).toHaveBeenCalledTimes(2);
+  });
+  it("D: cap reached -> identical resubmission gets the limit, never the old answer", async () => {
+    const { store, rows } = makeStore({ ...OPEN, max_runs_per_email: 1 });
+    await call(store, base({ question: "same", idempotencyKey: "a".repeat(20) }));
+    const r = await call(store, base({ question: "same", idempotencyKey: "b".repeat(20) }));
+    const body = await r.json();
+    expect(r.status).toBe(429);
+    expect(body.answer).toBeUndefined();
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(rows[1].status).toBe("rejected");
+  });
+  it("B/I: same key resent (stream fallback / resend) stays idempotent", async () => {
+    const { store, rows } = makeStore(OPEN);
+    const key = "f".repeat(20);
+    await call(store, base({ question: "same", idempotencyKey: key }));
+    const again = await call(store, base({ question: "same" }), { "idempotency-key": key });
+    expect((await again.json()).answer).toBe("An answer.");
     expect(rows).toHaveLength(1);
     expect(generate).toHaveBeenCalledTimes(1);
+  });
+  it("G/H: changed input or different email -> normal new run", async () => {
+    const { store, rows } = makeStore(OPEN);
+    await call(store, base({ question: "same" }));
+    await call(store, base({ question: "changed" }));
+    await call(store, base({ question: "same", email: "z@b.co" }));
+    expect(rows).toHaveLength(3);
+    expect(generate).toHaveBeenCalledTimes(3);
+  });
+  it("J: failed prior run with same key -> retried as a new run", async () => {
+    const { store, rows } = makeStore(OPEN);
+    generate.mockRejectedValueOnce(new Error("boom"));
+    const key = "j".repeat(20);
+    await call(store, base({ question: "same", idempotencyKey: key }));
+    expect(rows[0].status).toBe("failed");
+    await call(store, base({ question: "same", idempotencyKey: key }));
+    expect(rows).toHaveLength(2);
+    expect(rows[1].status).toBe("completed");
+  });
+  it("L: identical content while another submission is in progress attaches, no second paid run", async () => {
+    const { store, rows } = makeStore(OPEN);
+    let release!: () => void;
+    generate.mockImplementationOnce(() => new Promise((res) => { release = () => res({ text: "An answer.", side: "aplyer", calls: [] }); }));
+    const first = call(store, base({ question: "same", idempotencyKey: "l".repeat(20) }));
+    await new Promise((r) => setTimeout(r, 0));
+    const second = await call(store, base({ question: "same", idempotencyKey: "m".repeat(20) }));
+    expect(second.status).toBe(202);
+    expect((await second.json()).status).toBe("processing");
+    release();
+    await first;
+    expect(rows).toHaveLength(1);
+    expect(generate).toHaveBeenCalledTimes(1);
+  });
+  it("missing or invalid key is rejected before any admission or paid call", async () => {
+    const { store, rows } = makeStore(OPEN);
+    for (const k of [undefined, "", "short", "bad key with spaces!!"]) {
+      const r = await handleDemoRequest(
+        new Request("https://x.dev/api/public/demo", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ email: "a@b.co", resume: "r", jobDescription: "j", question: "q", idempotencyKey: k }),
+        }),
+        { store, generate: generate as unknown as DemoGenerator, salt: "salt" },
+      );
+      expect(r.status).toBe(400);
+    }
+    expect(rows).toHaveLength(0);
+    expect(generate).not.toHaveBeenCalled();
+  });
+  it("A/K/migration: DB rule keeps the lock + same-key return, never reuses completed", () => {
+    const { readdirSync } = require("node:fs") as typeof import("node:fs");
+    const { join } = require("node:path") as typeof import("node:path");
+    const dir = join(process.cwd(), "supabase/migrations");
+    const latest = readdirSync(dir).sort().map((f: string) => require("node:fs").readFileSync(join(dir, f), "utf8"))
+      .filter((s: string) => s.includes("FUNCTION public.demo_admit")).pop()!;
+    expect(latest).toContain("pg_advisory_xact_lock(hashtext('aplyer_demo_admit'))");
+    expect(latest).toContain("WHERE idempotency_key = _idempotency_key");
+    expect(latest).toMatch(/content_hash = _content_hash\s+AND status IN \('admitting','running','queued','processing'\)/);
+    expect(latest).not.toMatch(/content_hash = _content_hash\s+AND status IN \([^)]*completed/);
   });
   it("repeated request for a queued run returns the queued state", async () => {
     const { store, rows } = makeStore({});
