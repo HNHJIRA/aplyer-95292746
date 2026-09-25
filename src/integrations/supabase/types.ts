@@ -150,6 +150,10 @@ export type Database = {
           answer: string | null
           attempts: number
           chatgpt_answer: string | null
+          chatgpt_input_tokens: number | null
+          chatgpt_model_requested: string | null
+          chatgpt_model_returned: string | null
+          chatgpt_output_tokens: number | null
           chatgpt_prompt: string | null
           chatgpt_status: string
           completed_at: string | null
@@ -181,6 +185,10 @@ export type Database = {
           answer?: string | null
           attempts?: number
           chatgpt_answer?: string | null
+          chatgpt_input_tokens?: number | null
+          chatgpt_model_requested?: string | null
+          chatgpt_model_returned?: string | null
+          chatgpt_output_tokens?: number | null
           chatgpt_prompt?: string | null
           chatgpt_status?: string
           completed_at?: string | null
@@ -212,6 +220,10 @@ export type Database = {
           answer?: string | null
           attempts?: number
           chatgpt_answer?: string | null
+          chatgpt_input_tokens?: number | null
+          chatgpt_model_requested?: string | null
+          chatgpt_model_returned?: string | null
+          chatgpt_output_tokens?: number | null
           chatgpt_prompt?: string | null
           chatgpt_status?: string
           completed_at?: string | null
@@ -942,6 +954,10 @@ export type Database = {
           answer: string | null
           attempts: number
           chatgpt_answer: string | null
+          chatgpt_input_tokens: number | null
+          chatgpt_model_requested: string | null
+          chatgpt_model_returned: string | null
+          chatgpt_output_tokens: number | null
           chatgpt_prompt: string | null
           chatgpt_status: string
           completed_at: string | null

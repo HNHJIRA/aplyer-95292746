@@ -50,8 +50,15 @@ export interface ChatgptResult {
   text: string;
   prompt: string;
   calls: DemoAiCall[];
-  /** Model that served this answer: OpenAI's reported id, else the configured id sent. */
+  /** Display model (unchanged behavior): OpenAI's reported id, else the configured id sent. */
   model: string;
+  /** Exact configured model id sent to OpenAI. Stored evidence. */
+  requestedModel?: string | null;
+  /** Model id present in OpenAI's successful response only; null when omitted. Never falls back. */
+  returnedModel?: string | null;
+  /** Usage of the SUCCESSFUL response only (never aggregated across retries). */
+  inputTokens?: number | null;
+  outputTokens?: number | null;
 }
 
 export interface ChatgptHooks {
@@ -187,5 +194,15 @@ export const generateChatgptDemoAnswer: ChatgptGenerator = async (input, hooks =
   const text = extractResponsesText(a.body);
   if (!text.trim()) throw new DemoGenerationError("empty_output", false, calls);
   hooks.onDelta?.(text);
-  return { text, prompt, calls, model: servedModel || cfg.model };
+  const tok = (v: unknown) => (typeof v === "number" && Number.isInteger(v) && v >= 0 ? v : null);
+  return {
+    text,
+    prompt,
+    calls,
+    model: servedModel || cfg.model,
+    requestedModel: cfg.model,
+    returnedModel: servedModel || null,
+    inputTokens: tok(res?.usage?.input_tokens),
+    outputTokens: tok(res?.usage?.output_tokens),
+  };
 };

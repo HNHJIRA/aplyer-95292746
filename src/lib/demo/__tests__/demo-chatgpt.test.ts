@@ -549,3 +549,112 @@ describe("static safety", () => {
     expect(read("src/lib/demo/openai.server.ts")).not.toMatch(/anthropic/i);
   });
 });
+
+describe("comparison-row metadata (Part D one row per comparison)", () => {
+  const realFetch = globalThis.fetch;
+  const okRes = (o: Record<string, unknown> = {}) =>
+    new Response(
+      JSON.stringify({
+        model: "returned-model",
+        output: [{ type: "message", content: [{ type: "output_text", text: "Real GPT." }] }],
+        usage: { input_tokens: 123, output_tokens: 45 },
+        ...o,
+      }),
+      { status: 200, headers: { "x-request-id": "req_ok" } },
+    );
+  const realDeps = (store: DemoStore) => ({ ...deps(store), generateChatgpt: generateChatgptDemoAnswer });
+  beforeEach(() => {
+    process.env.DEMO_OPENAI_MODEL = "requested-model";
+    process.env.OPENAI_API_KEY = "sk-secret-test";
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.stubGlobal("fetch", realFetch);
+    vi.restoreAllMocks();
+  });
+
+  it("migration adds the four nullable columns without backfill", () => {
+    const dir = join(process.cwd(), "supabase/migrations");
+    const { readdirSync } = require("node:fs") as typeof import("node:fs");
+    const sql = readdirSync(dir)
+      .map((f: string) => readFileSync(join(dir, f), "utf8"))
+      .find((s: string) => s.includes("chatgpt_model_returned"))!;
+    for (const c of ["chatgpt_model_returned text", "chatgpt_model_requested text", "chatgpt_input_tokens integer", "chatgpt_output_tokens integer"]) {
+      expect(sql).toContain(c);
+    }
+    expect(sql).not.toMatch(/NOT NULL|DEFAULT|UPDATE\s/i);
+  });
+
+  it("live path stores requested and returned model separately plus successful usage", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => okRes()));
+    const { store, rows } = makeStore();
+    const res = await handleDemoRequest(req(INPUT), realDeps(store));
+    expect(rows[0]).toMatchObject({
+      chatgpt_status: "completed",
+      chatgpt_model_returned: "returned-model",
+      chatgpt_model_requested: "requested-model",
+      chatgpt_input_tokens: 123,
+      chatgpt_output_tokens: 45,
+    });
+    const text = await res.text();
+    expect(text).not.toMatch(/input_tokens|output_tokens|chatgpt_input|123|sk-secret/);
+    expect(JSON.stringify(rows[0])).not.toContain("sk-secret");
+    expect(JSON.stringify(rows[0])).not.toContain("req_ok");
+  });
+
+  it("omitted returned model stays NULL (no fallback); requested still stored", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => okRes({ model: undefined })));
+    const { store, rows } = makeStore();
+    await handleDemoRequest(req(INPUT), realDeps(store));
+    expect(rows[0].chatgpt_model_returned).toBeNull();
+    expect(rows[0].chatgpt_model_requested).toBe("requested-model");
+  });
+
+  it("retry: row holds only the successful response's tokens; cost events unchanged", async () => {
+    const f = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: { code: "" } }), { status: 500 }))
+      .mockResolvedValueOnce(okRes());
+    vi.stubGlobal("fetch", f);
+    const { store, rows, costs } = makeStore();
+    await handleDemoRequest(req(INPUT), realDeps(store));
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(rows[0]).toMatchObject({ chatgpt_input_tokens: 123, chatgpt_output_tokens: 45 });
+    const oa = costs.filter((c) => c.side === "openai");
+    expect(oa).toHaveLength(1);
+    expect(oa[0]).toMatchObject({ model: "requested-model", inputTokens: 123, outputTokens: 45 });
+  });
+
+  it("failed ChatGPT run invents no model or token metadata", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 400 })));
+    const { store, rows } = makeStore();
+    await handleDemoRequest(req(INPUT), realDeps(store));
+    expect(rows[0].chatgpt_status).toBe("failed");
+    for (const k of ["chatgpt_model_returned", "chatgpt_model_requested", "chatgpt_input_tokens", "chatgpt_output_tokens"]) {
+      expect(rows[0][k] ?? null).toBeNull();
+    }
+  });
+
+  it("queued path uses the same persistence", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => okRes()));
+    const { store, rows } = makeStore(null);
+    await handleDemoRequest(req(INPUT), realDeps(store));
+    const settingsStore = { ...store, spendSnapshot: async () => ({ settings: OPEN, spend: { spent_today_usd: 0, unpriced_today: 0, inflight: 1, next_reset: "2099-01-01T00:00:00Z", day_start: null } }) };
+    await drainDemoQueue({ store: settingsStore, generate: generate as unknown as DemoGenerator, generateChatgpt: generateChatgptDemoAnswer, sendResult: vi.fn(async () => ({ ok: true })) });
+    expect(rows[0]).toMatchObject({
+      chatgpt_model_returned: "returned-model",
+      chatgpt_model_requested: "requested-model",
+      chatgpt_input_tokens: 123,
+      chatgpt_output_tokens: 45,
+    });
+  });
+
+  it("display model tag behavior unchanged (falls back to configured when omitted)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => okRes({ model: undefined })));
+    const { store } = makeStore();
+    const body = await (await handleDemoRequest(req(INPUT), realDeps(store))).json();
+    expect(body.chatgpt).toMatchObject({ status: "completed", model: "requested-model" });
+    expect(body.chatgpt).not.toHaveProperty("inputTokens");
+  });
+});
