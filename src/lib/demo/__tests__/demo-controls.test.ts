@@ -46,7 +46,9 @@ function makeStore(settings: Partial<DemoSettings> | null, opts: { spent?: numbe
   const store: DemoStore = {
     async admit(i: AdmitInput) {
       const byKey = rows.find((r) => r.idempotency_key === i.idempotencyKey);
-      if (byKey) return { duplicate: true, request: byKey };
+      // Mirrors demo_admit: failed/rejected rows retire their key and allow a retry.
+      if (byKey && ["failed", "rejected"].includes(byKey.status)) byKey.idempotency_key = `${byKey.idempotency_key}:retired:${byKey.id}`;
+      else if (byKey) return { duplicate: true, request: byKey };
       const byContent = rows.find(
         (r) =>
           r.email === i.email &&
