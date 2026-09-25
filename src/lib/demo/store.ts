@@ -24,6 +24,11 @@ export interface DemoRequestRow {
   chatgpt_answer?: string | null;
   chatgpt_prompt?: string | null;
   chatgpt_status?: "pending" | "completed" | "failed" | "not_configured" | null;
+  /** Server-only comparison evidence (never sent to the browser). */
+  chatgpt_model_returned?: string | null;
+  chatgpt_model_requested?: string | null;
+  chatgpt_input_tokens?: number | null;
+  chatgpt_output_tokens?: number | null;
   scoreboard?: unknown;
   scoreboard_status?: "shown" | "suppressed" | null;
   human_score?: unknown;
