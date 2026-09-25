@@ -51,7 +51,7 @@ function makeStore(settings: Partial<DemoSettings> | null, opts: { spent?: numbe
         (r) =>
           r.email === i.email &&
           r.content_hash === i.contentHash &&
-          ["admitting", "running", "queued", "processing", "completed"].includes(r.status),
+          ["admitting", "running", "queued", "processing"].includes(r.status),
       );
       if (byContent) return { duplicate: true, request: byContent };
       const live = rows.filter((r) => r.status !== "rejected");
@@ -130,7 +130,7 @@ function req(body: Record<string, unknown>, headers: Record<string, string> = {}
   return new Request("https://x.dev/api/public/demo", {
     method: "POST",
     headers: { "content-type": "application/json", "cf-connecting-ip": "1.1.1.1", ...headers },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ idempotencyKey: `test-${crypto.randomUUID()}`, ...body }),
   });
 }
 const base = (over: Record<string, unknown> = {}) => ({

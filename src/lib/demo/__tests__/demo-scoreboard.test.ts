@@ -174,7 +174,7 @@ function setup(aplyerTexts: string[], gptText: string) {
 }
 const deps = (store: DemoStore) => ({ store, generate: generate as unknown as DemoGenerator, generateChatgpt: chatgpt as unknown as ChatgptGenerator, salt: "s" });
 const req = (stream = false, extra: Record<string, unknown> = {}) =>
-  new Request(`https://x.dev/api/public/demo${stream ? "?stream=1" : ""}`, { method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": "1.1.1.1" }, body: JSON.stringify({ ...INPUT, ...extra }) });
+  new Request(`https://x.dev/api/public/demo${stream ? "?stream=1" : ""}`, { method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": "1.1.1.1" }, body: JSON.stringify({ idempotencyKey: `test-${crypto.randomUUID()}`, ...INPUT, ...extra }) });
 async function frames(res: Response) {
   return (await res.text()).split("\n\n").filter(Boolean).map((f) => ({ ev: /event: (.*)/.exec(f)?.[1], data: JSON.parse(/data: (.*)/.exec(f)?.[1] ?? "null") }));
 }

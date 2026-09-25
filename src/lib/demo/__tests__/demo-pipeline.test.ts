@@ -312,7 +312,9 @@ function makeStore(settings: DemoSettings) {
   const store: DemoStore = {
     async admit(i: AdmitInput) {
       const dup = rows.find(
-        (r) => r.idempotency_key === i.idempotencyKey || r.content_hash === i.contentHash,
+        (r) =>
+          r.idempotency_key === i.idempotencyKey ||
+          (r.content_hash === i.contentHash && ["admitting", "running", "queued", "processing"].includes(r.status)),
       );
       if (dup) return { duplicate: true, request: dup };
       const row: DemoRequestRow & Record<string, unknown> = {
