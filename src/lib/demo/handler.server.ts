@@ -496,6 +496,13 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
     if (!input.resume || !input.jobDescription || !input.question) {
       return respond(request, { error: DEMO_COPY.fieldsRequired }, 400, null);
     }
+    // One random key per Generate press is required (Sept 23: double-press
+    // guard inside one submission only). Rejected before any paid call.
+    const submissionKey =
+      request.headers.get("idempotency-key") ?? (typeof body.idempotencyKey === "string" ? body.idempotencyKey : "");
+    if (!isValidIdempotencyKey(submissionKey)) {
+      return respond(request, { error: DEMO_COPY.submissionKeyRequired }, 400, null);
+    }
 
     if (deps.checkEmail && !(await deps.checkEmail(email).catch(() => true))) {
       return respond(request, { error: DEMO_COPY.emailInvalid }, 400, null);
@@ -515,15 +522,13 @@ export async function handleDemoRequest(request: Request, deps: DemoDeps): Promi
     const sessionHash = await sha256(`${deps.salt}|sid|${sid}`);
     const ipHash = await sha256(`${deps.salt}|ip|${trustedIp(request)}`);
 
-    // 3. Idempotency: client key is validated and scoped to this email on the
-    // server; without one, the request content itself is the key.
+    // 3. Idempotency: the per-submission key (validated before any provider
+    // call) is scoped to this email on the server. Never derived from content,
+    // so a new submission never inherits an old completed comparison.
     const contentHash = await sha256(
       `${input.resume}\u0000${input.jobDescription}\u0000${input.question}\u0000${input.writingSample ?? ""}`,
     );
-    const rawKey =
-      request.headers.get("idempotency-key") ?? (typeof body.idempotencyKey === "string" ? body.idempotencyKey : "");
-    const keySource = isValidIdempotencyKey(rawKey) ? `k:${rawKey}` : `c:${contentHash}`;
-    const idempotencyKey = await sha256(`${deps.salt}|idem|${email}|${keySource}`);
+    const idempotencyKey = await sha256(`${deps.salt}|idem|${email}|k:${submissionKey}`);
 
     // 4. Atomic admission.
     const admitted = await deps.store.admit({
