@@ -9,94 +9,45 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as DemoRouteImport } from './routes/demo'
-import { Route as ExtensionAuthRouteImport } from './routes/extension-auth'
-import { Route as LegacyLandingRouteImport } from './routes/legacy-landing'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as PrivacyDothtmlRouteImport } from './routes/privacy[.]html'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as ResumeAuditRouteImport } from './routes/resume-audit'
-import { Route as ResumeMatchRouteImport } from './routes/resume-match'
-import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TermsDothtmlRouteImport } from './routes/terms[.]html'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as ApiResumeAuditRouteImport } from './routes/api/resume-audit'
-import { Route as ApiResumeMatchRouteImport } from './routes/api/resume-match'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as ResumeMatchRouteImport } from './routes/resume-match'
+import { Route as ResumeAuditRouteImport } from './routes/resume-audit'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PrivacyDothtmlRouteImport } from './routes/privacy[.]html'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as LegacyLandingRouteImport } from './routes/legacy-landing'
+import { Route as ExtensionAuthRouteImport } from './routes/extension-auth'
+import { Route as DemoRouteImport } from './routes/demo'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthForgotRouteImport } from './routes/auth.forgot'
+import { Route as ApiResumeMatchRouteImport } from './routes/api/resume-match'
+import { Route as ApiResumeAuditRouteImport } from './routes/api/resume-audit'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
-import { Route as AuthenticatedDashboardProfileRouteImport } from './routes/_authenticated/dashboard.profile'
-import { Route as AuthenticatedDashboardResumeRouteImport } from './routes/_authenticated/dashboard.resume'
-import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard.settings'
-import { Route as AuthenticatedDashboardSubscriptionRouteImport } from './routes/_authenticated/dashboard.subscription'
-import { Route as AuthenticatedDashboardSupportRouteImport } from './routes/_authenticated/dashboard.support'
-import { Route as AuthenticatedDashboardWritingRouteImport } from './routes/_authenticated/dashboard.writing'
-import { Route as ApiAiClassifyQuestionRouteImport } from './routes/api/ai.classify-question'
-import { Route as ApiPublicDemoRouteImport } from './routes/api/public/demo'
-import { Route as ApiPublicFactInventoryRouteImport } from './routes/api/public/fact-inventory'
-import { Route as ApiPublicFieldMemoryRouteImport } from './routes/api/public/field-memory'
-import { Route as ApiPublicGenerateAnswerRouteImport } from './routes/api/public/generate-answer'
-import { Route as ApiPublicJobSafetyCheckRouteImport } from './routes/api/public/job-safety-check'
-import { Route as ApiPublicSubscribeRouteImport } from './routes/api/public/subscribe'
-import { Route as ApiPublicWaitlistDrainRouteImport } from './routes/api/public/waitlist-drain'
 import { Route as ApiPublicWaitlistUploadRouteImport } from './routes/api/public/waitlist-upload'
-import { Route as ApiPublicAiClassifyQuestionRouteImport } from './routes/api/public/ai.classify-question'
+import { Route as ApiPublicWaitlistDrainRouteImport } from './routes/api/public/waitlist-drain'
+import { Route as ApiPublicSubscribeRouteImport } from './routes/api/public/subscribe'
+import { Route as ApiPublicJobSafetyCheckRouteImport } from './routes/api/public/job-safety-check'
+import { Route as ApiPublicGenerateAnswerRouteImport } from './routes/api/public/generate-answer'
+import { Route as ApiPublicFieldMemoryRouteImport } from './routes/api/public/field-memory'
+import { Route as ApiPublicFactInventoryRouteImport } from './routes/api/public/fact-inventory'
+import { Route as ApiPublicDemoRouteImport } from './routes/api/public/demo'
+import { Route as ApiAiClassifyQuestionRouteImport } from './routes/api/ai.classify-question'
+import { Route as AuthenticatedDashboardWritingRouteImport } from './routes/_authenticated/dashboard.writing'
+import { Route as AuthenticatedDashboardSupportRouteImport } from './routes/_authenticated/dashboard.support'
+import { Route as AuthenticatedDashboardSubscriptionRouteImport } from './routes/_authenticated/dashboard.subscription'
+import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard.settings'
+import { Route as AuthenticatedDashboardResumeRouteImport } from './routes/_authenticated/dashboard.resume'
+import { Route as AuthenticatedDashboardProfileRouteImport } from './routes/_authenticated/dashboard.profile'
 import { Route as ApiPublicExtensionVoicecardRouteImport } from './routes/api/public/extension.voicecard'
+import { Route as ApiPublicAiClassifyQuestionRouteImport } from './routes/api/public/ai.classify-question'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoRoute = DemoRouteImport.update({
-  id: '/demo',
-  path: '/demo',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ExtensionAuthRoute = ExtensionAuthRouteImport.update({
-  id: '/extension-auth',
-  path: '/extension-auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LegacyLandingRoute = LegacyLandingRouteImport.update({
-  id: '/legacy-landing',
-  path: '/legacy-landing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyDothtmlRoute = PrivacyDothtmlRouteImport.update({
-  id: '/privacy.html',
-  path: '/privacy.html',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResumeAuditRoute = ResumeAuditRouteImport.update({
-  id: '/resume-audit',
-  path: '/resume-audit',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResumeMatchRoute = ResumeMatchRouteImport.update({
-  id: '/resume-match',
-  path: '/resume-match',
+const TermsDothtmlRoute = TermsDothtmlRouteImport.update({
+  id: '/terms.html',
+  path: '/terms.html',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -104,24 +55,58 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TermsDothtmlRoute = TermsDothtmlRouteImport.update({
-  id: '/terms.html',
-  path: '/terms.html',
+const ResumeMatchRoute = ResumeMatchRouteImport.update({
+  id: '/resume-match',
+  path: '/resume-match',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const ApiResumeAuditRoute = ApiResumeAuditRouteImport.update({
-  id: '/api/resume-audit',
-  path: '/api/resume-audit',
+const ResumeAuditRoute = ResumeAuditRouteImport.update({
+  id: '/resume-audit',
+  path: '/resume-audit',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiResumeMatchRoute = ApiResumeMatchRouteImport.update({
-  id: '/api/resume-match',
-  path: '/api/resume-match',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyDothtmlRoute = PrivacyDothtmlRouteImport.update({
+  id: '/privacy.html',
+  path: '/privacy.html',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegacyLandingRoute = LegacyLandingRouteImport.update({
+  id: '/legacy-landing',
+  path: '/legacy-landing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExtensionAuthRoute = ExtensionAuthRouteImport.update({
+  id: '/extension-auth',
+  path: '/extension-auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthForgotRoute = AuthForgotRouteImport.update({
@@ -129,34 +114,76 @@ const AuthForgotRoute = AuthForgotRouteImport.update({
   path: '/forgot',
   getParentRoute: () => AuthRoute,
 } as any)
+const ApiResumeMatchRoute = ApiResumeMatchRouteImport.update({
+  id: '/api/resume-match',
+  path: '/api/resume-match',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiResumeAuditRoute = ApiResumeAuditRouteImport.update({
+  id: '/api/resume-audit',
+  path: '/api/resume-audit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardIndexRoute =
   AuthenticatedDashboardIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
-const AuthenticatedDashboardProfileRoute =
-  AuthenticatedDashboardProfileRouteImport.update({
-    id: '/profile',
-    path: '/profile',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
-const AuthenticatedDashboardResumeRoute =
-  AuthenticatedDashboardResumeRouteImport.update({
-    id: '/resume',
-    path: '/resume',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
-const AuthenticatedDashboardSettingsRoute =
-  AuthenticatedDashboardSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
-const AuthenticatedDashboardSubscriptionRoute =
-  AuthenticatedDashboardSubscriptionRouteImport.update({
-    id: '/subscription',
-    path: '/subscription',
+const ApiPublicWaitlistUploadRoute = ApiPublicWaitlistUploadRouteImport.update({
+  id: '/api/public/waitlist-upload',
+  path: '/api/public/waitlist-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicWaitlistDrainRoute = ApiPublicWaitlistDrainRouteImport.update({
+  id: '/api/public/waitlist-drain',
+  path: '/api/public/waitlist-drain',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicSubscribeRoute = ApiPublicSubscribeRouteImport.update({
+  id: '/api/public/subscribe',
+  path: '/api/public/subscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicJobSafetyCheckRoute = ApiPublicJobSafetyCheckRouteImport.update({
+  id: '/api/public/job-safety-check',
+  path: '/api/public/job-safety-check',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicGenerateAnswerRoute = ApiPublicGenerateAnswerRouteImport.update({
+  id: '/api/public/generate-answer',
+  path: '/api/public/generate-answer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFieldMemoryRoute = ApiPublicFieldMemoryRouteImport.update({
+  id: '/api/public/field-memory',
+  path: '/api/public/field-memory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFactInventoryRoute = ApiPublicFactInventoryRouteImport.update({
+  id: '/api/public/fact-inventory',
+  path: '/api/public/fact-inventory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicDemoRoute = ApiPublicDemoRouteImport.update({
+  id: '/api/public/demo',
+  path: '/api/public/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiClassifyQuestionRoute = ApiAiClassifyQuestionRouteImport.update({
+  id: '/api/ai/classify-question',
+  path: '/api/ai/classify-question',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedDashboardWritingRoute =
+  AuthenticatedDashboardWritingRouteImport.update({
+    id: '/writing',
+    path: '/writing',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
 const AuthenticatedDashboardSupportRoute =
@@ -165,67 +192,40 @@ const AuthenticatedDashboardSupportRoute =
     path: '/support',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
-const AuthenticatedDashboardWritingRoute =
-  AuthenticatedDashboardWritingRouteImport.update({
-    id: '/writing',
-    path: '/writing',
+const AuthenticatedDashboardSubscriptionRoute =
+  AuthenticatedDashboardSubscriptionRouteImport.update({
+    id: '/subscription',
+    path: '/subscription',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
-const ApiAiClassifyQuestionRoute = ApiAiClassifyQuestionRouteImport.update({
-  id: '/api/ai/classify-question',
-  path: '/api/ai/classify-question',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicDemoRoute = ApiPublicDemoRouteImport.update({
-  id: '/api/public/demo',
-  path: '/api/public/demo',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicFactInventoryRoute = ApiPublicFactInventoryRouteImport.update({
-  id: '/api/public/fact-inventory',
-  path: '/api/public/fact-inventory',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicFieldMemoryRoute = ApiPublicFieldMemoryRouteImport.update({
-  id: '/api/public/field-memory',
-  path: '/api/public/field-memory',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicGenerateAnswerRoute = ApiPublicGenerateAnswerRouteImport.update({
-  id: '/api/public/generate-answer',
-  path: '/api/public/generate-answer',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicJobSafetyCheckRoute = ApiPublicJobSafetyCheckRouteImport.update({
-  id: '/api/public/job-safety-check',
-  path: '/api/public/job-safety-check',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicSubscribeRoute = ApiPublicSubscribeRouteImport.update({
-  id: '/api/public/subscribe',
-  path: '/api/public/subscribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicWaitlistDrainRoute = ApiPublicWaitlistDrainRouteImport.update({
-  id: '/api/public/waitlist-drain',
-  path: '/api/public/waitlist-drain',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicWaitlistUploadRoute = ApiPublicWaitlistUploadRouteImport.update({
-  id: '/api/public/waitlist-upload',
-  path: '/api/public/waitlist-upload',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicAiClassifyQuestionRoute =
-  ApiPublicAiClassifyQuestionRouteImport.update({
-    id: '/api/public/ai/classify-question',
-    path: '/api/public/ai/classify-question',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedDashboardSettingsRoute =
+  AuthenticatedDashboardSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardResumeRoute =
+  AuthenticatedDashboardResumeRouteImport.update({
+    id: '/resume',
+    path: '/resume',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardProfileRoute =
+  AuthenticatedDashboardProfileRouteImport.update({
+    id: '/profile',
+    path: '/profile',
+    getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
 const ApiPublicExtensionVoicecardRoute =
   ApiPublicExtensionVoicecardRouteImport.update({
     id: '/api/public/extension/voicecard',
     path: '/api/public/extension/voicecard',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAiClassifyQuestionRoute =
+  ApiPublicAiClassifyQuestionRouteImport.update({
+    id: '/api/public/ai/classify-question',
+    path: '/api/public/ai/classify-question',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -480,81 +480,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo': {
-      id: '/demo'
-      path: '/demo'
-      fullPath: '/demo'
-      preLoaderRoute: typeof DemoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/extension-auth': {
-      id: '/extension-auth'
-      path: '/extension-auth'
-      fullPath: '/extension-auth'
-      preLoaderRoute: typeof ExtensionAuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/legacy-landing': {
-      id: '/legacy-landing'
-      path: '/legacy-landing'
-      fullPath: '/legacy-landing'
-      preLoaderRoute: typeof LegacyLandingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy.html': {
-      id: '/privacy.html'
-      path: '/privacy.html'
-      fullPath: '/privacy.html'
-      preLoaderRoute: typeof PrivacyDothtmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/resume-audit': {
-      id: '/resume-audit'
-      path: '/resume-audit'
-      fullPath: '/resume-audit'
-      preLoaderRoute: typeof ResumeAuditRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/resume-match': {
-      id: '/resume-match'
-      path: '/resume-match'
-      fullPath: '/resume-match'
-      preLoaderRoute: typeof ResumeMatchRouteImport
+    '/terms.html': {
+      id: '/terms.html'
+      path: '/terms.html'
+      fullPath: '/terms.html'
+      preLoaderRoute: typeof TermsDothtmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -564,32 +494,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/terms.html': {
-      id: '/terms.html'
-      path: '/terms.html'
-      fullPath: '/terms.html'
-      preLoaderRoute: typeof TermsDothtmlRouteImport
+    '/resume-match': {
+      id: '/resume-match'
+      path: '/resume-match'
+      fullPath: '/resume-match'
+      preLoaderRoute: typeof ResumeMatchRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/api/resume-audit': {
-      id: '/api/resume-audit'
-      path: '/api/resume-audit'
-      fullPath: '/api/resume-audit'
-      preLoaderRoute: typeof ApiResumeAuditRouteImport
+    '/resume-audit': {
+      id: '/resume-audit'
+      path: '/resume-audit'
+      fullPath: '/resume-audit'
+      preLoaderRoute: typeof ResumeAuditRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/resume-match': {
-      id: '/api/resume-match'
-      path: '/api/resume-match'
-      fullPath: '/api/resume-match'
-      preLoaderRoute: typeof ApiResumeMatchRouteImport
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy.html': {
+      id: '/privacy.html'
+      path: '/privacy.html'
+      fullPath: '/privacy.html'
+      preLoaderRoute: typeof PrivacyDothtmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legacy-landing': {
+      id: '/legacy-landing'
+      path: '/legacy-landing'
+      fullPath: '/legacy-landing'
+      preLoaderRoute: typeof LegacyLandingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/extension-auth': {
+      id: '/extension-auth'
+      path: '/extension-auth'
+      fullPath: '/extension-auth'
+      preLoaderRoute: typeof ExtensionAuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/forgot': {
@@ -599,6 +578,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthForgotRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/api/resume-match': {
+      id: '/api/resume-match'
+      path: '/api/resume-match'
+      fullPath: '/api/resume-match'
+      preLoaderRoute: typeof ApiResumeMatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/resume-audit': {
+      id: '/api/resume-audit'
+      path: '/api/resume-audit'
+      fullPath: '/api/resume-audit'
+      preLoaderRoute: typeof ApiResumeAuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard/': {
       id: '/_authenticated/dashboard/'
       path: '/'
@@ -606,95 +606,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
-    '/_authenticated/dashboard/profile': {
-      id: '/_authenticated/dashboard/profile'
-      path: '/profile'
-      fullPath: '/dashboard/profile'
-      preLoaderRoute: typeof AuthenticatedDashboardProfileRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/dashboard/resume': {
-      id: '/_authenticated/dashboard/resume'
-      path: '/resume'
-      fullPath: '/dashboard/resume'
-      preLoaderRoute: typeof AuthenticatedDashboardResumeRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/dashboard/settings': {
-      id: '/_authenticated/dashboard/settings'
-      path: '/settings'
-      fullPath: '/dashboard/settings'
-      preLoaderRoute: typeof AuthenticatedDashboardSettingsRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/dashboard/subscription': {
-      id: '/_authenticated/dashboard/subscription'
-      path: '/subscription'
-      fullPath: '/dashboard/subscription'
-      preLoaderRoute: typeof AuthenticatedDashboardSubscriptionRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/dashboard/support': {
-      id: '/_authenticated/dashboard/support'
-      path: '/support'
-      fullPath: '/dashboard/support'
-      preLoaderRoute: typeof AuthenticatedDashboardSupportRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/dashboard/writing': {
-      id: '/_authenticated/dashboard/writing'
-      path: '/writing'
-      fullPath: '/dashboard/writing'
-      preLoaderRoute: typeof AuthenticatedDashboardWritingRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/api/ai/classify-question': {
-      id: '/api/ai/classify-question'
-      path: '/api/ai/classify-question'
-      fullPath: '/api/ai/classify-question'
-      preLoaderRoute: typeof ApiAiClassifyQuestionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/demo': {
-      id: '/api/public/demo'
-      path: '/api/public/demo'
-      fullPath: '/api/public/demo'
-      preLoaderRoute: typeof ApiPublicDemoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/fact-inventory': {
-      id: '/api/public/fact-inventory'
-      path: '/api/public/fact-inventory'
-      fullPath: '/api/public/fact-inventory'
-      preLoaderRoute: typeof ApiPublicFactInventoryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/field-memory': {
-      id: '/api/public/field-memory'
-      path: '/api/public/field-memory'
-      fullPath: '/api/public/field-memory'
-      preLoaderRoute: typeof ApiPublicFieldMemoryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/generate-answer': {
-      id: '/api/public/generate-answer'
-      path: '/api/public/generate-answer'
-      fullPath: '/api/public/generate-answer'
-      preLoaderRoute: typeof ApiPublicGenerateAnswerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/job-safety-check': {
-      id: '/api/public/job-safety-check'
-      path: '/api/public/job-safety-check'
-      fullPath: '/api/public/job-safety-check'
-      preLoaderRoute: typeof ApiPublicJobSafetyCheckRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/subscribe': {
-      id: '/api/public/subscribe'
-      path: '/api/public/subscribe'
-      fullPath: '/api/public/subscribe'
-      preLoaderRoute: typeof ApiPublicSubscribeRouteImport
+    '/api/public/waitlist-upload': {
+      id: '/api/public/waitlist-upload'
+      path: '/api/public/waitlist-upload'
+      fullPath: '/api/public/waitlist-upload'
+      preLoaderRoute: typeof ApiPublicWaitlistUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/waitlist-drain': {
@@ -704,11 +620,102 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWaitlistDrainRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/waitlist-upload': {
-      id: '/api/public/waitlist-upload'
-      path: '/api/public/waitlist-upload'
-      fullPath: '/api/public/waitlist-upload'
-      preLoaderRoute: typeof ApiPublicWaitlistUploadRouteImport
+    '/api/public/subscribe': {
+      id: '/api/public/subscribe'
+      path: '/api/public/subscribe'
+      fullPath: '/api/public/subscribe'
+      preLoaderRoute: typeof ApiPublicSubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/job-safety-check': {
+      id: '/api/public/job-safety-check'
+      path: '/api/public/job-safety-check'
+      fullPath: '/api/public/job-safety-check'
+      preLoaderRoute: typeof ApiPublicJobSafetyCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/generate-answer': {
+      id: '/api/public/generate-answer'
+      path: '/api/public/generate-answer'
+      fullPath: '/api/public/generate-answer'
+      preLoaderRoute: typeof ApiPublicGenerateAnswerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/field-memory': {
+      id: '/api/public/field-memory'
+      path: '/api/public/field-memory'
+      fullPath: '/api/public/field-memory'
+      preLoaderRoute: typeof ApiPublicFieldMemoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/fact-inventory': {
+      id: '/api/public/fact-inventory'
+      path: '/api/public/fact-inventory'
+      fullPath: '/api/public/fact-inventory'
+      preLoaderRoute: typeof ApiPublicFactInventoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/demo': {
+      id: '/api/public/demo'
+      path: '/api/public/demo'
+      fullPath: '/api/public/demo'
+      preLoaderRoute: typeof ApiPublicDemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/classify-question': {
+      id: '/api/ai/classify-question'
+      path: '/api/ai/classify-question'
+      fullPath: '/api/ai/classify-question'
+      preLoaderRoute: typeof ApiAiClassifyQuestionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/dashboard/writing': {
+      id: '/_authenticated/dashboard/writing'
+      path: '/writing'
+      fullPath: '/dashboard/writing'
+      preLoaderRoute: typeof AuthenticatedDashboardWritingRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/support': {
+      id: '/_authenticated/dashboard/support'
+      path: '/support'
+      fullPath: '/dashboard/support'
+      preLoaderRoute: typeof AuthenticatedDashboardSupportRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/subscription': {
+      id: '/_authenticated/dashboard/subscription'
+      path: '/subscription'
+      fullPath: '/dashboard/subscription'
+      preLoaderRoute: typeof AuthenticatedDashboardSubscriptionRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/settings': {
+      id: '/_authenticated/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof AuthenticatedDashboardSettingsRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/resume': {
+      id: '/_authenticated/dashboard/resume'
+      path: '/resume'
+      fullPath: '/dashboard/resume'
+      preLoaderRoute: typeof AuthenticatedDashboardResumeRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/profile': {
+      id: '/_authenticated/dashboard/profile'
+      path: '/profile'
+      fullPath: '/dashboard/profile'
+      preLoaderRoute: typeof AuthenticatedDashboardProfileRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/api/public/extension/voicecard': {
+      id: '/api/public/extension/voicecard'
+      path: '/api/public/extension/voicecard'
+      fullPath: '/api/public/extension/voicecard'
+      preLoaderRoute: typeof ApiPublicExtensionVoicecardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/ai/classify-question': {
@@ -716,13 +723,6 @@ declare module '@tanstack/react-router' {
       path: '/api/public/ai/classify-question'
       fullPath: '/api/public/ai/classify-question'
       preLoaderRoute: typeof ApiPublicAiClassifyQuestionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/extension/voicecard': {
-      id: '/api/public/extension/voicecard'
-      path: '/api/public/extension/voicecard'
-      fullPath: '/api/public/extension/voicecard'
-      preLoaderRoute: typeof ApiPublicExtensionVoicecardRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
